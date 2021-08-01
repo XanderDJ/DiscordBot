@@ -17,12 +17,13 @@ import Discord.Types
   ( ChannelId,
     Event (MessageCreate),
     Message (..),
-    User (userDiscrim, userId, userName),
+    User (userDiscrim, userId, userName, userIsBot),
   )
+import GHC.ResponseFile (unescapeArgs)
 import Parsers
 import System.Environment
 import Text.Parsec
-import GHC.ResponseFile (unescapeArgs)
+import Foreign.Safe (fromBool)
 
 main = auctionBot
 
@@ -51,6 +52,8 @@ eventHandler mvar event = case event of
     when (isInfo m) (getInfo mvar m)
     when (isInfoUser m) (getInfoUser mvar m)
     when (isEndAuction m) (auctionActive mvar m startEndAuction)
+    when (isHelp m) (help m)
+    when (isUndo m) (auctionActive mvar m startUndo)
   _ -> pure ()
 
 -- BOT ACTIONS
@@ -230,11 +233,11 @@ getInfoUser mvar m = do
   auctions <- lift $ readMVar mvar
   let auction = getAuction (auctionID m) auctions
   ifElse (isNothing auction) (auctionNotFound m) (parseInfoUser mvar m auctions (fromJust auction))
-   
+
 parseInfoUser :: MVar Auctions -> Message -> Auctions -> Auction -> DiscordHandler ()
 parseInfoUser mvar m as a = do
   let u = parse infoP "parsing user info" (messageText m)
-  ifElse (isLeft u) (infoUserCommandHelp m) (hasInfoUser mvar m as a (extractRight u)) 
+  ifElse (isLeft u) (infoUserCommandHelp m) (hasInfoUser mvar m as a (extractRight u))
 
 hasInfoUser :: MVar Auctions -> Message -> Auctions -> Auction -> Auction.User -> DiscordHandler ()
 hasInfoUser mvar m as a u = ifElse (containsUser u (_aParticipants a)) (giveInfoUser mvar m as a u) (userNotParticipating m u)
@@ -243,6 +246,42 @@ giveInfoUser :: MVar Auctions -> Message -> Auctions -> Auction -> Auction.User 
 giveInfoUser mvar m as a u = do
   let p = getParticipant u (_aParticipants a)
   void . restCall $ R.CreateMessage (messageChannel m) (append (append (pingUserText m) ":\n") ((pack . show) p))
+
+startUndo :: MVar Auctions -> Message -> Auctions -> Auction -> DiscordHandler ()
+startUndo mvar m as a = do
+  let u = parse undoP "parsing undo message" (messageText m)
+  ifElse (isLeft u || (not . isValidUser . extractRight $ u)) (storeAuctions mvar as >> undoCommandHelp m) (canUndo mvar m as a (extractRight u))
+
+canUndo :: MVar Auctions -> Message -> Auctions -> Auction -> Auction.User -> DiscordHandler ()
+canUndo mvar m as a u = ifElse (containsUser u (_aParticipants a)) (canUndo2 mvar m as a u) (storeAuctions mvar as >> userNotParticipating m u)
+
+canUndo2 :: MVar Auctions -> Message -> Auctions -> Auction -> Auction.User -> DiscordHandler ()
+canUndo2 mvar m as a u = do
+  let part = getParticipant u (_aParticipants a)
+  ifElse (Prelude.null (_pTeam part)) (storeAuctions mvar as >> nothingToUndo m u) (undo mvar m as a part)
+
+undo :: MVar Auctions -> Message -> Auctions -> Auction -> Participant -> DiscordHandler ()
+undo mvar m as a p = do
+  let 
+      (item:items) = _pTeam p
+      (I name (Just price)) = item
+      (Just budget) = _pBudget p
+      budget' = price + budget
+      team' = items
+      p' = p {_pBudget = Just budget', _pTeam = team'}
+      ps = _aParticipants a
+      ps' = updateParticipants p' ps
+      a' = a { _aParticipants = ps'}
+      as' = updateAuction a' as
+  lift $ putMVar mvar as'
+  void . restCall $ R.CreateMessage (messageChannel m) (append (pingUserText m) (pack $ ", the previous bid has been undone: " ++ unpack name ++ " can now be nominated again!"))
+
+help :: Message -> DiscordHandler ()
+help m =
+  void . restCall $
+    R.CreateMessage
+      (messageChannel m)
+      "!hostauction - starts an auction in the channel putting you as auctioneer\nrp - registerparticipant, register someone participating in the auction\nnom - nominate an object/player for bid\nb - bid for current nomination\ninfo - see your budget and items\ninfo (user) - see users budget and items\nendbid - end the current bid, person with last bid gets the item\nendauction - end the auction"
 
 nominateText :: Text -> Maybe Int -> Text
 nominateText t (Just x) = pack $ ", player " ++ unpack t ++ " was nominated! Starting bid is " ++ show x ++ " and held by the nominator!"
@@ -265,6 +304,9 @@ isParticipant mvar m as a f = do
 isAuctioneer :: MVar Auctions -> Message -> Auctions -> Auction -> (MVar Auctions -> Message -> Auctions -> Auction -> DiscordHandler ()) -> DiscordHandler ()
 isAuctioneer mvar m as a f = do
   ifElse (user m /= _aAuctioneer a) (storeAuctions mvar as >> notAuctioneer m) (f mvar m as a)
+
+nothingToUndo :: Message -> Auction.User -> DiscordHandler ()
+nothingToUndo m u = void . restCall $ R.CreateMessage (messageChannel m) (append (pingUserText m) (pack $ show u ++ " has nothing to undo!"))
 
 notEnoughSlots :: Message -> DiscordHandler ()
 notEnoughSlots m = void . restCall $ R.CreateMessage (messageChannel m) (append (pingUserText m) ", your team is already full!")
@@ -311,11 +353,14 @@ auctionCommandHelp m = void $ restCall (R.CreateMessage (messageChannel m) (appe
 nominateCommandHelp :: Message -> DiscordHandler ()
 nominateCommandHelp m = void . restCall $ R.CreateMessage (messageChannel m) (append (pingUserText m) ", correct usage: nom (player)")
 
-infoUserCommandHelp :: Message  -> DiscordHandler ()
+infoUserCommandHelp :: Message -> DiscordHandler ()
 infoUserCommandHelp m = void . restCall $ R.CreateMessage (messageChannel m) (append (pingUserText m) ", correct usage: info (name)#(identifier)")
 
 bidCommandHelp :: Message -> DiscordHandler ()
 bidCommandHelp m = void . restCall $ R.CreateMessage (messageChannel m) (append (pingUserText m) ", correct usage: b (x|x.y|xk|x.yk)")
+
+undoCommandHelp :: Message -> DiscordHandler ()
+undoCommandHelp m = void . restCall $ R.CreateMessage (messageChannel m) (append (pingUserText m) ", correct usage: undo (name)#(identifier)")
 
 auctionNotFound :: Message -> DiscordHandler ()
 auctionNotFound m = void $ restCall (R.CreateMessage (messageChannel m) (append (pingUserText m) ", There is no auction happening in this channel!"))
@@ -357,32 +402,45 @@ isValidParticipant :: Participant -> Bool
 isValidParticipant (P _ (Just _) _) = True
 isValidParticipant _ = False
 
+isValidUser :: Auction.User -> Bool
+isValidUser (U _ (Just _)) = True
+isValidUser _ = False
+
 lowText :: Message -> Text
 lowText = toLower . messageText
 
 isRegisterAuction :: Message -> Bool
-isRegisterAuction m = "!hostauction" `isPrefixOf` lowText m
+isRegisterAuction m = "!hostauction" `isPrefixOf` lowText m && not (fromBot m)
 
 isRegisterParticipant :: Message -> Bool
-isRegisterParticipant m = "rp " `isPrefixOf` lowText m
+isRegisterParticipant m = "rp " `isPrefixOf` lowText m && not (fromBot m)
 
 isBid :: Message -> Bool
-isBid m = "b " `isPrefixOf` lowText m
+isBid m = "b " `isPrefixOf` lowText m && not (fromBot m)
 
 isNomination :: Message -> Bool
-isNomination m = "nom " `isPrefixOf` lowText m
+isNomination m = "nom " `isPrefixOf` lowText m && not (fromBot m)
 
 isEndBid :: Message -> Bool
-isEndBid m = "endbid" `isPrefixOf` lowText m
+isEndBid m = "endbid" `isPrefixOf` lowText m && not (fromBot m)
 
 isEndAuction :: Message -> Bool
-isEndAuction m = "endauction" == lowText m
+isEndAuction m = "endauction" == lowText m && not (fromBot m)
 
 isInfo :: Message -> Bool
-isInfo m = "info" == lowText m
+isInfo m = "info" == lowText m && not (fromBot m)
 
 isInfoUser :: Message -> Bool
-isInfoUser m = "info " `isPrefixOf` lowText m
+isInfoUser m = "info " `isPrefixOf` lowText m && not (fromBot m)
+
+isUndo :: Message -> Bool
+isUndo m = "undo" `isPrefixOf` lowText m && not (fromBot m) 
+
+isHelp :: Message -> Bool
+isHelp m = "help" == lowText m && not (fromBot m)
+
+fromBot :: Message -> Bool
+fromBot = userIsBot . messageAuthor 
 
 auctionID :: Message -> AuctionID
 auctionID m = ID ((fromIntegral . fromJust) guildID) (fromIntegral channelID)

@@ -2,7 +2,7 @@ module Parsers where
 
 import Auction (Auction (A), AuctionID, Participant (P), User (U))
 import Data.Functor
-import Data.Text (Text, pack)
+import Data.Text (Text, dropWhileEnd, pack, unpack)
 import Text.Parsec
   ( alphaNum,
     char,
@@ -32,11 +32,12 @@ parseMaybeIntScientific = do
   base <- many digit
   char '.'
   ground <- many digit
-  if null ground || null base
+  let fixedGround = unpack . dropWhileEnd ('0' ==) . pack $ ground
+  if null fixedGround || null base
     then return Nothing
     else do
       let x = read base * 1000
-          y = read ground * 100
+          y = read fixedGround * 100
       return $ Just (x + y)
 
 parseUser :: Parser User
@@ -63,3 +64,6 @@ bidP = string "b" *> spaces *> (try parseMaybeIntScientific <|> parseMaybeInt)
 -- example: info lonewulfx3#3333
 infoP :: Parser User
 infoP = U . pack <$> (string "info" *> spaces *> many (noneOf "#")) <*> (char '#' *> parseMaybeInt)
+
+undoP :: Parser User
+undoP = U . pack <$> (string "undo" *> spaces *> many (noneOf "#")) <*> (char '#' *> parseMaybeInt)
