@@ -1,1 +1,3 @@
 # Lonewulfx6
+
+Bot used for Auction purposes. Namesake is a keepsake of my twitch bots origin.
