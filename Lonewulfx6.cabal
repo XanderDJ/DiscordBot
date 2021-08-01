@@ -1,0 +1,84 @@
+cabal-version: 1.12
+
+-- This file has been generated from package.yaml by hpack version 0.34.4.
+--
+-- see: https://github.com/sol/hpack
+--
+-- hash: 7b852cd7ca40399f06e42f4bd378e5265b89e01118f6fea8d0d2a2cbb1dec33c
+
+name:           Lonewulfx6
+version:        0.1.0.0
+description:    Please see the README on GitHub at <https://github.com/githubuser/Lonewulfx6#readme>
+homepage:       https://github.com/githubuser/Lonewulfx6#readme
+bug-reports:    https://github.com/githubuser/Lonewulfx6/issues
+author:         Author name here
+maintainer:     example@example.com
+copyright:      2021 Author name here
+license:        BSD3
+license-file:   LICENSE
+build-type:     Simple
+extra-source-files:
+    README.md
+    ChangeLog.md
+
+source-repository head
+  type: git
+  location: https://github.com/githubuser/Lonewulfx6
+
+library
+  exposed-modules:
+      Auction
+      Lib
+      Parsers
+  other-modules:
+      Paths_Lonewulfx6
+  hs-source-dirs:
+      src
+  build-depends:
+      base >=4.7 && <5
+    , data-default
+    , discord-haskell
+    , mtl
+    , parsec
+    , text
+    , unliftio
+  default-language: Haskell2010
+
+executable Lonewulfx6-exe
+  main-is: Main.hs
+  other-modules:
+      Paths_Lonewulfx6
+  hs-source-dirs:
+      app
+  default-extensions:
+      OverloadedStrings
+  ghc-options: -threaded -rtsopts -with-rtsopts=-N
+  build-depends:
+      Lonewulfx6
+    , base >=4.7 && <5
+    , data-default
+    , discord-haskell
+    , mtl
+    , parsec
+    , text
+    , unliftio
+  default-language: Haskell2010
+
+test-suite Lonewulfx6-test
+  type: exitcode-stdio-1.0
+  main-is: Spec.hs
+  other-modules:
+      Paths_Lonewulfx6
+  hs-source-dirs:
+      test
+  ghc-options: -threaded -rtsopts -with-rtsopts=-N
+  build-depends:
+      Lonewulfx6
+    , base >=4.7 && <5
+    , data-default
+    , discord-haskell
+    , mtl
+    , parsec
+    , text
+    , unliftio
+  default-language: Haskell2010
