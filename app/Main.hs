@@ -21,17 +21,18 @@ import Discord.Types
   )
 import Parsers
 import Text.Parsec
-
+import System.Environment
 main = auctionBot
 
 auctionBot :: IO ()
 auctionBot = do
+  [token] <- getArgs 
   mVar <- newEmptyMVar
   putMVar mVar []
   userFacingError <-
     runDiscord $
       def
-        { discordToken = "Bot ODcwNzU3MTU2NTExNzA3MjI2.YQRZyw.hnmkdvxRe4C1sxwZIGmCTxClgPE",
+        { discordToken = append "Bot " (pack token),
           discordOnLog = print,
           discordOnEvent = eventHandler mVar
         }
