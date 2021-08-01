@@ -1,16 +1,29 @@
 module Main where
 
 import Auction
+    ( getAuction,
+      Auction(..),
+      AuctionID(..),
+      Auctions,
+      Item(I, _iName, _iPrice),
+      Participant(..),
+      User(U, _uName) )
 import Control.Concurrent.MVar
-import Control.Monad
-import Control.Monad.Trans
-import Data.Default
+    ( newEmptyMVar, putMVar, readMVar, takeMVar, MVar )
+import Control.Monad ( void, when )
+import Control.Monad.Trans ( MonadTrans(lift) )
+import Data.Default ( Default(def) )
 import Data.Either (fromRight, isLeft)
 import Data.List (foldr)
-import Data.Maybe
+import Data.Maybe ( fromJust, isJust, isNothing )
 import Data.Text
+    ( Text, append, isPrefixOf, pack, toLower, unpack )
 import qualified Data.Text.IO as TIO
 import Discord
+    ( restCall,
+      runDiscord,
+      DiscordHandler,
+      RunDiscordOpts(discordToken, discordOnLog, discordOnEvent) )
 import Discord.Requests (AllowedMentions (mentionUsers))
 import qualified Discord.Requests as R
 import Discord.Types
@@ -21,9 +34,14 @@ import Discord.Types
   )
 import GHC.ResponseFile (unescapeArgs)
 import Parsers
-import System.Environment
-import Text.Parsec
-import Foreign.Safe (fromBool)
+    ( bidP,
+      infoP,
+      nominatePlayerP,
+      registerAuctionP,
+      registerParticipantP,
+      undoP )
+import System.Environment ( getArgs )
+import Text.Parsec ( parse )
 
 main = auctionBot
 
@@ -53,7 +71,7 @@ eventHandler mvar event = case event of
     when (isInfoUser m) (getInfoUser mvar m)
     when (isEndAuction m) (auctionActive mvar m startEndAuction)
     when (isHelp m) (help m)
-    when (isUndo m) (auctionActive mvar m startUndo)
+    when (isUndo m) (auctionActive mvar m (isAuctioneer startUndo))
   _ -> pure ()
 
 -- BOT ACTIONS
@@ -87,7 +105,7 @@ addParticipant mvar m as a = do
 
 authorizedAddParticipant :: MVar [Auction] -> Message -> Auction -> [Auction] -> DiscordHandler ()
 authorizedAddParticipant mvar m a as = do
-  let part = parse registerParticipantP "parse Participant" (messageText m)
+  let part = parse registerParticipantP "parse Participant" (toLower (messageText m))
   ifElse (isLeft part || (not . isValidParticipant) (extractRight part)) (lift (putMVar mvar as) >> participantCommandHelp m) (checkDuplicateParticipant mvar m a as (extractRight part))
 
 checkDuplicateParticipant :: MVar [Auction] -> Message -> Auction -> [Auction] -> Participant -> DiscordHandler ()
@@ -115,7 +133,7 @@ hasSlots mvar m as a = do
 
 parseNomination :: MVar [Auction] -> Message -> [Auction] -> Auction -> DiscordHandler ()
 parseNomination mvar m as a = do
-  let nomination = parse nominatePlayerP "parse Nominate player" (messageText m)
+  let nomination = parse nominatePlayerP "parse Nominate player" (toLower (messageText m))
   ifElse (isLeft nomination) (storeAuctions mvar as >> nominateCommandHelp m) (startNomination mvar m as a (extractRight nomination))
 
 startNomination :: MVar Auctions -> Message -> Auctions -> Auction -> Text -> DiscordHandler ()
@@ -141,7 +159,7 @@ checkEnoughSlots mvar m as a = do
 
 parseBid :: MVar Auctions -> Message -> Auctions -> Auction -> DiscordHandler ()
 parseBid mvar m as a = do
-  let bid = parse bidP "parse !bid command" (messageText m)
+  let bid = parse bidP "parse !bid command" (toLower (messageText m))
   ifElse (isLeft bid || (isNothing . extractRight) bid) (storeAuctions mvar as >> bidCommandHelp m) (checkBidHigher mvar m as a ((fromJust . extractRight) bid))
 
 checkBidHigher :: MVar Auctions -> Message -> Auctions -> Auction -> Int -> DiscordHandler ()
@@ -179,7 +197,7 @@ startEndBid mvar m = auctionActive mvar m canEndBid
 
 canEndBid :: MVar Auctions -> Message -> Auctions -> Auction -> DiscordHandler ()
 canEndBid mvar m as a = do
-  ifElse (isNothing $ _aCurrentBid a) (storeAuctions mvar as >> noNominationActive m) (isAuctioneer mvar m as a endBid)
+  ifElse (isNothing $ _aCurrentBid a) (storeAuctions mvar as >> noNominationActive m) (isAuctioneer endBid mvar m as a )
 
 endBid :: MVar Auctions -> Message -> Auctions -> Auction -> DiscordHandler ()
 endBid mvar m as a = do
@@ -202,7 +220,7 @@ endBid mvar m as a = do
       )
 
 startEndAuction :: MVar Auctions -> Message -> Auctions -> Auction -> DiscordHandler ()
-startEndAuction mvar m as a = isAuctioneer mvar m as a canEndAuction
+startEndAuction mvar m as a = isAuctioneer canEndAuction mvar m as a
 
 canEndAuction :: MVar Auctions -> Message -> Auctions -> Auction -> DiscordHandler ()
 canEndAuction mvar m as a = do
@@ -236,7 +254,7 @@ getInfoUser mvar m = do
 
 parseInfoUser :: MVar Auctions -> Message -> Auctions -> Auction -> DiscordHandler ()
 parseInfoUser mvar m as a = do
-  let u = parse infoP "parsing user info" (messageText m)
+  let u = parse infoP "parsing user info" (toLower (messageText m))
   ifElse (isLeft u) (infoUserCommandHelp m) (hasInfoUser mvar m as a (extractRight u))
 
 hasInfoUser :: MVar Auctions -> Message -> Auctions -> Auction -> Auction.User -> DiscordHandler ()
@@ -301,8 +319,8 @@ isParticipant mvar m as a f = do
   let uId = user m
   ifElse (containsUser uId (_aParticipants a)) (f mvar m as a) (storeAuctions mvar as >> notParticipating m)
 
-isAuctioneer :: MVar Auctions -> Message -> Auctions -> Auction -> (MVar Auctions -> Message -> Auctions -> Auction -> DiscordHandler ()) -> DiscordHandler ()
-isAuctioneer mvar m as a f = do
+isAuctioneer :: (MVar Auctions -> Message -> Auctions -> Auction -> DiscordHandler ()) -> MVar Auctions -> Message -> Auctions -> Auction ->  DiscordHandler ()
+isAuctioneer f mvar m as a = do
   ifElse (user m /= _aAuctioneer a) (storeAuctions mvar as >> notAuctioneer m) (f mvar m as a)
 
 nothingToUndo :: Message -> Auction.User -> DiscordHandler ()
