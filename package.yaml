@@ -37,6 +37,7 @@ dependencies:
 - time
 - split
 - http-types
+- async
 
 library:
   source-dirs: src

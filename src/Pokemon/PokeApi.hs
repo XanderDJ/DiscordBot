@@ -10,6 +10,7 @@ module Pokemon.PokeApi
   )
 where
 
+import Control.Concurrent.Async
 import Data.Aeson
   ( FromJSON (parseJSON),
     Value (Object),
@@ -58,10 +59,10 @@ getDt name = do
     then return $ Just $ DtNature (fromJust nature)
     else do
       let allUrls = tryAllBases name
-          allRequests = map4 parseRequest_ allUrls
+          allRequests = map parseRequest_ allUrls
       manager <- newManager settings
-      responses <- mapM4 (`httpLbs` manager) allRequests
-      let bodies = map4 responseBody responses
+      responses <- mapConcurrently (`httpLbs` manager) allRequests
+      let bodies = map responseBody responses
           dts = fromBS4 bodies
           dt = getDts dts
       return dt
@@ -147,14 +148,14 @@ moveBase = apiBase ++ "move/"
 itemBase :: String
 itemBase = apiBase ++ "item/"
 
-allBases :: (String, String, String, String)
-allBases = (pokemonBase, abilityBase, moveBase, itemBase)
+allBases :: [String]
+allBases = [pokemonBase, abilityBase, moveBase, itemBase]
 
 -- | When running a dt command we don't know what the user has given us, so we try all bases
-tryAllBases :: String -> (String, String, String, String)
+tryAllBases :: String -> [String]
 tryAllBases name =
   let name' = (intercalate "-" . words) name
-   in map4 (++ name') allBases
+   in map (++ name') allBases
 
 -- | Map over a 4 tuple
 map4 :: (t -> d) -> (t, t, t, t) -> (d, d, d, d)
@@ -169,8 +170,9 @@ mapM4 f (x1, x2, x3, x4) = do
   y4 <- f x4
   return (y1, y2, y3, y4)
 
-fromBS4 :: (ByteString, ByteString, ByteString, ByteString) -> (Maybe Pokemon, Maybe Ability, Maybe Move, Maybe Item)
-fromBS4 (x1, x2, x3, x4) = (decode x1, decode x2, decode x3, decode x4)
+fromBS4 :: [ByteString] -> (Maybe Pokemon, Maybe Ability, Maybe Move, Maybe Item)
+fromBS4 [x1, x2, x3, x4] = (decode x1, decode x2, decode x3, decode x4)
+fromBS4 _ = (Nothing, Nothing, Nothing, Nothing)
 
 getDts :: (Maybe Pokemon, Maybe Ability, Maybe Move, Maybe Item) -> Maybe DTType
 getDts (Just dt, Nothing, Nothing, Nothing) = Just $ DtPokemon dt

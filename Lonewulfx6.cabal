@@ -4,7 +4,7 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 089d572a025c2bfe818eb53066e243567dc5bece090267891a7f02b85ab3ce57
+-- hash: 8ec9490176879661134034ed8b9a887ad34a6f51ee2596268809c9d5bd994f95
 
 name:           Lonewulfx6
 version:        0.1.0.0
@@ -49,6 +49,7 @@ library
       OverloadedStrings
   build-depends:
       aeson
+    , async
     , base >=4.7 && <5
     , bytestring
     , containers
@@ -79,6 +80,7 @@ executable Lonewulfx6-exe
   build-depends:
       Lonewulfx6
     , aeson
+    , async
     , base >=4.7 && <5
     , bytestring
     , containers
@@ -108,6 +110,7 @@ test-suite Lonewulfx6-test
   build-depends:
       Lonewulfx6
     , aeson
+    , async
     , base >=4.7 && <5
     , bytestring
     , containers
