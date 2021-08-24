@@ -27,7 +27,7 @@ instance Show Auction where
   show a = auction ++ participants
     where
       auction = "Auction " ++ unpack (_aName a) ++ " has ended, below all the participants and their team!\n\n"
-      participants = Data.List.intercalate "\n" (Data.List.map show (_aParticipants a))
+      participants = Data.List.intercalate "\n\n" (Data.List.map show (_aParticipants a))
 
 data Participant = P
   { _pId :: User,

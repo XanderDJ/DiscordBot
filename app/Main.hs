@@ -13,7 +13,7 @@ import Control.Concurrent.MVar
 import Control.Monad ( void, when )
 import Control.Monad.Trans ( MonadTrans(lift) )
 import Data.Default ( Default(def) )
-import Data.Either (fromRight, isLeft)
+import Data.Either (fromRight, isLeft, isRight)
 import Data.List (foldr)
 import Data.Maybe ( fromJust, isJust, isNothing )
 import Data.Text
@@ -39,9 +39,12 @@ import Parsers
       nominatePlayerP,
       registerAuctionP,
       registerParticipantP,
-      undoP )
+      undoP,
+      dtP)
 import System.Environment ( getArgs )
-import Text.Parsec ( parse )
+import Text.Parsec
+import Pokemon.PokeApi
+import Pokemon.Types
 
 main = auctionBot
 
@@ -72,9 +75,31 @@ eventHandler mvar event = case event of
     when (isEndAuction m) (auctionActive mvar m startEndAuction)
     when (isHelp m) (help m)
     when (isUndo m) (auctionActive mvar m (isAuctioneer startUndo))
+    when (isDT m) (returnDT m)
   _ -> pure ()
 
 -- BOT ACTIONS
+
+returnDT :: Message -> DiscordHandler ()
+returnDT m = do
+  let dt = parse dtP "parse DT" (toLower (messageText m))
+  lift $ print dt
+  ifElse (isLeft dt) (nonValidDt m) (handleDt (extractRight dt) m)
+
+handleDt :: String -> Message -> DiscordHandler ()
+handleDt dt m = do
+  dt' <- lift $ getDt dt
+  ifElse (isNothing dt') (dtNotFound m) (dtFound (fromJust dt') m)
+
+
+dtFound :: DTType -> Message -> DiscordHandler ()
+dtFound dt m = sendMessage $ R.CreateMessage (messageChannel m) (append (pingUserText m) (pack $ ", " ++ show dt))
+dtNotFound :: Message -> DiscordHandler ()
+dtNotFound m = sendMessage $ R.CreateMessage (messageChannel m) (append (pingUserText m) ", couldn't find the data you were looking for.") 
+
+nonValidDt ::Message -> DiscordHandler ()
+nonValidDt m = void . restCall $ R.CreateMessage (messageChannel m) "Usage: ldt (item/pokemon/move/nature/ability)"
+
 
 registerAuction :: MVar [Auction] -> Message -> DiscordHandler ()
 registerAuction mvar m = do
@@ -388,6 +413,10 @@ alreadyAnAuction m = void $ restCall (R.CreateMessage (messageChannel m) (append
 
 -- HELPER FUNCTIONS
 
+sendMessage :: R.ChannelRequest Message -> DiscordHandler ()
+sendMessage = void . restCall
+
+
 extractRight :: Either a b -> b
 extractRight (Right b) = b
 extractRight (Left a) = error "Tried extracting Right value from Left"
@@ -428,34 +457,37 @@ lowText :: Message -> Text
 lowText = toLower . messageText
 
 isRegisterAuction :: Message -> Bool
-isRegisterAuction m = "!hostauction" `isPrefixOf` lowText m && not (fromBot m)
+isRegisterAuction m = "lhostauction" `isPrefixOf` lowText m && not (fromBot m)
 
 isRegisterParticipant :: Message -> Bool
-isRegisterParticipant m = "rp " `isPrefixOf` lowText m && not (fromBot m)
+isRegisterParticipant m = "lrp " `isPrefixOf` lowText m && not (fromBot m)
 
 isBid :: Message -> Bool
-isBid m = "b " `isPrefixOf` lowText m && not (fromBot m)
+isBid m = "lb " `isPrefixOf` lowText m && not (fromBot m)
 
 isNomination :: Message -> Bool
-isNomination m = "nom " `isPrefixOf` lowText m && not (fromBot m)
+isNomination m = "lnom " `isPrefixOf` lowText m && not (fromBot m)
 
 isEndBid :: Message -> Bool
-isEndBid m = "endbid" `isPrefixOf` lowText m && not (fromBot m)
+isEndBid m = "lendbid" `isPrefixOf` lowText m && not (fromBot m)
 
 isEndAuction :: Message -> Bool
-isEndAuction m = "endauction" == lowText m && not (fromBot m)
+isEndAuction m = "lendauction" == lowText m && not (fromBot m)
 
 isInfo :: Message -> Bool
-isInfo m = "info" == lowText m && not (fromBot m)
+isInfo m = "linfo" == lowText m && not (fromBot m)
 
 isInfoUser :: Message -> Bool
-isInfoUser m = "info " `isPrefixOf` lowText m && not (fromBot m)
+isInfoUser m = "linfo " `isPrefixOf` lowText m && not (fromBot m)
 
 isUndo :: Message -> Bool
-isUndo m = "undo" `isPrefixOf` lowText m && not (fromBot m) 
+isUndo m = "lundo" `isPrefixOf` lowText m && not (fromBot m) 
 
 isHelp :: Message -> Bool
-isHelp m = "help" == lowText m && not (fromBot m)
+isHelp m = "lhelp" == lowText m && not (fromBot m)
+
+isDT :: Message -> Bool
+isDT m = "ldt" `isPrefixOf` lowText m && not (fromBot m)
 
 fromBot :: Message -> Bool
 fromBot = userIsBot . messageAuthor 

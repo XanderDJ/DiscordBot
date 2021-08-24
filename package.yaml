@@ -27,9 +27,21 @@ dependencies:
 - mtl
 - parsec
 - data-default
+- containers
+- http-client
+- http-client-tls
+- aeson
+- xlsx
+- lens
+- bytestring
+- time
+- split
+- http-types
 
 library:
   source-dirs: src
+  default-extensions:
+    - OverloadedStrings
 
 executables:
   Lonewulfx6-exe:

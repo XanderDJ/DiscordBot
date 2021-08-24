@@ -13,7 +13,7 @@ import Text.Parsec
     spaces,
     string,
     try,
-    (<|>),
+    (<|>), anyChar
   )
 import Text.Parsec.Text (Parser)
 
@@ -46,24 +46,27 @@ parseUser = U . pack <$> many (noneOf "#") <*> (char '#' *> parseMaybeInt)
 -- Message example = !auction lpl 5000
 
 registerAuctionP :: AuctionID -> User -> Parser Auction
-registerAuctionP aId auctioneer = A aId . pack <$> (string "!hostauction" *> spaces *> many alphaNum) <*> parseMaybeInt <*> parseMaybeInt <*> parseMaybeInt <*> pure Nothing <*> pure auctioneer <*> pure []
+registerAuctionP aId auctioneer = A aId . pack <$> (string "lhostauction" *> spaces *> many alphaNum) <*> parseMaybeInt <*> parseMaybeInt <*> parseMaybeInt <*> pure Nothing <*> pure auctioneer <*> pure []
 
 -- example: rp mogo#5432 80000
 
 registerParticipantP :: Parser Participant
-registerParticipantP = P <$> (string "rp" *> spaces *> parseUser) <*> parseMaybeInt <*> pure []
+registerParticipantP = P <$> (string "lrp" *> spaces *> parseUser) <*> parseMaybeInt <*> pure []
 
 -- example: nom jeroni9999
 nominatePlayerP :: Parser Text
-nominatePlayerP = pack <$> (string "nom" *> spaces *> many alphaNum)
+nominatePlayerP = pack <$> (string "lnom" *> spaces *> many alphaNum)
 
 -- example: b (5000|5.0k|5.0|5k)
 bidP :: Parser (Maybe Int)
-bidP = string "b" *> spaces *> (try parseMaybeIntScientific <|> parseMaybeInt)
+bidP = string "lb" *> spaces *> (try parseMaybeIntScientific <|> parseMaybeInt)
 
 -- example: info lonewulfx3#3333
 infoP :: Parser User
-infoP = U . pack <$> (string "info" *> spaces *> many (noneOf "#")) <*> (char '#' *> parseMaybeInt)
+infoP = U . pack <$> (string "linfo" *> spaces *> many (noneOf "#")) <*> (char '#' *> parseMaybeInt)
 
 undoP :: Parser User
-undoP = U . pack <$> (string "undo" *> spaces *> many (noneOf "#")) <*> (char '#' *> parseMaybeInt)
+undoP = U . pack <$> (string "lundo" *> spaces *> many (noneOf "#")) <*> (char '#' *> parseMaybeInt)
+
+dtP :: Parser String
+dtP = map (\s -> if s == ' ' then '-' else s) <$> (string "ldt " *> spaces *> many anyChar)

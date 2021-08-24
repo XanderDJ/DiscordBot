@@ -4,7 +4,7 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 2f79c6b15660b5cb0238e09f65d6415d1ac73da8cd13a73d982e3451b8d07872
+-- hash: 089d572a025c2bfe818eb53066e243567dc5bece090267891a7f02b85ab3ce57
 
 name:           Lonewulfx6
 version:        0.1.0.0
@@ -28,19 +28,43 @@ source-repository head
 library
   exposed-modules:
       Auction
+      Excel
       Parsers
+      Pokemon.Excel
+      Pokemon.Functions
+      Pokemon.Nature
+      Pokemon.PokeApi
+      Pokemon.Replays.API
+      Pokemon.Replays.Parsers
+      Pokemon.Replays.Types
+      Pokemon.Stats.Functions
+      Pokemon.Stats.Stats
+      Pokemon.Stats.Types
+      Pokemon.Types
   other-modules:
       Paths_Lonewulfx6
   hs-source-dirs:
       src
+  default-extensions:
+      OverloadedStrings
   build-depends:
-      base >=4.7 && <5
+      aeson
+    , base >=4.7 && <5
+    , bytestring
+    , containers
     , data-default
     , discord-haskell
+    , http-client
+    , http-client-tls
+    , http-types
+    , lens
     , mtl
     , parsec
+    , split
     , text
+    , time
     , unliftio
+    , xlsx
   default-language: Haskell2010
 
 executable Lonewulfx6-exe
@@ -54,13 +78,23 @@ executable Lonewulfx6-exe
   ghc-options: -threaded -rtsopts -with-rtsopts=-N
   build-depends:
       Lonewulfx6
+    , aeson
     , base >=4.7 && <5
+    , bytestring
+    , containers
     , data-default
     , discord-haskell
+    , http-client
+    , http-client-tls
+    , http-types
+    , lens
     , mtl
     , parsec
+    , split
     , text
+    , time
     , unliftio
+    , xlsx
   default-language: Haskell2010
 
 test-suite Lonewulfx6-test
@@ -73,11 +107,21 @@ test-suite Lonewulfx6-test
   ghc-options: -threaded -rtsopts -with-rtsopts=-N
   build-depends:
       Lonewulfx6
+    , aeson
     , base >=4.7 && <5
+    , bytestring
+    , containers
     , data-default
     , discord-haskell
+    , http-client
+    , http-client-tls
+    , http-types
+    , lens
     , mtl
     , parsec
+    , split
     , text
+    , time
     , unliftio
+    , xlsx
   default-language: Haskell2010
