@@ -1,4 +1,4 @@
-module Auction where
+module Commands.Auction.Types where
 
 import Data.List
 import Data.Maybe
@@ -53,6 +53,3 @@ instance Show Item where
 
 type Auctions = [Auction]
 
-getAuction :: AuctionID -> [Auction] -> Maybe Auction
-getAuction _ [] = Nothing
-getAuction id (a : as) = if id == _aID a then Just a else getAuction id as

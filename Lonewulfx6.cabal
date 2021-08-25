@@ -4,7 +4,7 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 8ec9490176879661134034ed8b9a887ad34a6f51ee2596268809c9d5bd994f95
+-- hash: 83034daa3e75cfbfb77071e9b110c136b793fa13612cae25a58b62392a1af4d5
 
 name:           Lonewulfx6
 version:        0.1.0.0
@@ -27,7 +27,26 @@ source-repository head
 
 library
   exposed-modules:
-      Auction
+      CommandMap
+      Commands.Auction
+      Commands.Auction.Bid
+      Commands.Auction.EndAuction
+      Commands.Auction.EndBid
+      Commands.Auction.Imports
+      Commands.Auction.Info
+      Commands.Auction.Nomination
+      Commands.Auction.RegisterAuction
+      Commands.Auction.RegisterParticipant
+      Commands.Auction.Types
+      Commands.Auction.Undo
+      Commands.Auction.Utility
+      Commands.AuctionCommands
+      Commands.Commands
+      Commands.Help
+      Commands.TextCommands
+      Commands.TextCommands.DT
+      Commands.Types
+      Commands.Utility
       Excel
       Parsers
       Pokemon.Excel

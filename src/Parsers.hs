@@ -1,20 +1,9 @@
 module Parsers where
 
-import Auction (Auction (A), AuctionID, Participant (P), User (U))
+import Commands.Auction (Auction (A), AuctionID, Participant (P), User (U))
 import Data.Functor
 import Data.Text (Text, dropWhileEnd, pack, unpack)
 import Text.Parsec
-  ( alphaNum,
-    char,
-    digit,
-    lookAhead,
-    many,
-    noneOf,
-    spaces,
-    string,
-    try,
-    (<|>), anyChar
-  )
 import Text.Parsec.Text (Parser)
 
 parseMaybeInt :: Parser (Maybe Int)
@@ -43,13 +32,16 @@ parseMaybeIntScientific = do
 parseUser :: Parser User
 parseUser = U . pack <$> many (noneOf "#") <*> (char '#' *> parseMaybeInt)
 
+
+parseCommand :: Parser Text
+parseCommand = pack <$> (char 'l' *> many letter)
+
 -- Message example = !auction lpl 5000
 
 registerAuctionP :: AuctionID -> User -> Parser Auction
 registerAuctionP aId auctioneer = A aId . pack <$> (string "lhostauction" *> spaces *> many alphaNum) <*> parseMaybeInt <*> parseMaybeInt <*> parseMaybeInt <*> pure Nothing <*> pure auctioneer <*> pure []
 
 -- example: rp mogo#5432 80000
-
 registerParticipantP :: Parser Participant
 registerParticipantP = P <$> (string "lrp" *> spaces *> parseUser) <*> parseMaybeInt <*> pure []
 
@@ -63,7 +55,7 @@ bidP = string "lb" *> spaces *> (try parseMaybeIntScientific <|> parseMaybeInt)
 
 -- example: info lonewulfx3#3333
 infoP :: Parser User
-infoP = U . pack <$> (string "linfo" *> spaces *> many (noneOf "#")) <*> (char '#' *> parseMaybeInt)
+infoP = U . pack <$> (string "linfouser" *> spaces *> many (noneOf "#")) <*> (char '#' *> parseMaybeInt)
 
 undoP :: Parser User
 undoP = U . pack <$> (string "lundo" *> spaces *> many (noneOf "#")) <*> (char '#' *> parseMaybeInt)

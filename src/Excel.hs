@@ -1,13 +1,6 @@
-module Excel (ExcelTable (..), ExcelMap (..), TableContent, TableMode (..), insertTable, insertMap, emptyXlsx, emptySheet, nextPoint, Size (..), toBoldCellValue) where
+module Excel (ExcelTable (..), ExcelMap (..), TableContent, TableMode (..), insertTable, insertMap, insertMoveMaps, emptyXlsx, emptySheet, nextPoint, Size (..), toBoldCellValue) where
 
 import Codec.Xlsx
-    ( cellValueAt,
-      runPropertiesBold,
-      def,
-      Worksheet,
-      Xlsx,
-      CellValue(CellRich),
-      RichTextRun(RichTextRun) )
 import Control.Lens (Field1 (_1), Field2 (_2), (%~), (&), (?~))
 import qualified Data.Map as M
 import qualified Data.Text as T
@@ -49,6 +42,15 @@ insertMap startPos mp ws = finalWs
     mapMode = eMMode mp
     map' = eMMap mp
     ((finalWs, mode, pos), map'') = M.mapAccumWithKey insertKeyValue (ws, mapMode, startPos) map'
+
+
+insertMoveMaps :: Xlsx -> [(String, Maybe ExcelMap)] -> Xlsx
+insertMoveMaps xl [] = xl
+insertMoveMaps xl ((sheetName, Nothing) : items) = insertMoveMaps xl items
+insertMoveMaps xl ((sheetName, Just em) : items) =
+  let newSheet = insertMap (1, 1) em emptySheet
+      newXl = xl & atSheet (T.pack sheetName) ?~ newSheet
+   in insertMoveMaps newXl items
 
 -- | a = start value type.
 -- b = index type.
