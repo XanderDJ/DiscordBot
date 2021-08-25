@@ -4,7 +4,7 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 83034daa3e75cfbfb77071e9b110c136b793fa13612cae25a58b62392a1af4d5
+-- hash: b80c4eb9040b8022599d83972b8753cba84c7ab3adf59dd0d9d9f3f4570ea6d4
 
 name:           Lonewulfx6
 version:        0.1.0.0
@@ -45,6 +45,7 @@ library
       Commands.Help
       Commands.TextCommands
       Commands.TextCommands.DT
+      Commands.TextCommands.SpeedSheet
       Commands.Types
       Commands.Utility
       Excel

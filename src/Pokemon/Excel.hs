@@ -42,18 +42,23 @@ pokemonSpeedRow pok = row
         (CellDouble . fromIntegral . maxSpeedWithScarf) pok
       ]
 
-pokemonMoveMap :: TableMode -> Pokemon -> Maybe ExcelMap
+pokemonMoveMap :: TableMode -> Pokemon -> Either String ExcelMap
 pokemonMoveMap mode mon = do
   mvCts <- moveCategories mon
   let mp = ExcelMap (categoryMap M.empty mvCts) mode
   return mp
 
-moveCategories :: Pokemon -> Maybe [(String, String)]
+moveCategories :: Pokemon -> Either String [(String, String)]
 moveCategories mon = do 
     maybeMvList <- pMoves mon
     let zipCategories = map (\mov -> (getMoveType mov, mov)) maybeMvList
         categories = map (\(tipe, mv) -> (moveTypeToName (tipe, mv), mName mv)) zipCategories
     return categories
+
+eitherToMaybes :: [Either a b] -> [Maybe b]
+eitherToMaybes [] = []
+eitherToMaybes (Left _: eithers) = Nothing : eitherToMaybes eithers
+eitherToMaybes (Right b: eithers) = Just b : eitherToMaybes eithers
 
 moveTypeToName :: (MoveType, Move) -> String
 moveTypeToName (ATTACK, move) = show $ mTipe move

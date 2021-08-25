@@ -2,7 +2,8 @@ module Parsers where
 
 import Commands.Auction (Auction (A), AuctionID, Participant (P), User (U))
 import Data.Functor
-import Data.Text (Text, dropWhileEnd, pack, unpack)
+import Data.List (isPrefixOf)
+import Data.Text (Text, dropWhileEnd, pack, replace, unpack)
 import Text.Parsec
 import Text.Parsec.Text (Parser)
 
@@ -31,7 +32,6 @@ parseMaybeIntScientific = do
 
 parseUser :: Parser User
 parseUser = U . pack <$> many (noneOf "#") <*> (char '#' *> parseMaybeInt)
-
 
 parseCommand :: Parser Text
 parseCommand = pack <$> (char 'l' *> many letter)
@@ -62,3 +62,20 @@ undoP = U . pack <$> (string "lundo" *> spaces *> many (noneOf "#")) <*> (char '
 
 dtP :: Parser String
 dtP = map (\s -> if s == ' ' then '-' else s) <$> (string "ldt " *> spaces *> many anyChar)
+
+data NOrP = N Text | PN Text deriving (Show)
+
+parseNOrP :: Parser NOrP
+parseNOrP = (N <$> try parseN) <|> (PN <$> parsePN)
+
+parseN :: Parser Text
+parseN = pack . dropHeadPattern "lss" . filter (/= ' ') <$> (many1 (noneOf ":") <* char ':')
+
+parsePN :: Parser Text
+parsePN = pack . map (\c -> if c == ' ' then '-' else c) <$> many1 anyChar
+
+dropHeadPattern :: String -> String -> String
+dropHeadPattern p s
+  | length p > length s = s
+  | p `isPrefixOf` s = drop (length p) s
+  | otherwise = s

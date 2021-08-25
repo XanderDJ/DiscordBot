@@ -1,6 +1,7 @@
 module Pokemon.Types where
 
 import Data.Char
+import qualified Data.Text as T
 
 -- | Wrapper around all different data types for the /dt command from showdown
 data DTType = DtPokemon Pokemon | DtItem Item | DtMove Move | DtNature Nature | DtAbility Ability
@@ -122,7 +123,7 @@ data Pokemon = Pokemon
     abilities :: [Name],
     hiddenAbilities :: Maybe Name,
     baseStats :: BaseStats,
-    pMoves :: Maybe [Move],
+    pMoves :: Either String [Move],
     weight :: Int
   }
   deriving (Show)
@@ -156,3 +157,4 @@ data Terrain = ELECTRIC_T | PSYCHIC_T | MISTY | GRASSY deriving (Show, Eq, Ord)
 data Hazards = SPIKES | TOXIC_SPIKES | STEALTH_ROCKS | STICKY_WEBS | VOLCALITH | CANNONADE | VINELASH | WILDFIRE deriving (Show, Eq, Ord)
 
 data Volatile = LEECH_SEED | TAUNT | DESTINY_BOND | CONFUSION | YAWN deriving (Show, Eq, Ord)
+

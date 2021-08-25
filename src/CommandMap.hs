@@ -18,5 +18,6 @@ commandMap =
       ("info", infoCommand),
       ("infouser", infoUserCommand),
       ("endauction", endAuctionCommand),
-      ("undo", undoCommand)
+      ("undo", undoCommand),
+      ("ss", speedSheetCommand )
     ]

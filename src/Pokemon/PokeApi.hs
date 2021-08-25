@@ -1,4 +1,3 @@
-
 module Pokemon.PokeApi
   ( getPokemon,
     getPokemonNoMoves,
@@ -21,7 +20,7 @@ import Data.Aeson
 import Data.ByteString.Lazy (ByteString)
 import Data.List (intercalate)
 import qualified Data.Map as M
-import Data.Maybe (fromJust, isJust)
+import Data.Maybe (fromJust, isJust, isNothing)
 import qualified Data.Text as T
 import Network.HTTP.Client
   ( ManagerSettings,
@@ -91,43 +90,45 @@ getPokemon name = do
         else return mon
     else return Nothing
 
-getPokemonNoMoves :: String -> IO (Maybe Pokemon)
+getPokemonNoMoves :: String -> IO (Either String Pokemon)
 getPokemonNoMoves pokemon = do
   let base = pokemonBase ++ pokemon
-  getResponse base
+  getResponse base pokemon
 
 -- | Get an ability from pokéapi.
-getAbility :: String -> IO (Maybe Ability)
+getAbility :: String -> IO (Either String Ability)
 getAbility name = do
   let base = abilityBase ++ name
-  getResponse base
+  getResponse base name
 
 -- | Get an item from pokéapi.
-getItem :: String -> IO (Maybe Item)
+getItem :: String -> IO (Either String Item)
 getItem name = do
   let base = itemBase ++ name
-  getResponse base
+  getResponse base name
 
 -- | Get a move from pokéapi.
-getMove :: String -> IO (Maybe Move)
+getMove :: String -> IO (Either String Move)
 getMove name = do
   let base = moveBase ++ name
-  getResponse base
+  getResponse base name
 
 -- | Get the names of moves learned by a pokemon
-getMoveNames :: String -> IO (Maybe MoveNames)
+getMoveNames :: String -> IO (Either String MoveNames)
 getMoveNames pokemon = do
   let base = pokemonBase ++ pokemon
-  getResponse base
+  getResponse base pokemon
 
 -- | Fetch an API request from the api
-getResponse :: FromJSON a => String -> IO (Maybe a)
-getResponse base = do
+getResponse :: FromJSON a => String -> String -> IO (Either String a)
+getResponse base name = do
   manager <- newManager settings
   response <- httpLbs (parseRequest_ base) manager
   if checkFound response
-    then return $ decode (responseBody response)
-    else return Nothing
+    then do 
+      let resp = decode (responseBody response)
+      if isNothing resp then return $ Left base else return $ Right (fromJust resp)
+    else return $ Left name
 
 checkFound :: Response ByteString -> Bool
 checkFound resp = status404 /= responseStatus resp
@@ -213,7 +214,7 @@ instance FromJSON Pokemon where
         abilities = (map _name . filter (not . isHidden)) allAbilities
         hiddenAbility = (map _name . filter isHidden) allAbilities
         ha = if length hiddenAbility == 1 then Just $ head hiddenAbility else Nothing
-    return $ Pokemon name typing abilities ha baseStats Nothing (div weight 10)
+    return $ Pokemon name typing abilities ha baseStats (Right []) (div weight 10)
 
 data EffectEntry = EffectEntry
   { language :: String,
