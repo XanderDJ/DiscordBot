@@ -4,6 +4,7 @@ import Commands.Auction (Auction (A), AuctionID, Participant (P), User (U))
 import Data.Functor
 import Data.List (isPrefixOf)
 import Data.Text (Text, dropWhileEnd, pack, replace, unpack)
+import Data.Char ( toLower )
 import Text.Parsec
 import Text.Parsec.Text (Parser)
 
@@ -72,7 +73,7 @@ parseN :: Parser Text
 parseN = pack . dropHeadPattern "lss" . filter (/= ' ') <$> (many1 (noneOf ":") <* char ':')
 
 parsePN :: Parser Text
-parsePN = pack . map (\c -> if c == ' ' then '-' else c) <$> many1 anyChar
+parsePN = pack . map (\c -> if c == ' ' then '-' else toLower c) <$> many1 anyChar
 
 dropHeadPattern :: String -> String -> String
 dropHeadPattern p s

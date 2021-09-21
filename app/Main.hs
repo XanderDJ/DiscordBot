@@ -12,7 +12,7 @@ import Data.Text
 import qualified Data.Text.IO as TIO
 import Discord
   ( DiscordHandler,
-    RunDiscordOpts (discordOnEvent, discordOnLog, discordToken),
+    RunDiscordOpts (discordOnEvent, discordOnLog, discordToken, discordOnEnd),
     restCall,
     runDiscord,
   )
@@ -25,7 +25,8 @@ import Discord.Types
 import Parsers
 import System.Environment (getArgs)
 import Text.Parsec
-
+import qualified Discord as R
+import Control.Monad
 main = auctionBot
 
 auctionBot :: IO ()
@@ -38,7 +39,8 @@ auctionBot = do
       def
         { discordToken = append "Bot " (pack token),
           discordOnLog = print,
-          discordOnEvent = eventHandler mVar
+          discordOnEvent = eventHandler mVar,
+          discordOnEnd = putStrLn "Ending" 
         }
   TIO.putStrLn userFacingError
 

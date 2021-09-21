@@ -21,7 +21,6 @@ dtCommand = Com "ldt (item/pokemon/move/nature/ability)" (TextCommand returnDT)
 returnDT :: Message -> DiscordHandler ()
 returnDT m = do
   let dt = parse dtP "parse DT" (toLower (messageText m))
-  lift $ print dt
   ifElse (isLeft dt) (nonValidDt m) (handleDt (extractRight dt) m)
 
 handleDt :: String -> Message -> DiscordHandler ()

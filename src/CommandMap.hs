@@ -1,9 +1,9 @@
 module CommandMap (commandMap) where
 
 import Commands.Commands
-import Commands.Types
-import Data.Map
-import Data.Text
+import Commands.Types ( Command )
+import Data.Map ( Map, fromList )
+import Data.Text ( Text )
 
 commandMap :: Map Text Command
 commandMap =

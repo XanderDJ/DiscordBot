@@ -45,6 +45,9 @@ data Move = Move
 -- | Nature datatype, contains the name of the nature, the positive stat increase and then the negative. If the stats are neutral then there is no change.
 data Nature = Nature String Stat Stat
 
+-- | Effect of a nature on a stat, used to simplify functions that calc evs
+data NatureEffect = NNegative | NNeutral | NPositive deriving (Show, Eq)
+
 instance Show Nature where
   show (Nature name NEUTRAL NEUTRAL) = name ++ ": No effects on stats"
   show (Nature name positive negative) = name ++ ": 10 % increase for " ++ show positive ++ " and 10% decrease for " ++ show negative

@@ -3,8 +3,8 @@ module Pokemon.Functions where
 import Data.List (sortBy)
 import Data.Maybe
 import Data.Ord (Down (Down))
-import Pokemon.Types
 import Pokemon.Nature
+import Pokemon.Types
 import Text.Read (readMaybe)
 
 getType :: String -> Maybe Type
@@ -42,16 +42,25 @@ findBaseStat [] s = error $ "Couldn't find stat \"" ++ show s ++ "\" in base sta
 findBaseStat ((BaseStat s' val) : bs) s = if s' == s then BaseStat s val else findBaseStat bs s
 
 minStatAt :: Level -> BaseStat -> Int
-minStatAt lvl (BaseStat HP value) = ((2 * value) * div lvl 100) + 10 + lvl
-minStatAt lvl stat = fromIntegral ((2 * getValue stat) * div lvl 100 + 5) *// 0.9
+minStatAt lvl = calcStat lvl 0 0 NNegative
 
 noInvestStatAt :: Level -> BaseStat -> Int
-noInvestStatAt lvl (BaseStat HP value) = ((31 + 2 * value) * div lvl 100) + 10 + lvl
-noInvestStatAt lvl stat = (31 + 2 * getValue stat) * div lvl 100 + 5
+noInvestStatAt lvl = calcStat lvl 31 0 NNeutral
 
 maxStatAt :: Level -> BaseStat -> Int
-maxStatAt lvl (BaseStat HP value) = ((31 + 2 * value + div 252 4) * div lvl 100) + 10 + lvl
-maxStatAt lvl stat = fromIntegral ((31 + 2 * getValue stat + div 252 4) * div lvl 100 + 5) *// 1.1
+maxStatAt lvl = calcStat lvl 31 252 NPositive
+
+neutralMaxStatAt :: Level -> BaseStat -> Int
+neutralMaxStatAt lvl = calcStat lvl 31 252 NNeutral
+
+calcStat :: Level -> Int -> Int -> NatureEffect -> BaseStat -> Int
+calcStat lvl iv ev natureEffect baseStat = case baseStat of
+  BaseStat HP n -> (2 * n + iv + div ev 4) * div lvl 100 + 10 + lvl
+  BaseStat _ n ->
+    let multiplier NNegative = 0.9
+        multiplier NNeutral = 1
+        multiplier NPositive = 1.1
+     in fromIntegral ((2 * n + iv + div ev 4) * div lvl 100 + 5) *// multiplier natureEffect
 
 getValue :: BaseStat -> Int
 getValue (BaseStat _ val) = val
@@ -74,9 +83,6 @@ sortPokemon stat pok1 pok2 = compare (Down stat1) (Down stat2)
     baseStat2 = getBaseStat stat pok2
     stat2 = getValue baseStat2
 
-getSpeed :: Pokemon -> Int
-getSpeed = getValue . getBaseStat "speed"
-
 maxSpeed :: Pokemon -> Int
 maxSpeed = maxStatAt 100 . getBaseStat "speed"
 
@@ -85,18 +91,18 @@ maxSpeedWithScarf = (*// 1.5) . fromIntegral . maxSpeed
 
 getMoveType :: Move -> MoveType
 getMoveType (Move name tipe dClass bp' accuracy _)
- | name `elem` hazards = HAZARD 
- | name `elem` utility = UTILITY 
- | name `elem` recovery = RECOVERY
- | name `elem` statusMoves = STATUS 
- | name `elem` boostMoves = BOOST 
- | dClass == "physical" || dClass == "special" = ATTACK
- | otherwise = OTHER
+  | name `elem` hazards = HAZARD
+  | name `elem` utility = UTILITY
+  | name `elem` recovery = RECOVERY
+  | name `elem` statusMoves = STATUS
+  | name `elem` boostMoves = BOOST
+  | dClass == "physical" || dClass == "special" = ATTACK
+  | otherwise = OTHER
 
-hazards :: [[Char]]
+hazards :: [String]
 hazards = ["spikes", "toxic-spikes", "stealth-rock", "sticky-web"]
 
-utility :: [[Char]]
+utility :: [String]
 utility =
   [ "trick-room",
     "rain-dance",
@@ -131,10 +137,9 @@ utility =
     "torment"
   ]
 
-other :: [[Char]]
-other = 
-  [
-    "after-you",
+other :: [String]
+other =
+  [ "after-you",
     "ally-switch",
     "aromatic-mist",
     "assist",
@@ -272,10 +277,9 @@ other =
     "worry-seed"
   ]
 
-recovery :: [[Char]]
+recovery :: [String]
 recovery =
-  [
-    "moonlight",
+  [ "moonlight",
     "morning-sun",
     "roost",
     "milk-drink",
@@ -308,10 +312,9 @@ recovery =
     "swallow"
   ]
 
-statusMoves :: [[Char]]
+statusMoves :: [String]
 statusMoves =
-  [
-    "toxic",
+  [ "toxic",
     "will-o-wisp",
     "thunder-wave",
     "hypnosis",
@@ -331,10 +334,9 @@ statusMoves =
     "encore"
   ]
 
-boostMoves :: [[Char]]
-boostMoves = 
-  [
-    "acid-armor",
+boostMoves :: [String]
+boostMoves =
+  [ "acid-armor",
     "acupressure",
     "agility",
     "amnesia",

@@ -17,13 +17,15 @@ import Pokemon.Functions
       maxSpeed,
       maxSpeedWithScarf,
       minStatAt,
-      noInvestStatAt )
+      noInvestStatAt,
+      neutralMaxStatAt
+    )
 
 -- | create an excel table with the pokemon sorted by speed. Uses the base speed stat to calculate speed rows for each mon
 speedTable :: [Pokemon] -> ExcelTable
 speedTable poks = table
   where
-    headers' = map toBoldCellValue ["Name", "Base speed", "Min speed", "No invest speed", "Max speed", "Max speed with scarf"]
+    headers' = map toBoldCellValue ["Name", "Base speed", "Min speed", "No invest speed", "Neutral max speed", "Max speed", "Max speed with scarf"]
     contents' = map pokemonSpeedRow poks
     table = ExcelTable headers' contents' HORIZONTAL
 
@@ -38,6 +40,7 @@ pokemonSpeedRow pok = row
         (CellDouble . fromIntegral . getValue) speed,
         (CellDouble . fromIntegral . minStatAt 100) speed,
         (CellDouble . fromIntegral . noInvestStatAt 100) speed,
+        (CellDouble . fromIntegral . neutralMaxStatAt 100) speed,
         (CellDouble . fromIntegral . maxSpeed) pok,
         (CellDouble . fromIntegral . maxSpeedWithScarf) pok
       ]
