@@ -62,7 +62,7 @@ undoP :: Parser User
 undoP = U . pack <$> (string "lundo" *> spaces *> many (noneOf "#")) <*> (char '#' *> parseMaybeInt)
 
 dtP :: Parser String
-dtP = map (\s -> if s == ' ' then '-' else s) <$> (string "ldt " *> spaces *> many anyChar)
+dtP = map (\s -> if s == ' ' then '-' else toLower s) <$> (string "ldt " *> spaces *> many anyChar)
 
 data NOrP = N Text | PN Text deriving (Show)
 
