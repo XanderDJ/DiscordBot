@@ -60,7 +60,7 @@ calcStat lvl iv ev natureEffect baseStat = case baseStat of
     let multiplier NNegative = 0.9
         multiplier NNeutral = 1
         multiplier NPositive = 1.1
-     in fromIntegral ((2 * n + iv + div ev 4) * div lvl 100 + 5) *// multiplier natureEffect
+     in  (fromIntegral (2 * n + iv + div ev 4) * (fromIntegral lvl / 100) + 5) *// multiplier natureEffect
 
 getValue :: BaseStat -> Int
 getValue (BaseStat _ val) = val

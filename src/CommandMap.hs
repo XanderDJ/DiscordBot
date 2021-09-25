@@ -4,6 +4,7 @@ import Commands.Commands
 import Commands.Types ( Command )
 import Data.Map ( Map, fromList )
 import Data.Text ( Text )
+import Commands.TextCommands (osCom)
 
 commandMap :: Map Text Command
 commandMap =
@@ -19,5 +20,7 @@ commandMap =
       ("infouser", infoUserCommand),
       ("endauction", endAuctionCommand),
       ("undo", undoCommand),
-      ("ss", speedSheetCommand )
+      ("ss", speedSheetCommand),
+      ("os", osCom),
+      ("osl", oslCom)
     ]

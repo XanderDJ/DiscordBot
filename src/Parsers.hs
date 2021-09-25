@@ -31,6 +31,10 @@ parseMaybeIntScientific = do
           y = read fixedGround * 100
       return $ Just (x + y)
 
+
+parseIntCommand :: String -> Parser (Maybe Int)
+parseIntCommand s = string s *> spaces *> (try parseMaybeIntScientific <|> parseMaybeInt)
+
 parseUser :: Parser User
 parseUser = U . pack <$> many (noneOf "#") <*> (char '#' *> parseMaybeInt)
 
@@ -52,7 +56,7 @@ nominatePlayerP = pack <$> (string "lnom" *> spaces *> many alphaNum)
 
 -- example: b (5000|5.0k|5.0|5k)
 bidP :: Parser (Maybe Int)
-bidP = string "lb" *> spaces *> (try parseMaybeIntScientific <|> parseMaybeInt)
+bidP = parseIntCommand "lb"
 
 -- example: info lonewulfx3#3333
 infoP :: Parser User
@@ -80,3 +84,15 @@ dropHeadPattern p s
   | length p > length s = s
   | p `isPrefixOf` s = drop (length p) s
   | otherwise = s
+
+parseOutspeed :: Parser (Maybe Int)
+parseOutspeed = parseIntCommand "los"
+
+parseOutspeedLevel :: Parser (Maybe Int, Maybe Int)
+parseOutspeedLevel = do
+  string "losl"
+  spaces
+  n <- try parseMaybeIntScientific <|> parseMaybeInt
+  spaces
+  l <- try parseMaybeIntScientific <|> parseMaybeInt
+  return (n, l)

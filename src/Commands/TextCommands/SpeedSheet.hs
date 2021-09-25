@@ -1,26 +1,27 @@
 module Commands.TextCommands.SpeedSheet where
 
 import Data.Time.Clock.POSIX (getPOSIXTime)
-import Codec.Xlsx
-import Commands.Types
-import Commands.Utility
-import Control.Concurrent.Async
-import Control.Monad.Trans
+import Codec.Xlsx ( Worksheet, atSheet, fromXlsx )
+import Commands.Types ( Command(..), CommandFunction(TextCommand) )
+import Commands.Utility ( pingUserText, sendMessage )
+import Control.Concurrent.Async ( mapConcurrently )
+import Control.Monad.Trans ( MonadTrans(lift) )
 import Data.ByteString.Char8 (intercalate)
-import Data.Either
+import Data.Either ( lefts, rights )
 import qualified Data.List as L
 import qualified Data.Text as T
-import Discord
+import Discord ( DiscordHandler )
 import qualified Discord.Requests as R
-import Discord.Types
+import Discord.Types ( Message(messageText, messageChannel) )
 import Excel
-import Parsers
-import Pokemon.Excel
-import Pokemon.Functions
-import Pokemon.PokeApi
-import Pokemon.Types
-import Text.Parsec
-import Control.Lens
+    ( emptySheet, emptyXlsx, insertTable, ExcelTable, Size(width) )
+import Parsers ( parseNOrP, NOrP(..) )
+import Pokemon.Excel ( speedTable )
+import Pokemon.Functions ( sortOnSpeed )
+import Pokemon.PokeApi ( getPokemonNoMoves )
+import Pokemon.Types ( Pokemon )
+import Text.Parsec ( parse )
+import Control.Lens ( (&), (?~) )
 import qualified Data.ByteString.Lazy as L
 import qualified Data.ByteString as LS
 
