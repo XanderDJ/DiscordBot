@@ -85,12 +85,9 @@ dropHeadPattern p s
   | p `isPrefixOf` s = drop (length p) s
   | otherwise = s
 
-parseOutspeed :: Parser (Maybe Int)
-parseOutspeed = parseIntCommand "los"
-
 parseOutspeedLevel :: Parser (Maybe Int, Maybe Int)
 parseOutspeedLevel = do
-  string "losl"
+  string "los"
   spaces
   n <- try parseMaybeIntScientific <|> parseMaybeInt
   spaces
