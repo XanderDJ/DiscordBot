@@ -21,6 +21,5 @@ commandMap =
       ("endauction", endAuctionCommand),
       ("undo", undoCommand),
       ("ss", speedSheetCommand),
-      ("os", osCom),
-      ("osl", oslCom)
+      ("os", osCom)
     ]

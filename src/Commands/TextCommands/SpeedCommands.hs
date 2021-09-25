@@ -1,4 +1,4 @@
-module Commands.TextCommands.SpeedCommands (oslCom, osCom) where
+module Commands.TextCommands.SpeedCommands (osCom) where
 
 import Commands.Types (Command (..), CommandFunction (TextCommand))
 import Commands.Utility (ifElse, pingUserText, sendMessage)
@@ -16,10 +16,7 @@ import Text.Parsec (parse)
 -- OUTSPEED COMMAND
 
 osCom :: Command
-osCom = Com "los (speed) - Gives the base speeds a pokemon needs to outspeed this speed, assumes level 100!" (TextCommand outspeedCommand)
-
-oslCom :: Command
-oslCom = Com "losl (speed) (level) - Gives the basespeeds a pokemon at level l needs to outspeed the given speed!" (TextCommand outspeedLevelCommand)
+osCom = Com "los (speed) (level) - Gives the basespeeds a pokemon at level l (100 if none given) needs to outspeed the given speed!" (TextCommand outspeedLevelCommand)
 
 outspeedLevelCommand :: Message -> DiscordHandler ()
 outspeedLevelCommand m = do
@@ -27,15 +24,7 @@ outspeedLevelCommand m = do
   ifElse (isLeft r) (outspeedLevelUsage m) (outspeedLevelCommand' m (fromRight (Nothing, Nothing) r))
 
 outspeedLevelCommand' :: Message -> (Maybe Int, Maybe Level) -> DiscordHandler ()
-outspeedLevelCommand' m (mi, ml) = ifElse (isNothing mi || isNothing ml) (outspeedLevelUsage m) (outspeedCommand'' m (fromJust mi) (fromJust ml))
-
-outspeedCommand :: Message -> DiscordHandler ()
-outspeedCommand m = do
-  let number = parse parseOutspeed "Parsing speed to outspeed" (messageText m)
-  ifElse (isLeft number) (outspeedUsage m) (outspeedCommand' m (fromRight Nothing number))
-
-outspeedCommand' :: Message -> Maybe Int -> DiscordHandler ()
-outspeedCommand' m mi = ifElse (isNothing mi) (outspeedUsage m) (outspeedCommand'' m (fromJust mi) 100)
+outspeedLevelCommand' m (mi, ml) = ifElse (isNothing mi) (outspeedLevelUsage m) (ifElse (isNothing ml) (outspeedCommand'' m (fromJust mi) 100) (outspeedCommand'' m (fromJust mi) (fromJust ml)))
 
 outspeedCommand'' :: Message -> Int -> Level -> DiscordHandler ()
 outspeedCommand'' m i l = do
@@ -45,10 +34,7 @@ outspeedCommand'' m i l = do
 -- ERROR MESSAGES
 
 outspeedLevelUsage :: Message -> DiscordHandler ()
-outspeedLevelUsage m = sendMessage $ R.CreateMessage (messageChannel m) (append (pingUserText m) ", correct usage: losl (speed) (lvl)")
-
-outspeedUsage :: Message -> DiscordHandler ()
-outspeedUsage m = sendMessage $ R.CreateMessage (messageChannel m) (append (pingUserText m) ", correct usage: loutspeed (speed, not base speed but the actual speed number)")
+outspeedLevelUsage m = sendMessage $ R.CreateMessage (messageChannel m) (append (pingUserText m) ", correct usage: losl (speed) (lvl, 100 if not given)")
 
 -- HELPER FUNCTIONS
 

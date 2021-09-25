@@ -96,3 +96,4 @@ parseOutspeedLevel = do
   spaces
   l <- try parseMaybeIntScientific <|> parseMaybeInt
   return (n, l)
+
