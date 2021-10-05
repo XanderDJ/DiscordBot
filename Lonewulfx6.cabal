@@ -4,7 +4,7 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 5813d25c85fb98487a5d0d21c05cc152171b6b5c8cb3c3af454106d8a2db6c12
+-- hash: d3737d4cba70e487bff20bf7583d069d96d8169a5dc18ee267f9818f47bfa32b
 
 name:           Lonewulfx6
 version:        0.1.0.0
@@ -27,6 +27,7 @@ source-repository head
 
 library
   exposed-modules:
+      Data.StatMultiplier
       Excel
       Pokemon.Excel
       Pokemon.Functions
@@ -87,13 +88,13 @@ executable Lonewulfx6-exe
       Commands.Parsers
       Commands.TextCommands
       Commands.TextCommands.CalcStat
+      Commands.TextCommands.DamageCalc
       Commands.TextCommands.DT
       Commands.TextCommands.EmbedTest
       Commands.TextCommands.SpeedCommands
       Commands.TextCommands.SpeedSheet
       Commands.Types
       Commands.Utility
-      Data.StatMultiplier
       Paths_Lonewulfx6
   hs-source-dirs:
       app
