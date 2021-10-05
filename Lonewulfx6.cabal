@@ -4,7 +4,7 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 8a854c7ddfe5dbc692659c48c596cc7cf71c2c2307113482c2b0c52964fa1792
+-- hash: 5813d25c85fb98487a5d0d21c05cc152171b6b5c8cb3c3af454106d8a2db6c12
 
 name:           Lonewulfx6
 version:        0.1.0.0
@@ -27,30 +27,7 @@ source-repository head
 
 library
   exposed-modules:
-      CommandMap
-      Commands.Auction
-      Commands.Auction.Bid
-      Commands.Auction.EndAuction
-      Commands.Auction.EndBid
-      Commands.Auction.Imports
-      Commands.Auction.Info
-      Commands.Auction.Nomination
-      Commands.Auction.RegisterAuction
-      Commands.Auction.RegisterParticipant
-      Commands.Auction.Types
-      Commands.Auction.Undo
-      Commands.Auction.Utility
-      Commands.AuctionCommands
-      Commands.Commands
-      Commands.Help
-      Commands.TextCommands
-      Commands.TextCommands.DT
-      Commands.TextCommands.SpeedCommands
-      Commands.TextCommands.SpeedSheet
-      Commands.Types
-      Commands.Utility
       Excel
-      Parsers
       Pokemon.Excel
       Pokemon.Functions
       Pokemon.Nature
@@ -92,6 +69,31 @@ library
 executable Lonewulfx6-exe
   main-is: Main.hs
   other-modules:
+      CommandMap
+      Commands.Auction
+      Commands.Auction.Bid
+      Commands.Auction.EndAuction
+      Commands.Auction.EndBid
+      Commands.Auction.Info
+      Commands.Auction.Nomination
+      Commands.Auction.RegisterAuction
+      Commands.Auction.RegisterParticipant
+      Commands.Auction.Types
+      Commands.Auction.Undo
+      Commands.Auction.Utility
+      Commands.AuctionCommands
+      Commands.Commands
+      Commands.Help
+      Commands.Parsers
+      Commands.TextCommands
+      Commands.TextCommands.CalcStat
+      Commands.TextCommands.DT
+      Commands.TextCommands.EmbedTest
+      Commands.TextCommands.SpeedCommands
+      Commands.TextCommands.SpeedSheet
+      Commands.Types
+      Commands.Utility
+      Data.StatMultiplier
       Paths_Lonewulfx6
   hs-source-dirs:
       app

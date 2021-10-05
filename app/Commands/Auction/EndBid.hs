@@ -1,36 +1,34 @@
 module Commands.Auction.EndBid (endBidCommand) where
 
-import Commands.Auction.Imports
+import Commands.Auction.Types
   ( Auction (_aCurrentBid, _aParticipants),
     Auctions,
-    DiscordHandler,
     Item (_iName, _iPrice),
-    MVar,
-    Message (messageChannel),
-    MonadTrans (lift),
     Participant (_pBudget, _pTeam),
     User (_uName),
-    auctionActive,
-    fromJust,
+  )
+import Commands.Auction.Utility
+  ( auctionActive,
     getParticipant,
     isAuctioneer,
-    isNothing,
     noNominationActive,
-    pack,
-    putMVar,
-    restCall,
     storeAuctions,
-    unpack,
     updateAuction,
     updateParticipants,
-    void,
   )
 import Commands.Types
   ( Command (..),
     CommandFunction (AuctionCommand),
   )
 import Commands.Utility (ifElse)
+import Control.Concurrent.MVar (MVar, putMVar)
+import Control.Monad (void)
+import Control.Monad.Trans (MonadTrans (lift))
+import Data.Maybe (fromJust, isNothing)
+import Data.Text (pack, unpack)
+import Discord (DiscordHandler, restCall)
 import qualified Discord.Requests as R
+import Discord.Types (Message (messageChannel))
 
 endBidCommand :: Command
 endBidCommand = Com "lendbid" (AuctionCommand startEndBid)

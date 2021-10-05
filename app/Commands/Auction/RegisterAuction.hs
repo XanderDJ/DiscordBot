@@ -1,9 +1,28 @@
 module Commands.Auction.RegisterAuction (registerAuctionCommand) where
 
-import qualified Discord.Requests as R
-import Commands.Auction.Imports
+import Commands.Auction.Types (Auction (A, _aName))
+import Commands.Auction.Utility (auctionID, getAuction, user)
+import Commands.Parsers (registerAuctionP)
 import Commands.Types
-import Commands.Utility
+  ( Command (..),
+    CommandFunction (AuctionCommand),
+  )
+import Commands.Utility (extractRight, ifElse, pingUserText)
+import Control.Concurrent.MVar
+  ( MVar,
+    putMVar,
+    readMVar,
+    takeMVar,
+  )
+import Control.Monad (void)
+import Control.Monad.Trans (MonadTrans (lift))
+import Data.Either (isLeft)
+import Data.Maybe (isNothing)
+import Data.Text (append, pack, toLower, unpack)
+import Discord (DiscordHandler, restCall)
+import qualified Discord.Requests as R
+import Discord.Types (Message (messageChannel, messageText))
+import Text.Parsec (parse)
 
 registerAuctionCommand :: Command
 registerAuctionCommand = Com "lhostauction <name> <minimum bid i.e. 5000> <minimum bid step i.e. 500> <amount of players per team>" (AuctionCommand registerAuction)

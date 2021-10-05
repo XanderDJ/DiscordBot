@@ -1,29 +1,28 @@
 module Commands.Auction.EndAuction (endAuctionCommand) where
 
-import Commands.Auction.Imports
+import Commands.Auction.Types
   ( Auction (_aCurrentBid, _aID),
     Auctions,
-    DiscordHandler,
-    MVar,
-    Message (messageChannel),
-    MonadTrans (lift),
-    append,
-    auctionActive,
+  )
+import Commands.Auction.Utility
+  ( auctionActive,
     isAuctioneer,
-    isJust,
     nominationStillActive,
-    pack,
-    putMVar,
-    restCall,
     storeAuctions,
-    void,
   )
 import Commands.Types
   ( Command (..),
     CommandFunction (AuctionCommand),
   )
 import Commands.Utility (ifElse)
+import Control.Concurrent.MVar (MVar, putMVar)
+import Control.Monad (void)
+import Control.Monad.Trans (MonadTrans (lift))
+import Data.Maybe (isJust)
+import Data.Text (append, pack)
+import Discord (DiscordHandler, restCall)
 import qualified Discord.Requests as R
+import Discord.Types (Message (messageChannel))
 
 endAuctionCommand :: Command
 endAuctionCommand = Com "lendauction - ends the current auction in the channel" (AuctionCommand endAuction')

@@ -3,6 +3,7 @@ module Pokemon.Functions where
 import Data.List (sortBy)
 import Data.Maybe
 import Data.Ord (Down (Down))
+import Data.Ratio (denominator, numerator, (%))
 import Pokemon.Nature
 import Pokemon.Types
 import Text.Read (readMaybe)
@@ -24,11 +25,25 @@ mkStat name value = let stat = getStat name in BaseStat stat value
 getStat :: String -> Stat
 getStat "hp" = HP
 getStat "attack" = ATK
+getStat "atk" = ATK
 getStat "defense" = DEF
+getStat "def" = DEF
 getStat "special-attack" = SPATK
+getStat "spatk" = SPATK
 getStat "special-defense" = SPDEF
+getStat "spdef" = SPDEF
 getStat "speed" = SPEED
+getStat "spd" = SPEED
 getStat s = error $ s ++ " is not a stat."
+
+getNatureEffect :: String -> NatureEffect
+getNatureEffect "positive" = NPositive
+getNatureEffect "pos" = NPositive
+getNatureEffect "neutral" = NNeutral
+getNatureEffect "neu" = NNeutral
+getNatureEffect "negative" = NNegative
+getNatureEffect "neg" = NNegative
+getNatureEffect _ = NNeutral
 
 -- | Get the base stat of a pokemon using a string as a name
 getBaseStat :: String -> Pokemon -> BaseStat
@@ -60,7 +75,7 @@ calcStat lvl iv ev natureEffect baseStat = case baseStat of
     let multiplier NNegative = 0.9
         multiplier NNeutral = 1
         multiplier NPositive = 1.1
-     in  (fromIntegral (2 * n + iv + div ev 4) * (fromIntegral lvl / 100) + 5) *// multiplier natureEffect
+     in (fromIntegral (2 * n + iv + div ev 4) * (fromIntegral lvl / 100) + 5) *// multiplier natureEffect
 
 getValue :: BaseStat -> Int
 getValue (BaseStat _ val) = val

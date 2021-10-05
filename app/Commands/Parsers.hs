@@ -1,10 +1,16 @@
-module Parsers where
+module Commands.Parsers where
 
 import Commands.Auction (Auction (A), AuctionID, Participant (P), User (U))
+import Data.Char (toLower)
 import Data.Functor
 import Data.List (isPrefixOf)
+import qualified Data.Map as M
+import Data.Maybe
+import Data.StatMultiplier
 import Data.Text (Text, dropWhileEnd, pack, replace, unpack)
-import Data.Char ( toLower )
+import qualified Data.Text as T
+import Pokemon.Functions (getNatureEffect, getStat)
+import Pokemon.Types (BaseStat (BaseStat), Level, NatureEffect (NPositive))
 import Text.Parsec
 import Text.Parsec.Text (Parser)
 
@@ -30,7 +36,6 @@ parseMaybeIntScientific = do
       let x = read base * 1000
           y = read fixedGround * 100
       return $ Just (x + y)
-
 
 parseIntCommand :: String -> Parser (Maybe Int)
 parseIntCommand s = string s *> spaces *> (try parseMaybeIntScientific <|> parseMaybeInt)
@@ -94,3 +99,36 @@ parseOutspeedLevel = do
   l <- try parseMaybeIntScientific <|> parseMaybeInt
   return (n, l)
 
+data CalcStat = CS BaseStat NatureEffect
+
+-- "l(cs|calcstat) ((hp|atk|def|spatk|spdef|spd):basestat) (positive|neutral|negative|pos|neu|neg) [--level lvl, 100] [--iv iv, 252>] [--ev ev, 252] [--boost -1 0 +1, 0]"
+parseCalcStat :: Parser CalcStat
+parseCalcStat = do
+  char 'l'
+  try (string "cs") <|> string "calcstat"
+  spaces
+  stat <- string "hp" <|> string "atk" <|> string "def" <|> try (string "spatk") <|> try (string "spdef") <|> string "spd"
+  char ':'
+  bs <- read <$> many digit
+  spaces
+  natureEffect <- try (string "positive") <|> string "pos" <|> try (string "neutral") <|> try (string "neu") <|> try (string "negative") <|> string "neg"
+  return $ CS (BaseStat (getStat stat) bs) (getNatureEffect natureEffect)
+
+parseMaxCalcStat :: Parser CalcStat
+parseMaxCalcStat = do
+  char 'l'
+  try (string "ms") <|> string "maxstat"
+  spaces
+  stat <- string "hp" <|> string "atk" <|> string "def" <|> try (string "spatk") <|> try (string "spdef") <|> string "spd"
+  char ':'
+  bs <- read <$> many digit
+  return $ CS (BaseStat (getStat stat) bs) (NPositive)
+
+parseOptions :: Text -> (Text, M.Map Text Text)
+parseOptions t =
+  let ts = T.splitOn "--" t
+      getOpts :: M.Map Text Text -> [Text] -> M.Map Text Text
+      getOpts m [] = m
+      getOpts m (t : ts) = let ws = T.words t in if (not . null) ws then getOpts (M.insert (head ws) (T.intercalate " " (tail ws)) m) ts else getOpts m ts
+      options = if length ts > 1 then getOpts M.empty (tail ts) else M.empty
+   in ((T.strip . head) ts, options)

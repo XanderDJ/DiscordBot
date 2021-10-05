@@ -9,7 +9,7 @@ import Data.Text
 import Discord
 import qualified Discord.Requests as R
 import Discord.Types
-import Parsers
+import Commands.Parsers
 import Pokemon.PokeApi
 import Pokemon.Types
 import Text.Parsec

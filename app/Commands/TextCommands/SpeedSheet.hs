@@ -1,4 +1,4 @@
-module Commands.TextCommands.SpeedSheet where
+module Commands.TextCommands.SpeedSheet (speedSheetCommand) where
 
 import Data.Time.Clock.POSIX (getPOSIXTime)
 import Codec.Xlsx ( Worksheet, atSheet, fromXlsx )
@@ -15,7 +15,7 @@ import qualified Discord.Requests as R
 import Discord.Types ( Message(messageText, messageChannel) )
 import Excel
     ( emptySheet, emptyXlsx, insertTable, ExcelTable, Size(width) )
-import Parsers ( parseNOrP, NOrP(..) )
+import Commands.Parsers ( parseNOrP, NOrP(..) )
 import Pokemon.Excel ( speedTable )
 import Pokemon.Functions ( sortOnSpeed )
 import Pokemon.PokeApi ( getPokemonNoMoves )

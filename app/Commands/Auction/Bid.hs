@@ -1,42 +1,38 @@
 module Commands.Auction.Bid (bidCommand) where
 
-import Commands.Auction.Imports
+import Commands.Auction.Types
   ( Auction (_aAmountTeam, _aCurrentBid, _aMinStep, _aParticipants),
     Auctions,
-    DiscordHandler,
     Item (I),
-    MVar,
-    Message (messageChannel, messageText),
-    MonadTrans (lift),
     Participant (_pTeam),
-    append,
-    auctionActive,
-    bidP,
-    fromJust,
+  )
+import Commands.Auction.Utility
+  ( auctionActive,
     getMaxBudget,
     getParticipant,
-    isLeft,
-    isNothing,
     isParticipant,
     noNominationActive,
     notEnoughSlots,
-    pack,
-    parse,
-    putMVar,
-    restCall,
     storeAuctions,
-    toLower,
-    unpack,
     updateAuction,
     user,
-    void,
   )
+import Commands.Parsers (bidP)
 import Commands.Types
   ( Command (..),
     CommandFunction (AuctionCommand),
   )
 import Commands.Utility (extractRight, ifElse, pingUserText)
+import Control.Concurrent.MVar (MVar, putMVar)
+import Control.Monad (void)
+import Control.Monad.Trans (MonadTrans (lift))
+import Data.Either (isLeft)
+import Data.Maybe (fromJust, isNothing)
+import Data.Text (append, pack, toLower, unpack)
+import Discord (DiscordHandler, restCall)
 import qualified Discord.Requests as R
+import Discord.Types (Message (messageChannel, messageText))
+import Text.Parsec (parse)
 
 bidCommand :: Command
 bidCommand = Com "lb  <x|x.y|xk|x.yk>" (AuctionCommand registerBid)

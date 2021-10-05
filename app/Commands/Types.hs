@@ -13,6 +13,10 @@ data CommandFunction
   = TextCommand (Message -> DiscordHandler ())
   | AuctionCommand (MVar Auctions -> Message -> DiscordHandler ())
   | HelpCommand (Message -> M.Map Text Command -> DiscordHandler ())
-  | NoOp
+  | NoOp 
 
 data Command = Com Usage CommandFunction
+
+
+instance Eq Command where
+  (Com u1 _) == (Com u2 _) = u1 == u2

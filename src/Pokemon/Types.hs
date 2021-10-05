@@ -1,6 +1,9 @@
+{-# LANGUAGE GeneralizedNewtypeDeriving #-}
+
 module Pokemon.Types where
 
 import Data.Char
+import Data.Ratio
 import qualified Data.Text as T
 
 -- | Wrapper around all different data types for the /dt command from showdown

@@ -1,41 +1,39 @@
 module Commands.Auction.Undo (undoCommand) where
 
-import Commands.Auction.Imports
+import Commands.Auction.Types
   ( Auction (_aParticipants),
     Auctions,
-    DiscordHandler,
     Item (I),
-    MVar,
-    Message (messageChannel, messageText),
-    MonadTrans (lift),
     Participant (_pBudget, _pTeam),
     User,
-    append,
-    auctionActive,
+  )
+import Commands.Auction.Utility
+  ( auctionActive,
     containsUser,
     getParticipant,
     isAuctioneer,
-    isLeft,
     isValidUser,
     nothingToUndo,
-    pack,
-    parse,
-    putMVar,
-    restCall,
     storeAuctions,
-    undoP,
-    unpack,
     updateAuction,
     updateParticipants,
     userNotParticipating,
-    void,
   )
+import Commands.Parsers (undoP)
 import Commands.Types
   ( Command (..),
     CommandFunction (AuctionCommand),
   )
 import Commands.Utility (extractRight, ifElse, pingUserText)
+import Control.Concurrent.MVar (MVar, putMVar)
+import Control.Monad (void)
+import Control.Monad.Trans (MonadTrans (lift))
+import Data.Either (isLeft)
+import Data.Text (append, pack, unpack)
+import Discord (DiscordHandler, restCall)
 import qualified Discord.Requests as R
+import Discord.Types (Message (messageChannel, messageText))
+import Text.Parsec (parse)
 
 undoCommand :: Command
 undoCommand = Com "lundo <username>#<identifier> - removes the last won auction from this user" (AuctionCommand undo')

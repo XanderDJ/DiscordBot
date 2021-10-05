@@ -22,7 +22,7 @@ import Discord.Types
     Message (messageAuthor, messageText),
     User (userIsBot),
   )
-import Parsers
+import Commands.Parsers
 import System.Environment (getArgs)
 import Text.Parsec
 import qualified Discord as R

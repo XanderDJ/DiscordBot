@@ -1,39 +1,36 @@
 module Commands.Auction.Nomination (nominationCommand) where
 
-import Commands.Auction.Imports
+import Commands.Auction.Types
   ( Auction (_aAmountTeam, _aCurrentBid, _aMinBid, _aParticipants),
     Auctions,
-    DiscordHandler,
     Item (I),
-    MVar,
-    Message (messageChannel, messageText),
-    MonadTrans (lift),
     Participant (_pTeam),
-    Text,
-    append,
-    auctionActive,
-    fromJust,
+  )
+import Commands.Auction.Utility
+  ( auctionActive,
     getParticipant,
-    isJust,
-    isLeft,
     isParticipant,
-    nominatePlayerP,
     notEnoughSlots,
-    pack,
-    parse,
-    putMVar,
-    restCall,
     storeAuctions,
-    toLower,
-    unpack,
     updateAuction,
     user,
-    void,
+  )
+import Commands.Parsers (nominatePlayerP)
+import Commands.Types
+  ( Command (..),
+    CommandFunction (AuctionCommand),
   )
 import Commands.Utility (extractRight, ifElse, pingUserText)
+import Control.Concurrent.MVar (MVar, putMVar)
+import Control.Monad (void)
+import Control.Monad.Trans (MonadTrans (lift))
+import Data.Either (isLeft)
+import Data.Maybe (fromJust, isJust)
+import Data.Text (Text, append, pack, toLower, unpack)
+import Discord (DiscordHandler, restCall)
 import qualified Discord.Requests as R
-import Commands.Types
-    ( Command(..), CommandFunction(AuctionCommand) )
+import Discord.Types (Message (messageChannel, messageText))
+import Text.Parsec (parse)
 
 nominationCommand :: Command
 nominationCommand = Com "lnom <player>" (AuctionCommand registerNomination)

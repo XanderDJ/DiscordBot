@@ -1,39 +1,36 @@
 module Commands.Auction.Info (infoCommand, infoUserCommand) where
 
-import Commands.Auction.Imports
+import Commands.Auction.Types
   ( Auction (_aParticipants),
     Auctions,
-    DiscordHandler,
-    MVar,
-    Message (messageChannel, messageText),
-    MonadTrans (lift),
     User,
-    append,
-    auctionID,
+  )
+import Commands.Auction.Utility
+  ( auctionID,
     auctionNotFound,
     containsUser,
-    fromJust,
     getAuction,
     getParticipant,
-    infoP,
-    isLeft,
-    isNothing,
     notParticipating,
-    pack,
-    parse,
-    readMVar,
-    restCall,
-    toLower,
     user,
     userNotParticipating,
-    void,
   )
+import Commands.Parsers (infoP)
 import Commands.Types
   ( Command (..),
     CommandFunction (AuctionCommand),
   )
 import Commands.Utility (extractRight, ifElse, pingUserText)
+import Control.Concurrent.MVar (MVar, readMVar)
+import Control.Monad (void)
+import Control.Monad.Trans (MonadTrans (lift))
+import Data.Either (isLeft)
+import Data.Maybe (fromJust, isNothing)
+import Data.Text (append, pack, toLower)
+import Discord (DiscordHandler, restCall)
 import qualified Discord.Requests as R
+import Discord.Types (Message (messageChannel, messageText))
+import Text.Parsec (parse)
 
 infoCommand :: Command
 infoCommand = Com "linfo - gives your current auction status" (AuctionCommand getInfo)

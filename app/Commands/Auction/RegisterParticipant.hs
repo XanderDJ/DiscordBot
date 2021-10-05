@@ -1,35 +1,32 @@
 module Commands.Auction.RegisterParticipant (registerParticipantCommand) where
 
-import Commands.Auction.Imports
+import Commands.Auction.Types
   ( Auction (_aAuctioneer, _aParticipants),
-    DiscordHandler,
-    MVar,
-    Message (messageChannel, messageText),
-    MonadTrans (lift),
     Participant (P, _pId),
     User (_uName),
-    append,
-    auctionActive,
+  )
+import Commands.Auction.Utility
+  ( auctionActive,
     containsParticipant,
-    isLeft,
     notAuctioneer,
-    pack,
-    parse,
-    putMVar,
-    registerParticipantP,
-    restCall,
-    toLower,
-    unpack,
     updateAuction,
     user,
-    void,
   )
+import Commands.Parsers (registerParticipantP)
 import Commands.Types
   ( Command (..),
     CommandFunction (AuctionCommand),
   )
 import Commands.Utility (extractRight, ifElse, pingUserText)
+import Control.Concurrent.MVar (MVar, putMVar)
+import Control.Monad (void)
+import Control.Monad.Trans (MonadTrans (lift))
+import Data.Either (isLeft)
+import Data.Text (append, pack, toLower, unpack)
+import Discord (DiscordHandler, restCall)
 import qualified Discord.Requests as R
+import Discord.Types (Message (messageChannel, messageText))
+import Text.Parsec (parse)
 
 registerParticipantCommand :: Command
 registerParticipantCommand = Com "lrp <discordname>#<identifier> <budget>" (AuctionCommand registerParticipant)

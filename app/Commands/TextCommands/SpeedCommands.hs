@@ -8,7 +8,7 @@ import Data.Text (append, pack)
 import Discord (DiscordHandler)
 import qualified Discord.Requests as R
 import Discord.Types (Message (messageChannel, messageText))
-import Parsers (parseOutspeedLevel)
+import Commands.Parsers (parseOutspeedLevel)
 import Pokemon.Functions (maxStatAt, neutralMaxStatAt, (*//))
 import Pokemon.Types (BaseStat (BaseStat), Level, Stat (SPEED))
 import Text.Parsec (parse)

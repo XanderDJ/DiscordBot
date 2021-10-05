@@ -2,6 +2,7 @@ module Commands.Help (helpCommand) where
 
 import Commands.Types
 import Commands.Utility
+import qualified Data.List as L
 import qualified Data.Map as M
 import Data.Text
 import Discord
@@ -10,7 +11,9 @@ import qualified Discord.Requests as R
 
 help :: Message -> M.Map Text Command -> DiscordHandler ()
 help m map = do
-    let descriptions = M.foldr appendDescription "" map
+    let 
+        commands = L.nub . M.elems $ map
+        descriptions = L.foldr appendDescription "" commands
     sendMessage $ R.CreateMessage (messageChannel m) descriptions
 
 
