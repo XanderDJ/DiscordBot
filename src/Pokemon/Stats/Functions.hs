@@ -25,7 +25,7 @@ getStatusCause :: T.Text -> Status -> Match -> T.Text
 getStatusCause name status match = pokeStatusCause match ! (name, status)
 
 -- | Check if move is util
-isUtil :: MoveType -> Bool
+isUtil :: MoveCategory -> Bool
 isUtil BOOST = False
 isUtil ATTACK = False
 isUtil _ = True

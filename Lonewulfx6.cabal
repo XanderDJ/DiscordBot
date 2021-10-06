@@ -4,7 +4,7 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: d3737d4cba70e487bff20bf7583d069d96d8169a5dc18ee267f9818f47bfa32b
+-- hash: 1fe8fe98e06637429b89294e4a7c2f3103d42669fb7f6a3148979d442b277eab
 
 name:           Lonewulfx6
 version:        0.1.0.0
@@ -29,6 +29,7 @@ library
   exposed-modules:
       Data.StatMultiplier
       Excel
+      Pokemon.DamageCalc.DamageCalc
       Pokemon.Excel
       Pokemon.Functions
       Pokemon.Nature

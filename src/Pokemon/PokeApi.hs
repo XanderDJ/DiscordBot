@@ -1,3 +1,5 @@
+{-# OPTIONS_GHC -Wno-incomplete-patterns #-}
+
 module Pokemon.PokeApi
   ( getPokemon,
     getPokemonNoMoves,
@@ -9,7 +11,7 @@ module Pokemon.PokeApi
   )
 where
 
-import Control.Concurrent.Async
+import Control.Concurrent.Async (mapConcurrently)
 import Data.Aeson
   ( FromJSON (parseJSON),
     Value (Object),
@@ -31,16 +33,9 @@ import Network.HTTP.Client
   )
 import Network.HTTP.Client.TLS (tlsManagerSettings)
 import Network.HTTP.Types.Status (status404)
-import Pokemon.Types
-  ( Ability (..),
-    BaseStat (..),
-    DTType (..),
-    Item (..),
-    Move (Move),
-    Pokemon (..),
-  )
 import Pokemon.Functions (getStat)
 import Pokemon.Nature (getNature)
+import Pokemon.Types (Ability (..), AttackType (..), BaseStat (..), DTType (..), Item (..), Move (Move), Pokemon (Pokemon, pMoves))
 
 -- | In memory store of names to dt types, when implemented should lessen the load on pokéapi
 type DTCache = M.Map String DTType
@@ -75,7 +70,7 @@ getPokemon name = do
   if checkFound response
     then do
       let mon = decode (responseBody response) :: Maybe Pokemon
-          mn = decode (responseBody response) :: Maybe MoveNames 
+          mn = decode (responseBody response) :: Maybe MoveNames
       if isJust mn && isJust mon
         then do
           let (MN names) = fromJust mn
@@ -125,7 +120,7 @@ getResponse base name = do
   manager <- newManager settings
   response <- httpLbs (parseRequest_ base) manager
   if checkFound response
-    then do 
+    then do
       let resp = decode (responseBody response)
       if isNothing resp then return $ Left base else return $ Right (fromJust resp)
     else return $ Left name
@@ -158,18 +153,6 @@ tryAllBases name =
   let name' = (intercalate "-" . words) name
    in map (++ name') allBases
 
--- | Map over a 4 tuple
-map4 :: (t -> d) -> (t, t, t, t) -> (d, d, d, d)
-map4 f (a, b, c, d) = (f a, f b, f c, f d)
-
--- | Monadic map over 4 tuple, will sequentially call the function on each element.
-mapM4 :: (a -> IO b) -> (a, a, a, a) -> IO (b, b, b, b)
-mapM4 f (x1, x2, x3, x4) = do
-  y1 <- f x1
-  y2 <- f x2
-  y3 <- f x3
-  y4 <- f x4
-  return (y1, y2, y3, y4)
 
 fromBS4 :: [ByteString] -> (Maybe Pokemon, Maybe Ability, Maybe Move, Maybe Item)
 fromBS4 [x1, x2, x3, x4] = (decode x1, decode x2, decode x3, decode x4)
@@ -257,7 +240,12 @@ instance FromJSON Move where
         effect' = if (not . null) effects then (Just . eDescription . head) effects' else Nothing
         mType = read tipe
         effect'' = Effect chance effect'
-    return $ Move name mType dClass power acc (getCompleteDescription effect'')
+    return $ Move name mType (toDClass dClass) power acc (getCompleteDescription effect'')
+    where
+      toDClass :: String -> AttackType
+      toDClass "special" = SPECIAL
+      toDClass "physical" = PHYSICAL
+      toDClass o = OTHER
 
 newtype MoveNames = MN (Maybe [String]) deriving (Show)
 

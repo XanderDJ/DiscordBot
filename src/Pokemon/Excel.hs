@@ -9,10 +9,10 @@ import qualified Data.Map as M
 import qualified Data.Text as T
 import Excel
 import Pokemon.Types
-    ( Move(mName, mTipe), MoveType(ATTACK), Pokemon(pName, pMoves) )
+    ( Move(mName, mTipe), MoveCategory(ATTACK), Pokemon(pName, pMoves) )
 import Pokemon.Functions
     ( getBaseStat,
-      getMoveType,
+      getMoveCategory,
       getValue,
       maxSpeed,
       maxSpeedWithScarf,
@@ -54,7 +54,7 @@ pokemonMoveMap mode mon = do
 moveCategories :: Pokemon -> Either String [(String, String)]
 moveCategories mon = do 
     maybeMvList <- pMoves mon
-    let zipCategories = map (\mov -> (getMoveType mov, mov)) maybeMvList
+    let zipCategories = map (\mov -> (getMoveCategory mov, mov)) maybeMvList
         categories = map (\(tipe, mv) -> (moveTypeToName (tipe, mv), mName mv)) zipCategories
     return categories
 
@@ -63,7 +63,7 @@ eitherToMaybes [] = []
 eitherToMaybes (Left _: eithers) = Nothing : eitherToMaybes eithers
 eitherToMaybes (Right b: eithers) = Just b : eitherToMaybes eithers
 
-moveTypeToName :: (MoveType, Move) -> String
+moveTypeToName :: (MoveCategory, Move) -> String
 moveTypeToName (ATTACK, move) = show $ mTipe move
 moveTypeToName (tipe, move) = show tipe
 

@@ -38,15 +38,18 @@ instance Show Item where
 data Move = Move
   { mName :: Name,
     mTipe :: Type,
-    mDClass :: String,
+    mDClass :: AttackType,
     mBp :: Maybe Int,
     mAccuracy :: Maybe Int,
     mDescription :: Maybe Description
   }
-  deriving (Show)
+  deriving (Show, Eq)
+
+-- | Attack type
+data AttackType = PHYSICAL | SPECIAL | OTHER deriving (Eq, Ord, Show)
 
 -- | Nature datatype, contains the name of the nature, the positive stat increase and then the negative. If the stats are neutral then there is no change.
-data Nature = Nature String Stat Stat
+data Nature = Nature String Stat Stat deriving (Eq)
 
 -- | Effect of a nature on a stat, used to simplify functions that calc evs
 data NatureEffect = NNegative | NNeutral | NPositive deriving (Show, Eq)
@@ -132,13 +135,39 @@ data Pokemon = Pokemon
     pMoves :: Either String [Move],
     weight :: Int
   }
-  deriving (Show)
+  deriving (Show, Eq)
+
+data PokemonS = PokemonS {
+  pokemon :: Pokemon,
+  epNature :: Nature,
+  epAbility :: T.Text,
+  epEvs :: EVs,
+  epIvs :: IVs  
+} deriving (Show, Eq)
+
+data EVs = EVS {
+  hpEv :: Int,
+  atkEv :: Int,
+  defEv :: Int,
+  spatkEv :: Int,
+  spdefEv :: Int,
+  spdEv :: Int
+} deriving (Show, Eq)
+
+data IVs = IVS {
+  hpIv :: Int,
+  atkIv :: Int,
+  defIv :: Int,
+  spatkIv :: Int,
+  spdefIv :: Int,
+  spdIv :: Int
+} deriving (Show, Eq)
 
 -- | Level of a pokemon 0 - 100
 type Level = Int
 
 -- | Move types
-data MoveType = STATUS | ATTACK | HAZARD | BOOST | UTILITY | RECOVERY | OTHER deriving (Eq, Show, Ord)
+data MoveCategory = STATUS | ATTACK | HAZARD | BOOST | UTILITY | RECOVERY | REST deriving (Eq, Show, Ord)
 
 -- | Status types
 data Status = BURN | PARALYZED | POISONED | SLEEP | FROZEN deriving (Show, Eq, Ord)
@@ -164,3 +193,10 @@ data Hazards = SPIKES | TOXIC_SPIKES | STEALTH_ROCKS | STICKY_WEBS | VOLCALITH |
 
 data Volatile = LEECH_SEED | TAUNT | DESTINY_BOND | CONFUSION | YAWN deriving (Show, Eq, Ord)
 
+data Screen = AURORA_VEIL | LIGHT_SCREEN | REFLECT deriving (Show, Eq, Ord)
+
+data Environment = Env {
+  activeTerrain :: Maybe Terrain,
+  activeWeather :: Maybe Weather,
+  screens :: [Screen]
+} deriving (Show, Eq)

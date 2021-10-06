@@ -104,15 +104,15 @@ maxSpeed = maxStatAt 100 . getBaseStat "speed"
 maxSpeedWithScarf :: Pokemon -> Int
 maxSpeedWithScarf = (*// 1.5) . fromIntegral . maxSpeed
 
-getMoveType :: Move -> MoveType
-getMoveType (Move name tipe dClass bp' accuracy _)
+getMoveCategory :: Move -> MoveCategory
+getMoveCategory (Move name tipe dClass bp' accuracy _)
   | name `elem` hazards = HAZARD
   | name `elem` utility = UTILITY
   | name `elem` recovery = RECOVERY
   | name `elem` statusMoves = STATUS
   | name `elem` boostMoves = BOOST
-  | dClass == "physical" || dClass == "special" = ATTACK
-  | otherwise = OTHER
+  | dClass == PHYSICAL || dClass == SPECIAL = ATTACK
+  | otherwise = REST
 
 hazards :: [String]
 hazards = ["spikes", "toxic-spikes", "stealth-rock", "sticky-web"]
@@ -389,3 +389,6 @@ boostMoves =
     "withdraw",
     "work-up"
   ]
+
+getBp :: Move -> PokemonS -> PokemonS -> Int
+getBp m a d = undefined
