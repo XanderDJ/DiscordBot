@@ -5,6 +5,7 @@ module Pokemon.Types where
 import Data.Char
 import Data.Ratio
 import qualified Data.Text as T
+import Data.StatMultiplier (StatMultiplier)
 
 -- | Wrapper around all different data types for the /dt command from showdown
 data DTType = DtPokemon Pokemon | DtItem Item | DtMove Move | DtNature Nature | DtAbility Ability
@@ -28,7 +29,7 @@ instance Show Ability where
   show (Ability name _) = name ++ ": no description yet in the api."
 
 -- | Item contains the name of an item and it's description
-data Item = Item Name (Maybe Description)
+data Item = Item Name (Maybe Description) deriving Eq
 
 instance Show Item where
   show (Item name (Just description)) = name ++ ": " ++ description
@@ -139,10 +140,13 @@ data Pokemon = Pokemon
 
 data PokemonS = PokemonS {
   pokemon :: Pokemon,
-  epNature :: Nature,
-  epAbility :: T.Text,
-  epEvs :: EVs,
-  epIvs :: IVs  
+  pLevel :: Int,
+  pItem :: Item,
+  pNature :: Nature,
+  pAbility :: T.Text,
+  pEvs :: EVs,
+  pIvs :: IVs,
+  pMultiplier :: StatMultiplier
 } deriving (Show, Eq)
 
 data EVs = EVS {
@@ -198,5 +202,8 @@ data Screen = AURORA_VEIL | LIGHT_SCREEN | REFLECT deriving (Show, Eq, Ord)
 data Environment = Env {
   activeTerrain :: Maybe Terrain,
   activeWeather :: Maybe Weather,
-  screens :: [Screen]
+  screens :: [Screen],
+  isDiving :: Bool,
+  isMinimized :: Bool,
+  isDigging :: Bool
 } deriving (Show, Eq)

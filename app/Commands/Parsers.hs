@@ -1,7 +1,7 @@
 module Commands.Parsers where
 
 import Commands.Auction (Auction (A), AuctionID, Participant (P), User (U))
-import Data.Char (toLower)
+import Data.Char (toLower, isPunctuation)
 import Data.Functor
 import Data.List (isPrefixOf)
 import qualified Data.Map as M
@@ -45,6 +45,9 @@ parseUser = U . pack <$> many (noneOf "#") <*> (char '#' *> parseMaybeInt)
 
 parseCommand :: Parser Text
 parseCommand = pack <$> (char 'l' *> many letter)
+
+parsePokemon :: Parser Text
+parsePokemon = pack . map (\s -> if s == ' ' then '-' else toLower s) <$> (spaces *> many (satisfy (not . isPunctuation))) 
 
 -- Message example = !auction lpl 5000
 
@@ -132,3 +135,12 @@ parseOptions t =
       getOpts m (t : ts) = let ws = T.words t in if (not . null) ws then getOpts (M.insert (head ws) (T.intercalate " " (tail ws)) m) ts else getOpts m ts
       options = if length ts > 1 then getOpts M.empty (tail ts) else M.empty
    in ((T.strip . head) ts, options)
+
+-- | Parse a command to get a list of pokemon names
+-- Ex: l(bu|beatup) mon with space, mon2, mon3, ...
+parseBeatUp :: Parser [Text]
+parseBeatUp = (try (string "lbeatup") <|> string "lbu") *> spaces *> sepByComma parsePokemon
+
+
+sepByComma :: Parser a -> Parser [a]
+sepByComma p = sepBy p (char ',')

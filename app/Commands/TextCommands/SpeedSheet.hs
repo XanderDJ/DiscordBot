@@ -3,7 +3,7 @@ module Commands.TextCommands.SpeedSheet (speedSheetCommand) where
 import Data.Time.Clock.POSIX (getPOSIXTime)
 import Codec.Xlsx ( Worksheet, atSheet, fromXlsx )
 import Commands.Types ( Command(..), CommandFunction(TextCommand) )
-import Commands.Utility ( pingUserText, sendMessage )
+import Commands.Utility ( pingUserText, sendMessage, invalidMons)
 import Control.Concurrent.Async ( mapConcurrently )
 import Control.Monad.Trans ( MonadTrans(lift) )
 import Data.ByteString.Char8 (intercalate)
@@ -63,9 +63,6 @@ insertTables (t : ts) (x, y) sheet = insertTables ts (x, y + width t + 1) (inser
 
 getMons :: TeamExcel -> [Pokemon]
 getMons (TeamExcel _ mons) = rights mons
-
-invalidMons :: Message -> [String] -> DiscordHandler ()
-invalidMons m lfts = sendMessage $ R.CreateMessage (messageChannel m) (T.append (pingUserText m) (T.append ", couldn't the following mons: " ((T.pack . unwords) lfts)))
 
 getLefts :: [TeamExcel] -> [[String]]
 getLefts [] = []

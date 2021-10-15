@@ -392,3 +392,20 @@ boostMoves =
 
 getBp :: Move -> PokemonS -> PokemonS -> Int
 getBp m a d = undefined
+
+
+getAttackStat :: Item -> AttackType -> PokemonS -> Int
+getAttackStat i = getAttackStat'
+
+getAttackStat' :: AttackType -> PokemonS -> Int
+getAttackStat' PHYSICAL PokemonS {pokemon = p, pLevel = lvl, pEvs = evs, pIvs = ivs} = undefined
+getAttackStat' SPECIAL PokemonS {pokemon = p, pLevel = lvl, pEvs = evs, pIvs = ivs} = undefined
+getAttackStat' OTHER p = 0
+
+getDefenseStat :: Item -> AttackType -> PokemonS -> Int
+getDefenseStat i = getDefenseStat'
+
+getDefenseStat' :: AttackType -> PokemonS -> Int
+getDefenseStat' PHYSICAL p = undefined
+getDefenseStat' SPECIAL p = undefined
+getDefenseStat' OTHER p = undefined

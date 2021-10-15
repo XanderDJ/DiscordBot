@@ -3,6 +3,7 @@ module Pokemon.DamageCalc.DamageCalc where
 import Control.Monad.Reader
 import Pokemon.Types
 import Pokemon.Functions
+import Data.StatMultiplier
 
 data DCS = DCS Environment PokemonS PokemonS Move deriving (Eq, Show)
 
@@ -30,7 +31,10 @@ baseDamage = do
     move <- getMove
     let bp = getBp move attacker defender
         moveType = mDClass move
-    pure 0
+        atk =  fromIntegral (getAttackStat (pItem attacker) moveType attacker) *// (getMultiplier . pMultiplier) attacker
+        def = fromIntegral (getDefenseStat (pItem defender) moveType defender) *// (getMultiplier . pMultiplier) defender
+        lvl = pLevel attacker
+    return $ div ((div (2 * lvl) 5 + 2) * bp * div atk def) 50 + 2
 
 targetsMultiplier :: Int -> Reader DCS Int
 targetsMultiplier dmg = undefined
