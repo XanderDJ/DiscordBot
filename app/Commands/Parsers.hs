@@ -1,7 +1,7 @@
 module Commands.Parsers where
 
 import Commands.Auction (Auction (A), AuctionID, Participant (P), User (U))
-import Data.Char (toLower, isPunctuation)
+import Data.Char (isPunctuation, toLower)
 import Data.Functor
 import Data.List (isPrefixOf)
 import qualified Data.Map as M
@@ -13,6 +13,7 @@ import Pokemon.Functions (getNatureEffect, getStat)
 import Pokemon.Types (BaseStat (BaseStat), Level, NatureEffect (NPositive))
 import Text.Parsec
 import Text.Parsec.Text (Parser)
+import Text.Parsec.Number ( fractional, int ) 
 
 parseMaybeInt :: Parser (Maybe Int)
 parseMaybeInt = do
@@ -40,6 +41,19 @@ parseMaybeIntScientific = do
 parseIntCommand :: String -> Parser (Maybe Int)
 parseIntCommand s = string s *> spaces *> (try parseMaybeIntScientific <|> parseMaybeInt)
 
+parseDouble :: Parser Double
+parseDouble = try parseDoubleFraction <|> parseDoubleDecimal
+
+parseDoubleFraction :: Parser Double
+parseDoubleFraction = do
+  nominator <- int
+  char '/'
+  denominator <- int
+  return $ fromIntegral nominator / fromIntegral denominator
+
+parseDoubleDecimal :: Parser Double
+parseDoubleDecimal = fractional
+
 parseUser :: Parser User
 parseUser = U . pack <$> many (noneOf "#") <*> (char '#' *> parseMaybeInt)
 
@@ -47,7 +61,7 @@ parseCommand :: Parser Text
 parseCommand = pack <$> (char 'l' *> many letter)
 
 parsePokemon :: Parser Text
-parsePokemon = pack . map (\s -> if s == ' ' then '-' else toLower s) <$> (spaces *> many (satisfy (not . isPunctuation))) 
+parsePokemon = pack . map (\s -> if s == ' ' then '-' else toLower s) <$> (spaces *> many (satisfy (not . isPunctuation)))
 
 -- Message example = !auction lpl 5000
 
@@ -141,6 +155,15 @@ parseOptions t =
 parseBeatUp :: Parser [Text]
 parseBeatUp = (try (string "lbeatup") <|> string "lbu") *> spaces *> sepByComma parsePokemon
 
-
 sepByComma :: Parser a -> Parser [a]
 sepByComma p = sepBy p (char ',')
+
+-- lct (0.9|9/10) (0.85|85/100)
+parseCT :: Parser (Double, Double)
+parseCT = do
+  try (string "lct") <|> string "lcalctries"
+  spaces
+  ps <- parseDouble -- chance p of success
+  spaces
+  dsr <- parseDouble -- desired success rate
+  return (ps, dsr)

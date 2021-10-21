@@ -4,7 +4,7 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 19a90ad4e372c729fb907b494105112714c249e509c1bd58783904da86e1e505
+-- hash: 5afb8ec5988bd40182db4dc855222b0e317c4229dbbaa0faa5ae52d829f1affe
 
 name:           Lonewulfx6
 version:        0.1.0.0
@@ -27,6 +27,9 @@ source-repository head
 
 library
   exposed-modules:
+      ChanceCalculator
+      ChanceCalculator.ChanceCalculator
+      ChanceCalculator.ChanceList
       Data.StatMultiplier
       Excel
       Pokemon.DamageCalc.DamageCalc
@@ -61,6 +64,7 @@ library
     , lens
     , mtl
     , parsec
+    , parsec3-numbers
     , split
     , text
     , time
@@ -90,6 +94,7 @@ executable Lonewulfx6-exe
       Commands.TextCommands
       Commands.TextCommands.BeatUp
       Commands.TextCommands.CalcStat
+      Commands.TextCommands.ChanceCalculation
       Commands.TextCommands.DamageCalc
       Commands.TextCommands.DT
       Commands.TextCommands.EmbedTest
@@ -118,6 +123,7 @@ executable Lonewulfx6-exe
     , lens
     , mtl
     , parsec
+    , parsec3-numbers
     , split
     , text
     , time
@@ -148,6 +154,7 @@ test-suite Lonewulfx6-test
     , lens
     , mtl
     , parsec
+    , parsec3-numbers
     , split
     , text
     , time

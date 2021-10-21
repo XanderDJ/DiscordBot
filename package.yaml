@@ -38,6 +38,7 @@ dependencies:
 - split
 - http-types
 - async
+- parsec3-numbers
 
 library:
   source-dirs: src

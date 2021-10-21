@@ -26,5 +26,7 @@ commandMap =
       ("ms", msCom),
       ("maxstat", msCom),
       ("bu", beatUpCom),
-      ("beatup", beatUpCom)
+      ("beatup", beatUpCom),
+      ("ct", ctCom),
+      ("calculatetries", ctCom)
     ]

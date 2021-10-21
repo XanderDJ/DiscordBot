@@ -14,7 +14,7 @@ import Data.Text (Text, append, pack, unpack)
 import qualified Data.Text as T
 import Discord
 import qualified Discord.Requests as R
-import Discord.Types
+import Discord.Types 
 import Pokemon.Functions
 import Pokemon.PokeApi
 import Pokemon.Types

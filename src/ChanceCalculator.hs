@@ -1,0 +1,4 @@
+module ChanceCalculator (module ChanceCalculator.ChanceCalculator, module ChanceCalculator.ChanceList) where
+
+import ChanceCalculator.ChanceCalculator
+import ChanceCalculator.ChanceList
