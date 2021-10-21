@@ -28,5 +28,7 @@ commandMap =
       ("bu", beatUpCom),
       ("beatup", beatUpCom),
       ("ct", ctCom),
-      ("calculatetries", ctCom)
+      ("calculatetries", ctCom),
+      ("cc", ccCom),
+      ("calcchance", ccCom)
     ]

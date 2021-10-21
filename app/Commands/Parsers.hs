@@ -167,3 +167,12 @@ parseCT = do
   spaces
   dsr <- parseDouble -- desired success rate
   return (ps, dsr)
+
+parseCC :: Parser (Double, Int)
+parseCC = do
+  try (string "lcc") <|> string "lcalcchance"
+  spaces
+  ps <- parseDouble -- chance p of success
+  spaces
+  tries <- int -- desired success rate
+  return (ps, tries)
