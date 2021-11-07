@@ -16,4 +16,4 @@ dnCom = Com "ldn (something)" (TextCommand dnCommand)
 dnCommand :: Message -> DiscordHandler ()
 dnCommand msg = do
     let dn = parse parseDN "parsing DN" (messageText msg)
-    sendMessage $ R.CreateMessage (messageChannel msg) (append ((pack . show) dn) " deez nuts! HAH GOTTEM!")
+    sendMessage $ R.CreateMessage (messageChannel msg) (append ((pack . show . extractRight) dn) " deez nuts! HAH GOTTEM!")
