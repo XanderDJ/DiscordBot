@@ -30,5 +30,6 @@ commandMap =
       ("ct", ctCom),
       ("calculatetries", ctCom),
       ("cc", ccCom),
-      ("calcchance", ccCom)
+      ("calcchance", ccCom),
+      ("ldn", dnCom)
     ]

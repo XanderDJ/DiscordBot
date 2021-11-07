@@ -4,7 +4,8 @@ module Commands.TextCommands (
     module Commands.TextCommands.SpeedCommands,
     module Commands.TextCommands.CalcStat,
     module Commands.TextCommands.BeatUp,
-    module Commands.TextCommands.ChanceCalculation
+    module Commands.TextCommands.ChanceCalculation,
+    module Commands.TextCommands.Bomko
 ) where
 
 import Commands.TextCommands.DT
@@ -13,3 +14,5 @@ import Commands.TextCommands.SpeedCommands
 import Commands.TextCommands.CalcStat
 import Commands.TextCommands.BeatUp
 import Commands.TextCommands.ChanceCalculation
+
+import Commands.TextCommands.Bomko

@@ -4,7 +4,7 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 5afb8ec5988bd40182db4dc855222b0e317c4229dbbaa0faa5ae52d829f1affe
+-- hash: 0138ef1a483acee9f3e0adce5a05c52dfc84ae6a1c1b23d9da74e37610443547
 
 name:           Lonewulfx6
 version:        0.1.0.0
@@ -93,6 +93,7 @@ executable Lonewulfx6-exe
       Commands.Parsers
       Commands.TextCommands
       Commands.TextCommands.BeatUp
+      Commands.TextCommands.Bomko
       Commands.TextCommands.CalcStat
       Commands.TextCommands.ChanceCalculation
       Commands.TextCommands.DamageCalc

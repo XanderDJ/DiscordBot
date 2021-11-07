@@ -176,3 +176,6 @@ parseCC = do
   spaces
   tries <- int -- desired success rate
   return (ps, tries)
+
+parseDN :: Parser Text
+parseDN = pack <$> (string "ldn" *> spaces *> many alphaNum)
