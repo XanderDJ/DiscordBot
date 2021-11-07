@@ -10,6 +10,7 @@ import Text.Parsec
 import Commands.Parsers
 import Data.Text
 
+dnCom :: Command
 dnCom = Com "ldn (something)" (TextCommand dnCommand)
 
 dnCommand :: Message -> DiscordHandler ()
