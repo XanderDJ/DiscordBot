@@ -47,6 +47,13 @@ data Move = Move
   }
   deriving (Show, Eq)
 
+instance Ord Move where
+  (Move _ _ _ (Just b) _ _) <= (Move _ _ _ (Just b') _ _) = b <= b'
+  (Move _ _ _ (Just b) _ _) <= (Move _ _ _ Nothing _ _) = False
+  (Move _ _ _ Nothing _ _) <= (Move _ _ _ (Just b') _ _) = True
+  (Move _ _ _ Nothing _ _) <= (Move _ _ _ Nothing _ _) = True
+  
+
 -- | Attack type
 data AttackType = PHYSICAL | SPECIAL | OTHER deriving (Eq, Ord, Show)
 

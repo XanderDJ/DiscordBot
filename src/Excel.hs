@@ -1,4 +1,5 @@
-module Excel (ExcelTable (..), ExcelMap (..), TableContent, TableMode (..), insertTable, insertMap, insertMoveMaps, emptyXlsx, emptySheet, nextPoint, Size (..), toBoldCellValue) where
+{-# LANGUAGE OverloadedStrings #-}
+module Excel (ExcelTable (..), ExcelMap (..), TableContent, TableMode (..), insertTable, insertMap, insertMoveMaps, emptyXlsx, emptySheet, nextPoint, Size (..), toBoldCellValue, toBoldAndColorCellValue) where
 
 import Codec.Xlsx
 import Control.Lens (Field1 (_1), Field2 (_2), (%~), (&), (?~))
@@ -115,11 +116,23 @@ longestValLength map =
   let f foldable currentMax = if length foldable > currentMax then length foldable else currentMax
    in M.foldr f 0 map
 
-toBoldCellValue :: String -> CellValue
+toBoldCellValue :: T.Text -> CellValue
 toBoldCellValue txt = 
   let
     runProperties = def
     boldProperty = runProperties & runPropertiesBold ?~ True
-    richRun = RichTextRun (Just boldProperty) (T.pack txt)
+    richRun = RichTextRun (Just boldProperty) txt
   in
     CellRich [richRun]
+
+toBoldAndColorCellValue :: T.Text -> T.Text -> CellValue
+toBoldAndColorCellValue txt color = 
+  let
+    runProperties = def
+    colorDef = def 
+    boldProperty = runProperties & runPropertiesBold ?~ True & runPropertiesColor ?~ (colorDef {_colorARGB = Just color})
+    richRun = RichTextRun (Just boldProperty) txt
+  in
+    CellRich [richRun]
+
+-- & runPropertiesColor ?~ (colorDef {_colorARGB = Just "FFFF0000"})

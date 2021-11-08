@@ -1,6 +1,6 @@
 module Pokemon.Functions where
 
-import Data.List (sortBy)
+import Data.List (sortBy, sort)
 import Data.Maybe
 import Data.Ord (Down (Down))
 import qualified Data.Text as T
@@ -115,6 +115,30 @@ getMoveCategory (Move name tipe dClass bp' accuracy _)
   | dClass == PHYSICAL || dClass == SPECIAL = ATTACK
   | otherwise = REST
 
+typeToColor :: T.Text -> T.Text
+typeToColor "FIRE" = "FFDD6610"
+typeToColor "GRASS" = "FF5CA935"
+typeToColor "WATER" = "FF386CEB"
+typeToColor "ELECTRIC" = "FFF0C108"
+typeToColor "FLYING" = "FF9180C4"
+typeToColor "GROUND" = "FFD4A82F"
+typeToColor "STEEL" = "FF9797BA"
+typeToColor "FAIRY" = "FFF540FF"
+typeToColor "DARK" = "FF513F34"
+typeToColor "GHOST" = "FF554374"
+typeToColor "FIGHTING" = "FF9D2721"
+typeToColor "NORMAL" = "FF8A8A59"
+typeToColor "ROCK" = "FF93802D"
+typeToColor "POISON" = "FF803380"
+typeToColor "BUG" = "FF8D9A1B"
+typeToColor "ICE" = "FF69C6C6"
+typeToColor "DRAGON" = "FF4C08EF"
+typeToColor "PSYCHIC" = "FFf61C5D"
+typeToColor _ = "FF000000"
+
+sortMoves :: [Move] -> [Move]
+sortMoves = sort
+
 toName :: T.Text -> T.Text
 toName = T.replace " " "-" . T.toLower
 
@@ -153,7 +177,16 @@ utility =
     "memento",
     "parting-shot",
     "baton-pass",
-    "torment"
+    "torment",
+    "gravity",
+    "wonder-room",
+    "roar",
+    "whirlwind",
+    "ally-switch",
+    "block",
+    "imprison",
+    "transform",
+    "magnet-rise"
   ]
 
 other :: [T.Text]
@@ -415,3 +448,4 @@ getDefenseStat' :: AttackType -> PokemonS -> Int
 getDefenseStat' PHYSICAL p = undefined
 getDefenseStat' SPECIAL p = undefined
 getDefenseStat' OTHER p = undefined
+

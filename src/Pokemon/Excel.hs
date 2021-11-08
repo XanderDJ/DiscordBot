@@ -18,8 +18,10 @@ import Pokemon.Functions
       maxSpeedWithScarf,
       minStatAt,
       noInvestStatAt,
-      neutralMaxStatAt
+      neutralMaxStatAt,
+      typeToColor
     )
+import Data.List (sort)
 
 -- | create an excel table with the pokemon sorted by speed. Uses the base speed stat to calculate speed rows for each mon
 speedTable :: [Pokemon] -> ExcelTable
@@ -51,10 +53,12 @@ pokemonMoveMap mode mon = do
   let mp = ExcelMap (categoryMap M.empty mvCts) mode
   return mp
 
-moveCategories :: Pokemon -> Either String [(String, T.Text)]
+moveCategories :: Pokemon -> Either String [(T.Text, T.Text)]
 moveCategories mon = do 
     maybeMvList <- pMoves mon
-    let zipCategories = map (\mov -> (getMoveCategory mov, mov)) maybeMvList
+    let 
+        sortedMoves = sort maybeMvList
+        zipCategories = map (\mov -> (getMoveCategory mov, mov)) sortedMoves
         categories = map (\(tipe, mv) -> (moveTypeToName (tipe, mv), mName mv)) zipCategories
     return categories
 
@@ -63,17 +67,15 @@ eitherToMaybes [] = []
 eitherToMaybes (Left _: eithers) = Nothing : eitherToMaybes eithers
 eitherToMaybes (Right b: eithers) = Just b : eitherToMaybes eithers
 
-moveTypeToName :: (MoveCategory, Move) -> String
-moveTypeToName (ATTACK, move) = show $ mTipe move
-moveTypeToName (tipe, move) = show tipe
+moveTypeToName :: (MoveCategory, Move) -> T.Text
+moveTypeToName (ATTACK, move) = T.pack . show $ mTipe move
+moveTypeToName (tipe, move) = (T.pack . show) tipe
 
-categoryMap :: M.Map CellValue [CellValue] -> [(String, T.Text)] -> M.Map CellValue [CellValue]
+categoryMap :: M.Map CellValue [CellValue] -> [(T.Text, T.Text)] -> M.Map CellValue [CellValue]
 categoryMap mp [] = mp
 categoryMap mp ((key, val) : cs) =
-  let mVal = M.lookup (toBoldCellValue key) mp
-      newVal = maybe [sToCell val] (sToCell val :) mVal
-      mp' = M.insert (toBoldCellValue key) newVal mp
+  let mVal = M.lookup (toBoldAndColorCellValue key (typeToColor key)) mp
+      newVal = maybe [CellText val] (CellText val :) mVal
+      mp' = M.insert (toBoldAndColorCellValue key (typeToColor key)) newVal mp
    in categoryMap mp' cs
 
-sToCell :: T.Text -> CellValue
-sToCell = CellText
