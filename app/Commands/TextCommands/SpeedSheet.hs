@@ -109,7 +109,7 @@ spCommandHelp :: Message -> DiscordHandler ()
 spCommandHelp m = sendMessage $ R.CreateMessage (messageChannel m) (T.append (pingUserText m) helpText)
 
 helpText :: T.Text
-helpText = ", USAGE \n\nlss <TEAMNAME>:\n<PokemonName>\n\nYou can add as many pokemons as you want per team.\n A new team starts when you add a new name with a :\n\n You can give as many teams as you like, this should normally be only one or two.\nEXAMPLE:\n\nwulf:\ncharizard\nnidoqueen\naegislash blade\npersian alola\nrapidash galar\n\njeroni:\nmeowth\npersian\ncomfey"
+helpText = ", USAGE \n\nlss <TEAMNAME>:\n<PokemonName>\n\nYou can add as many pokemons as you want per team.\n A new team starts when you add a new name with a :\n\n You can give as many teams as you like, this should normally be only one or two.\nEXAMPLE:\n\nplayer1:\ncharizard\nblastoise\nvenusaur mega\n\n\nplayer2:\npersian-alola\nrapidash galar\ncharizard mega y"
 
 tsToFileName :: [TeamExcel] -> T.Text -> T.Text
 tsToFileName [] fn = fn
