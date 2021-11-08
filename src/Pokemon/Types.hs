@@ -4,8 +4,9 @@ module Pokemon.Types where
 
 import Data.Char
 import Data.Ratio
-import qualified Data.Text as T
 import Data.StatMultiplier (StatMultiplier)
+import Data.Text (Text)
+import qualified Data.Text as T
 
 -- | Wrapper around all different data types for the /dt command from showdown
 data DTType = DtPokemon Pokemon | DtItem Item | DtMove Move | DtNature Nature | DtAbility Ability
@@ -17,23 +18,23 @@ instance Show DTType where
   show (DtAbility x) = show x
   show (DtNature x) = show x
 
-type Name = String
+type Name = Text
 
-type Description = String
+type Description = Text
 
 -- | Ability contains the name of the ability and it's description
 data Ability = Ability Name (Maybe Description)
 
 instance Show Ability where
-  show (Ability name (Just description)) = name ++ ": " ++ description
-  show (Ability name _) = name ++ ": no description yet in the api."
+  show (Ability name (Just description)) = show name ++ ": " ++ show description
+  show (Ability name _) = show name ++ ": no description yet in the api."
 
 -- | Item contains the name of an item and it's description
-data Item = Item Name (Maybe Description) deriving Eq
+data Item = Item Name (Maybe Description) Int deriving (Eq)
 
 instance Show Item where
-  show (Item name (Just description)) = name ++ ": " ++ description
-  show (Item name _) = name ++ ": no description yet in the api."
+  show (Item name (Just description) bp) = show name ++ "(flingBP=" ++ show bp ++ "): " ++ show description
+  show (Item name _ bp) = show name ++ ": no description yet in the api."
 
 -- | Data type representing a move, dClass is either physical or special, bp can be battle power, accuracy is only applicable to moves that have accuracy
 data Move = Move
@@ -131,41 +132,51 @@ data Pokemon = Pokemon
   { pName :: Name,
     pTyping :: Typing,
     abilities :: [Name],
-    hiddenAbilities :: Maybe Name,
     baseStats :: BaseStats,
     pMoves :: Either String [Move],
-    weight :: Int
+    pColour :: Name,
+    pNfe :: Bool,
+    pWeight :: Int
+  }
+  deriving (Eq)
+
+instance Show Pokemon where
+  show (Pokemon name types abilities bs _ colour nfe weight) =
+    "Pokemon "
+      ++ show name
+      ++ " " ++ show types ++ " " ++ show abilities ++ " " ++ show bs ++ " colour=" ++ show colour ++ " weight=" ++ show weight
+
+data PokemonS = PokemonS
+  { pokemon :: Pokemon,
+    pLevel :: Int,
+    pItem :: Item,
+    pNature :: Nature,
+    pAbility :: T.Text,
+    pEvs :: EVs,
+    pIvs :: IVs,
+    pMultiplier :: StatMultiplier
   }
   deriving (Show, Eq)
 
-data PokemonS = PokemonS {
-  pokemon :: Pokemon,
-  pLevel :: Int,
-  pItem :: Item,
-  pNature :: Nature,
-  pAbility :: T.Text,
-  pEvs :: EVs,
-  pIvs :: IVs,
-  pMultiplier :: StatMultiplier
-} deriving (Show, Eq)
+data EVs = EVS
+  { hpEv :: Int,
+    atkEv :: Int,
+    defEv :: Int,
+    spatkEv :: Int,
+    spdefEv :: Int,
+    spdEv :: Int
+  }
+  deriving (Show, Eq)
 
-data EVs = EVS {
-  hpEv :: Int,
-  atkEv :: Int,
-  defEv :: Int,
-  spatkEv :: Int,
-  spdefEv :: Int,
-  spdEv :: Int
-} deriving (Show, Eq)
-
-data IVs = IVS {
-  hpIv :: Int,
-  atkIv :: Int,
-  defIv :: Int,
-  spatkIv :: Int,
-  spdefIv :: Int,
-  spdIv :: Int
-} deriving (Show, Eq)
+data IVs = IVS
+  { hpIv :: Int,
+    atkIv :: Int,
+    defIv :: Int,
+    spatkIv :: Int,
+    spdefIv :: Int,
+    spdIv :: Int
+  }
+  deriving (Show, Eq)
 
 -- | Level of a pokemon 0 - 100
 type Level = Int
@@ -199,11 +210,12 @@ data Volatile = LEECH_SEED | TAUNT | DESTINY_BOND | CONFUSION | YAWN deriving (S
 
 data Screen = AURORA_VEIL | LIGHT_SCREEN | REFLECT deriving (Show, Eq, Ord)
 
-data Environment = Env {
-  activeTerrain :: Maybe Terrain,
-  activeWeather :: Maybe Weather,
-  screens :: [Screen],
-  isDiving :: Bool,
-  isMinimized :: Bool,
-  isDigging :: Bool
-} deriving (Show, Eq)
+data Environment = Env
+  { activeTerrain :: Maybe Terrain,
+    activeWeather :: Maybe Weather,
+    screens :: [Screen],
+    isDiving :: Bool,
+    isMinimized :: Bool,
+    isDigging :: Bool
+  }
+  deriving (Show, Eq)

@@ -34,7 +34,7 @@ pokemonSpeedRow :: Pokemon -> [CellValue]
 pokemonSpeedRow pok = row
   where
     speed = getBaseStat "speed" pok
-    pokName = T.pack $ pName pok
+    pokName = pName pok
     row =
       [ CellText pokName,
         (CellDouble . fromIntegral . getValue) speed,
@@ -51,7 +51,7 @@ pokemonMoveMap mode mon = do
   let mp = ExcelMap (categoryMap M.empty mvCts) mode
   return mp
 
-moveCategories :: Pokemon -> Either String [(String, String)]
+moveCategories :: Pokemon -> Either String [(String, T.Text)]
 moveCategories mon = do 
     maybeMvList <- pMoves mon
     let zipCategories = map (\mov -> (getMoveCategory mov, mov)) maybeMvList
@@ -67,7 +67,7 @@ moveTypeToName :: (MoveCategory, Move) -> String
 moveTypeToName (ATTACK, move) = show $ mTipe move
 moveTypeToName (tipe, move) = show tipe
 
-categoryMap :: M.Map CellValue [CellValue] -> [(String, String)] -> M.Map CellValue [CellValue]
+categoryMap :: M.Map CellValue [CellValue] -> [(String, T.Text)] -> M.Map CellValue [CellValue]
 categoryMap mp [] = mp
 categoryMap mp ((key, val) : cs) =
   let mVal = M.lookup (toBoldCellValue key) mp
@@ -75,5 +75,5 @@ categoryMap mp ((key, val) : cs) =
       mp' = M.insert (toBoldCellValue key) newVal mp
    in categoryMap mp' cs
 
-sToCell :: String -> CellValue
-sToCell = CellText . T.pack
+sToCell :: T.Text -> CellValue
+sToCell = CellText

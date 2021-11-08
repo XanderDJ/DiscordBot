@@ -3,7 +3,7 @@ module Commands.TextCommands.SpeedSheet (speedSheetCommand) where
 import Data.Time.Clock.POSIX (getPOSIXTime)
 import Codec.Xlsx ( Worksheet, atSheet, fromXlsx )
 import Commands.Types ( Command(..), CommandFunction(TextCommand) )
-import Commands.Utility ( pingUserText, sendMessage, invalidMons)
+import Commands.Utility ( pingUserText, sendMessage, invalidMons, noConnection, ifElse)
 import Control.Concurrent.Async ( mapConcurrently )
 import Control.Monad.Trans ( MonadTrans(lift) )
 import Data.ByteString.Char8 (intercalate)
@@ -14,16 +14,19 @@ import Discord ( DiscordHandler )
 import qualified Discord.Requests as R
 import Discord.Types ( Message(messageText, messageChannel) )
 import Excel
-    ( emptySheet, emptyXlsx, insertTable, ExcelTable, Size(width) )
 import Commands.Parsers ( parseNOrP, NOrP(..) )
-import Pokemon.Excel ( speedTable )
+import Pokemon.Excel ( speedTable , pokemonMoveMap)
 import Pokemon.Functions ( sortOnSpeed )
-import Pokemon.PokeApi ( getPokemonNoMoves )
-import Pokemon.Types ( Pokemon )
+import qualified PokemonDB.Queries as Q
+import Pokemon.DBConversion ( toPokemon )
+import Pokemon.Types 
 import Text.Parsec ( parse )
 import Control.Lens ( (&), (?~) )
 import qualified Data.ByteString.Lazy as L
 import qualified Data.ByteString as LS
+import Database.PostgreSQL.Simple (Connection, close)
+import PokemonDB.Connection (getDbConnEnv)
+import Data.Maybe
 
 
 
@@ -44,16 +47,27 @@ makeSpeedSheet' m norps = do
 
 makeSpeedSheet'' :: Message -> [Team] -> DiscordHandler ()
 makeSpeedSheet'' m teams = do
-  teams' <- lift $ mapConcurrently mkTeamExcel teams
+  con <- lift $ getDbConnEnv
+  ifElse (isNothing con) (noConnection m) (makeSpeedSheet''' (fromJust con) m teams)
+
+makeSpeedSheet''' :: Connection -> Message -> [Team] -> DiscordHandler ()
+makeSpeedSheet''' con m teams = do
+  teams' <- lift $ mapConcurrently (mkTeamExcel con) teams
+  lift $ close con
   let lfts = concat $ getLefts teams'
   if null lfts then makeSS m teams' else invalidMons m lfts
 
 makeSS :: Message -> [TeamExcel] -> DiscordHandler ()
 makeSS m teams = do
-  let fileName = tsToFileName teams ""
-      speedtables = map (speedTable . sortOnSpeed . getMons) teams
+  let 
+      teams' = reverse teams
+      fileName = tsToFileName teams' ""
+      speedtables = map (speedTable . sortOnSpeed . getMons) teams'
       sheet = insertTables speedtables (1, 1) emptySheet
-      xl = emptyXlsx & atSheet "SpeedTiers" ?~ sheet
+      team = head teams
+      moveMaps = map (\pokemon -> (pName pokemon, pokemonMoveMap HORIZONTAL pokemon)) (getMons team)
+      xl' = emptyXlsx & atSheet "SpeedTiers" ?~ sheet
+      xl = insertMoveMaps xl' moveMaps
   time <- lift getPOSIXTime
   sendMessage $ R.CreateMessageUploadFile (messageChannel m) fileName (L.toStrict (fromXlsx time xl))
 
@@ -64,19 +78,18 @@ insertTables (t : ts) (x, y) sheet = insertTables ts (x, y + width t + 1) (inser
 getMons :: TeamExcel -> [Pokemon]
 getMons (TeamExcel _ mons) = rights mons
 
-getLefts :: [TeamExcel] -> [[String]]
+getLefts :: [TeamExcel] -> [[T.Text]]
 getLefts [] = []
 getLefts (TeamExcel name mons : ts) = lefts mons : getLefts ts
 
-mkTeamExcel :: Team -> IO TeamExcel
-mkTeamExcel (Team name mons) = do
-  let mons' = map T.unpack mons
-  mons'' <- mapConcurrently getPokemonNoMoves mons'
-  return $ TeamExcel name mons''
+mkTeamExcel :: Connection -> Team -> IO TeamExcel
+mkTeamExcel con (Team name mons) = do
+  mons' <- mapConcurrently (Q.getCompletePokemon con) mons
+  return $ TeamExcel name (map (fmap toPokemon) mons')
 
 data Team = Team T.Text [T.Text] deriving (Show)
 
-data TeamExcel = TeamExcel T.Text [Either String Pokemon] deriving (Show)
+data TeamExcel = TeamExcel T.Text [Either T.Text Pokemon] deriving (Show)
 
 nOrPsToTeams :: [NOrP] -> [Team]
 nOrPsToTeams = go []

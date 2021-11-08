@@ -14,6 +14,7 @@ import Pokemon.Types (BaseStat (BaseStat), Level, NatureEffect (NPositive))
 import Text.Parsec
 import Text.Parsec.Text (Parser)
 import Text.Parsec.Number ( fractional, int ) 
+import Commands.Utility (toId)
 
 parseMaybeInt :: Parser (Maybe Int)
 parseMaybeInt = do
@@ -87,8 +88,8 @@ infoP = U . pack <$> (string "linfouser" *> spaces *> many (noneOf "#")) <*> (ch
 undoP :: Parser User
 undoP = U . pack <$> (string "lundo" *> spaces *> many (noneOf "#")) <*> (char '#' *> parseMaybeInt)
 
-dtP :: Parser String
-dtP = map (\s -> if s == ' ' then '-' else toLower s) <$> (string "ldt " *> spaces *> many anyChar)
+dtP :: Parser Text
+dtP = pack <$> (string "ldt " *> spaces *> many anyChar)
 
 data NOrP = N Text | PN Text deriving (Show)
 
@@ -96,10 +97,10 @@ parseNOrP :: Parser NOrP
 parseNOrP = (N <$> try parseN) <|> (PN <$> parsePN)
 
 parseN :: Parser Text
-parseN = pack . dropHeadPattern "lss" . filter (/= ' ') <$> (many1 (noneOf ":") <* char ':')
+parseN = toId . pack . dropHeadPattern "lss" . filter (/= ' ') <$> (many1 (noneOf ":") <* char ':')
 
 parsePN :: Parser Text
-parsePN = pack . map (\c -> if c == ' ' then '-' else toLower c) <$> many1 anyChar
+parsePN = toId . pack  <$> many1 anyChar
 
 dropHeadPattern :: String -> String -> String
 dropHeadPattern p s

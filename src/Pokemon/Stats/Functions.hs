@@ -31,9 +31,7 @@ isUtil ATTACK = False
 isUtil _ = True
 
 isUtilMove :: T.Text -> Bool
-isUtilMove moveName =
-  let name = moveString moveName
-   in elem name utility || elem name hazards || elem name recovery || elem name statusMoves || elem name other
+isUtilMove name = elem name utility || elem name hazards || elem name recovery || elem name statusMoves || elem name other
 
 -- | change move name to pokeapi standard (lowercase with dashes)
 moveString :: T.Text -> String

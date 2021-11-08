@@ -4,7 +4,7 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 0138ef1a483acee9f3e0adce5a05c52dfc84ae6a1c1b23d9da74e37610443547
+-- hash: 8eb5b594fcd2a484deeb4e199da85910636416fb4636ac6f813d9f6b35ef55b1
 
 name:           Lonewulfx6
 version:        0.1.0.0
@@ -33,6 +33,7 @@ library
       Data.StatMultiplier
       Excel
       Pokemon.DamageCalc.DamageCalc
+      Pokemon.DBConversion
       Pokemon.Excel
       Pokemon.Functions
       Pokemon.Nature
@@ -44,6 +45,10 @@ library
       Pokemon.Stats.Stats
       Pokemon.Stats.Types
       Pokemon.Types
+      PokemonDB.Connection
+      PokemonDB.Queries
+      PokemonDB.Tables
+      PokemonDB.Types
   other-modules:
       Paths_Lonewulfx6
   hs-source-dirs:
@@ -63,12 +68,16 @@ library
     , http-types
     , lens
     , mtl
+    , opaleye
     , parsec
     , parsec3-numbers
+    , postgresql-simple
+    , product-profunctors
     , split
     , text
     , time
     , unliftio
+    , utf8-string
     , xlsx
   default-language: Haskell2010
 
@@ -123,12 +132,16 @@ executable Lonewulfx6-exe
     , http-types
     , lens
     , mtl
+    , opaleye
     , parsec
     , parsec3-numbers
+    , postgresql-simple
+    , product-profunctors
     , split
     , text
     , time
     , unliftio
+    , utf8-string
     , xlsx
   default-language: Haskell2010
 
@@ -154,11 +167,15 @@ test-suite Lonewulfx6-test
     , http-types
     , lens
     , mtl
+    , opaleye
     , parsec
     , parsec3-numbers
+    , postgresql-simple
+    , product-profunctors
     , split
     , text
     , time
     , unliftio
+    , utf8-string
     , xlsx
   default-language: Haskell2010

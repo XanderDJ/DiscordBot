@@ -2,6 +2,7 @@ module Pokemon.Nature where
 
 import Pokemon.Types
     ( Stat(SPATK, NEUTRAL, ATK, DEF, SPEED, SPDEF), Nature(..) )
+import Data.Text
 
 hardy :: Nature
 hardy = Nature "Hardy" NEUTRAL NEUTRAL
@@ -78,7 +79,7 @@ sassy = Nature "Sassy" SPDEF SPEED
 careful :: Nature
 careful = Nature "Careful" SPDEF SPATK
 
-getNature :: String -> Maybe Nature
+getNature :: Text -> Maybe Nature
 getNature "hardy" = Just hardy
 getNature "docile" = Just docile
 getNature "serious" = Just serious

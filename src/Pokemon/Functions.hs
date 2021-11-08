@@ -3,6 +3,7 @@ module Pokemon.Functions where
 import Data.List (sortBy)
 import Data.Maybe
 import Data.Ord (Down (Down))
+import qualified Data.Text as T
 import Data.Ratio (denominator, numerator, (%))
 import Pokemon.Nature
 import Pokemon.Types
@@ -29,11 +30,11 @@ getStat "atk" = ATK
 getStat "defense" = DEF
 getStat "def" = DEF
 getStat "special-attack" = SPATK
-getStat "spatk" = SPATK
+getStat "spa" = SPATK
 getStat "special-defense" = SPDEF
-getStat "spdef" = SPDEF
+getStat "spd" = SPDEF
 getStat "speed" = SPEED
-getStat "spd" = SPEED
+getStat "spe" = SPEED
 getStat s = error $ s ++ " is not a stat."
 
 getNatureEffect :: String -> NatureEffect
@@ -106,18 +107,21 @@ maxSpeedWithScarf = (*// 1.5) . fromIntegral . maxSpeed
 
 getMoveCategory :: Move -> MoveCategory
 getMoveCategory (Move name tipe dClass bp' accuracy _)
-  | name `elem` hazards = HAZARD
-  | name `elem` utility = UTILITY
-  | name `elem` recovery = RECOVERY
-  | name `elem` statusMoves = STATUS
-  | name `elem` boostMoves = BOOST
+  | toName name `elem` hazards = HAZARD
+  | toName name `elem` utility = UTILITY
+  | toName name `elem` recovery = RECOVERY
+  | toName name `elem` statusMoves = STATUS
+  | toName name `elem` boostMoves = BOOST
   | dClass == PHYSICAL || dClass == SPECIAL = ATTACK
   | otherwise = REST
 
-hazards :: [String]
+toName :: T.Text -> T.Text
+toName = T.replace " " "-" . T.toLower
+
+hazards :: [T.Text]
 hazards = ["spikes", "toxic-spikes", "stealth-rock", "sticky-web"]
 
-utility :: [String]
+utility :: [T.Text]
 utility =
   [ "trick-room",
     "rain-dance",
@@ -152,7 +156,7 @@ utility =
     "torment"
   ]
 
-other :: [String]
+other :: [T.Text]
 other =
   [ "after-you",
     "ally-switch",
@@ -292,7 +296,7 @@ other =
     "worry-seed"
   ]
 
-recovery :: [String]
+recovery :: [T.Text]
 recovery =
   [ "moonlight",
     "morning-sun",
@@ -324,10 +328,12 @@ recovery =
     "slack-off",
     "strength-sap",
     "oblivion-wing",
-    "swallow"
+    "swallow",
+    "recover",
+    "shore-up"
   ]
 
-statusMoves :: [String]
+statusMoves :: [T.Text]
 statusMoves =
   [ "toxic",
     "will-o-wisp",
@@ -349,7 +355,7 @@ statusMoves =
     "encore"
   ]
 
-boostMoves :: [String]
+boostMoves :: [T.Text]
 boostMoves =
   [ "acid-armor",
     "acupressure",

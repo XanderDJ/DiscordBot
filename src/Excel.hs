@@ -44,12 +44,12 @@ insertMap startPos mp ws = finalWs
     ((finalWs, mode, pos), map'') = M.mapAccumWithKey insertKeyValue (ws, mapMode, startPos) map'
 
 
-insertMoveMaps :: Xlsx -> [(String, Maybe ExcelMap)] -> Xlsx
+insertMoveMaps :: Xlsx -> [(T.Text, Either String ExcelMap)] -> Xlsx
 insertMoveMaps xl [] = xl
-insertMoveMaps xl ((sheetName, Nothing) : items) = insertMoveMaps xl items
-insertMoveMaps xl ((sheetName, Just em) : items) =
+insertMoveMaps xl ((sheetName, Left s) : items) = insertMoveMaps xl items
+insertMoveMaps xl ((sheetName, Right em) : items) =
   let newSheet = insertMap (1, 1) em emptySheet
-      newXl = xl & atSheet (T.pack sheetName) ?~ newSheet
+      newXl = xl & atSheet sheetName ?~ newSheet
    in insertMoveMaps newXl items
 
 -- | a = start value type.

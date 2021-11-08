@@ -39,6 +39,10 @@ dependencies:
 - http-types
 - async
 - parsec3-numbers
+- opaleye
+- product-profunctors
+- postgresql-simple
+- utf8-string
 
 library:
   source-dirs: src

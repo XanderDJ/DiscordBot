@@ -21,6 +21,7 @@ import Data.Aeson
   )
 import Data.ByteString.Lazy (ByteString)
 import Data.List (intercalate)
+import Data.Either (fromRight)
 import qualified Data.Map as M
 import Data.Maybe (fromJust, isJust, isNothing)
 import qualified Data.Text as T
@@ -37,8 +38,6 @@ import Pokemon.Functions (getStat)
 import Pokemon.Nature (getNature)
 import Pokemon.Types (Ability (..), AttackType (..), BaseStat (..), DTType (..), Item (..), Move (Move), Pokemon (Pokemon, pMoves))
 
--- | In memory store of names to dt types, when implemented should lessen the load on pokéapi
-type DTCache = M.Map String DTType
 
 -- | Manager settings for tls connections
 settings :: ManagerSettings
@@ -48,7 +47,7 @@ settings = tlsManagerSettings
 getDt :: String -> IO (Maybe DTType)
 getDt name = do
   let name' = (intercalate "-" . words) name
-      nature = getNature name'
+      nature = getNature (T.pack name')
   if isJust nature
     then return $ Just $ DtNature (fromJust nature)
     else do
@@ -194,17 +193,18 @@ instance FromJSON Pokemon where
     allAbilities <- jsn .: "abilities"
     baseStats <- jsn .: "stats"
     let typing = map read types
-        abilities = (map _name . filter (not . isHidden)) allAbilities
-        hiddenAbility = (map _name . filter isHidden) allAbilities
+        abilities = (map (T.pack . _name) . filter (not . isHidden)) allAbilities
+        hiddenAbility = (map (T.pack . _name) . filter isHidden) allAbilities
         ha = if length hiddenAbility == 1 then Just $ head hiddenAbility else Nothing
-    return $ Pokemon name typing abilities ha baseStats (Right []) (div weight 10)
+        abilities' = maybe abilities (: abilities) ha
+    return $ Pokemon name typing abilities' baseStats (Right []) "" False (div weight 10)
 
 data EffectEntry = EffectEntry
-  { language :: String,
-    eDescription :: String
+  { language :: T.Text,
+    eDescription :: T.Text
   }
 
-data Effect = Effect (Maybe Int) (Maybe String)
+data Effect = Effect (Maybe Int) (Maybe T.Text)
 
 instance FromJSON EffectEntry where
   parseJSON (Object jsn) = EffectEntry <$> ((jsn .: "language") >>= (.: "name")) <*> (jsn .: "effect")
@@ -221,9 +221,10 @@ instance FromJSON Item where
   parseJSON (Object jsn) = do
     name <- jsn .: "name"
     effects <- jsn .: "effect_entries"
+    bp <- jsn .: "fling_power"
     let effects' = filter (\(EffectEntry lang _) -> lang == "en") effects
         effect' = if (not . null) effects then (Just . eDescription . head) effects' else Nothing
-    return $ Item name effect'
+    return $ Item name effect' bp
 
 instance FromJSON Move where
   parseJSON (Object jsn) = do
@@ -260,11 +261,10 @@ instance FromJSON MoveNames where
         if null moves then return $ MN Nothing else return $ MN $ Just moveNames
       else error "Couldn't find moves key in requested object."
 
-getCompleteDescription :: Effect -> Maybe String
+getCompleteDescription :: Effect -> Maybe T.Text
 getCompleteDescription (Effect _ Nothing) = Nothing
 getCompleteDescription (Effect Nothing (Just desc)) = Just desc
 getCompleteDescription (Effect (Just x) (Just desc)) = Just newDesc
   where
     valueText = T.pack $ show x
-    tDesc = T.pack desc
-    newDesc = T.unpack $ T.replace "$effect_chance" valueText tDesc
+    newDesc = T.replace "$effect_chance" valueText desc

@@ -1,6 +1,6 @@
 module Commands.Utility where
 
-import Data.Text ( pack, Text )
+import Data.Text 
 import qualified Data.Text as T
 import Discord ( restCall, DiscordHandler )
 import qualified Discord.Requests as R
@@ -22,9 +22,15 @@ ifElse False _ a = a
 pingUserText :: Message -> Text
 pingUserText m = pack $ "<@" ++ show (userId . messageAuthor $ m) ++ ">"
 
-invalidMons :: Message -> [String] -> DiscordHandler ()
-invalidMons m lfts = sendMessage $ R.CreateMessage (messageChannel m) (T.append (pingUserText m) (T.append ", couldn't the following mons: " ((T.pack . unwords) lfts)))
+invalidMons :: Message -> [T.Text] -> DiscordHandler ()
+invalidMons m lfts = sendMessage $ R.CreateMessage (messageChannel m) (T.append (pingUserText m) (T.append ", couldn't the following mons: " (T.intercalate "," lfts)))
+
+noConnection :: Message -> DiscordHandler ()
+noConnection m = sendMessage $ R.CreateMessage (messageChannel m) (T.append (pingUserText m) ", couldn't connect to the database!")
 
 getOptionWithDefault :: Ord k => a -> [k] -> M.Map k a -> a
 getOptionWithDefault def [] m = def
 getOptionWithDefault def (k:ks) m = if M.member k m then m M.! k else getOptionWithDefault def ks m
+
+toId :: Text -> Text
+toId = T.replace " " "" . T.replace "-" "" . T.toLower
