@@ -5,7 +5,9 @@ module Commands.TextCommands (
     module Commands.TextCommands.CalcStat,
     module Commands.TextCommands.BeatUp,
     module Commands.TextCommands.ChanceCalculation,
-    module Commands.TextCommands.Bomko
+    module Commands.TextCommands.Bomko,
+    module Commands.TextCommands.RemoveDefaultRole,
+    module Commands.TextCommands.AddDefaultRole
 ) where
 
 import Commands.TextCommands.DT
@@ -14,5 +16,6 @@ import Commands.TextCommands.SpeedCommands
 import Commands.TextCommands.CalcStat
 import Commands.TextCommands.BeatUp
 import Commands.TextCommands.ChanceCalculation
-
+import Commands.TextCommands.AddDefaultRole
+import Commands.TextCommands.RemoveDefaultRole
 import Commands.TextCommands.Bomko

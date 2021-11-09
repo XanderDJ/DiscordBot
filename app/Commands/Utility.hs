@@ -1,12 +1,16 @@
 module Commands.Utility where
 
-import Data.Text 
-import qualified Data.Text as T
+import Data.Text hiding (map) 
+import qualified Data.Text as T hiding (map)
 import Discord ( restCall, DiscordHandler )
 import qualified Discord.Requests as R
-import Discord.Types ( Message(messageAuthor, messageChannel), User(userId) )
+import Discord.Types ( Message(messageAuthor, messageChannel, messageGuild), User(userId), Snowflake, Guild (guildId), memberRoles, RoleId, Role, rolePos, roleId, roleName )
 import Control.Monad ( void )
 import qualified Data.Map as M
+import DiscordDB.Tables (GuildRoleF)
+import Data.Maybe
+import Data.Either
+import DiscordDB.Types (GuildRoleT(GuildRoleT))
 
 sendMessage :: R.ChannelRequest Message -> DiscordHandler ()
 sendMessage = void . restCall
@@ -25,6 +29,9 @@ pingUserText m = pack $ "<@" ++ show (userId . messageAuthor $ m) ++ ">"
 invalidMons :: Message -> [T.Text] -> DiscordHandler ()
 invalidMons m lfts = sendMessage $ R.CreateMessage (messageChannel m) (T.append (pingUserText m) (T.append ", couldn't the following mons: " (T.intercalate "," lfts)))
 
+invalidGuild :: Message -> DiscordHandler ()
+invalidGuild m = sendMessage $ R.CreateMessage (messageChannel m) (append (pingUserText m) ", you need to send this command in a guild!")
+
 noConnection :: Message -> DiscordHandler ()
 noConnection m = sendMessage $ R.CreateMessage (messageChannel m) (T.append (pingUserText m) ", couldn't connect to the database!")
 
@@ -34,3 +41,42 @@ getOptionWithDefault def (k:ks) m = if M.member k m then m M.! k else getOptionW
 
 toId :: Text -> Text
 toId = T.replace " " "" . T.replace "-" "" . T.toLower
+
+makeGuildRole :: Snowflake -> Snowflake -> GuildRoleF
+makeGuildRole gId rId = GuildRoleT (fromIntegral gId) (fromIntegral rId)
+
+
+checkAllowed :: Message -> DiscordHandler Bool
+checkAllowed m = do
+    let mgId = messageGuild m
+    if isNothing mgId
+        then return False
+        else do
+            let gId = fromJust mgId
+            allRoles <- restCall $ R.GetGuildRoles gId
+            if isLeft allRoles 
+                then return False
+                else do
+                    let allRoles' = extractRight allRoles
+                    guildMember <- restCall $ R.GetGuildMember gId (userId . messageAuthor $ m)
+                    if isLeft guildMember
+                        then return False
+                        else do
+                            let userRoles = memberRoles (extractRight guildMember)
+                                userRolePos = rolePositions userRoles allRoles'
+                                maximum' = Prelude.foldr1 (\x y ->if x >= y then x else y)
+                                maxPos = maximum' userRolePos
+                                botPos = findBotPos allRoles'
+                            return (maxPos > botPos)
+
+
+findBotPos :: [Role] -> Int
+findBotPos [] = 0
+findBotPos (r:rs) = if roleName r == "Lonewulfx6" then fromIntegral (rolePos r) else findBotPos rs
+
+rolePositions :: [RoleId] -> [Role] -> [Int]
+rolePositions rIds rs = map (findRolePos rs) rIds
+ where
+     findRolePos :: [Role] -> RoleId -> Int
+     findRolePos [] rId = 0
+     findRolePos (r:rs) rId = if roleId r == rId then fromIntegral (rolePos r) else findRolePos rs rId

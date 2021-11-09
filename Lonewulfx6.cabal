@@ -4,7 +4,7 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 8eb5b594fcd2a484deeb4e199da85910636416fb4636ac6f813d9f6b35ef55b1
+-- hash: 4b7a32360ea13a05ef25edaab215ffef65161bb49ea80c7835386e8020fe74a5
 
 name:           Lonewulfx6
 version:        0.1.0.0
@@ -31,6 +31,10 @@ library
       ChanceCalculator.ChanceCalculator
       ChanceCalculator.ChanceList
       Data.StatMultiplier
+      DiscordDB.Connection
+      DiscordDB.Queries
+      DiscordDB.Tables
+      DiscordDB.Types
       Excel
       Pokemon.DamageCalc.DamageCalc
       Pokemon.DBConversion
@@ -99,8 +103,10 @@ executable Lonewulfx6-exe
       Commands.AuctionCommands
       Commands.Commands
       Commands.Help
+      Commands.Manage.Role
       Commands.Parsers
       Commands.TextCommands
+      Commands.TextCommands.AddDefaultRole
       Commands.TextCommands.BeatUp
       Commands.TextCommands.Bomko
       Commands.TextCommands.CalcStat
@@ -108,6 +114,7 @@ executable Lonewulfx6-exe
       Commands.TextCommands.DamageCalc
       Commands.TextCommands.DT
       Commands.TextCommands.EmbedTest
+      Commands.TextCommands.RemoveDefaultRole
       Commands.TextCommands.SpeedCommands
       Commands.TextCommands.SpeedSheet
       Commands.Types

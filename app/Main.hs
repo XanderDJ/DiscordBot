@@ -18,7 +18,7 @@ import Discord
   )
 import qualified Discord.Requests as R
 import Discord.Types
-  ( Event (MessageCreate),
+  ( Event (MessageCreate, GuildMemberUpdate, GuildMemberAdd),
     Message (messageAuthor, messageText),
     User (userIsBot),
   )
@@ -27,6 +27,9 @@ import System.Environment (getArgs)
 import Text.Parsec
 import qualified Discord as R
 import Control.Monad
+import Control.Monad.Trans
+import Commands.Manage.Role
+
 main = auctionBot
 
 auctionBot :: IO ()
@@ -47,6 +50,7 @@ auctionBot = do
 eventHandler :: MVar Auctions -> Event -> DiscordHandler ()
 eventHandler mvar event = case event of
   MessageCreate m -> if not (fromBot m) then runCommands mvar m commandMap else pure ()
+  GuildMemberAdd gId gM -> addRoleToUser gId gM
   _ -> pure ()
 
 runCommands :: MVar Auctions -> Message -> M.Map Text Command -> DiscordHandler ()

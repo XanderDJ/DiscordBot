@@ -31,5 +31,11 @@ commandMap =
       ("calculatetries", ctCom),
       ("cc", ccCom),
       ("calcchance", ccCom),
-      ("dn", dnCom)
+      ("dn", dnCom),
+      ("adr", addDefRoleCom),
+      ("adddefaultrole", addDefRoleCom),
+      ("adddefaultroles", addDefRoleCom),
+      ("rdr", removeDefCom),
+      ("removedefaultrole", removeDefCom),
+      ("removedefaultroles", removeDefCom)
     ]
