@@ -13,6 +13,7 @@ import Control.Monad.Trans (lift)
 import DiscordDB.Tables (GuildRoleF)
 import DiscordDB.Types (GuildRoleT(GuildRoleT))
 import DiscordDB.Queries (insertGuildRole)
+import Database.PostgreSQL.Simple (close)
 
 addDefRoleCom = Com "l(adr|adddefaultroles) role1, role2, ..." (TextCommand addDefRoleCommand)
 
@@ -39,5 +40,6 @@ insertRoles roleIds guildId m = do
             let guildRoles = map (makeGuildRole guildId) roleIds
             lift $ mapM_ (insertGuildRole (fromJust con)) guildRoles
             sendMessage $ R.CreateMessage (messageChannel m) (append (pingUserText m) ", default roles were added!")
+            lift $ close (fromJust con)
 
 

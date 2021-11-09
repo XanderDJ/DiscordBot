@@ -12,6 +12,7 @@ import DiscordDB.Connection (getDbConnEnv)
 import DiscordDB.Queries
 import Data.Maybe
 import DiscordDB.Types (GuildRoleT(roleId))
+import Database.PostgreSQL.Simple (close)
 
 addRoleToUser :: GuildId -> GuildMember ->  DiscordHandler ()
 addRoleToUser gId gMember = do 
@@ -22,6 +23,7 @@ addRoleToUser gId gMember = do
         defaultRoles <- lift $ getDefaultRoles (fromJust con) (fromIntegral gId)
         let roleIds = map DiscordDB.Types.roleId defaultRoles
         mapM_ (addRole gId (userId . memberUser $ gMember)) roleIds
+        lift $ close (fromJust con)
 
 addRole :: Integral a => GuildId -> UserId -> a -> DiscordHandler (Either RestCallErrorCode ())
 addRole gId uId rId = restCall $ R.AddGuildMemberRole gId uId (fromIntegral rId)

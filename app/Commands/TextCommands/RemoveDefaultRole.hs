@@ -11,6 +11,7 @@ import Data.Text (append)
 import DiscordDB.Connection (getDbConnEnv)
 import Control.Monad.Trans (lift)
 import DiscordDB.Queries (removeGuildRole)
+import Database.PostgreSQL.Simple (close)
 
 removeDefCom :: Command
 removeDefCom = Com "l(rdr|removedefaultrole) role1, role2" (TextCommand removeDefCommand)
@@ -37,3 +38,4 @@ removeRoles rIds gId m = do
             let guildRoles = map (makeGuildRole gId) rIds
             lift $ mapM_ (removeGuildRole (fromJust con)) guildRoles
             sendMessage $ R.CreateMessage (messageChannel m) (append (pingUserText m) ", default roles were removed!")
+            lift $ close (fromJust con)
