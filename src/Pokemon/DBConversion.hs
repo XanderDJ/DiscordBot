@@ -9,6 +9,7 @@ toPokemon :: DBCompletePokemon  -> Pokemon
 toPokemon (dbPoke, types, abilities, moves) =
   Pokemon
     { pName = pokemonName dbPoke,
+      pNum = pokemonNum dbPoke,
       pTyping = map (read . T.unpack) types,
       baseStats = getBaseStats dbPoke,
       abilities = abilities,

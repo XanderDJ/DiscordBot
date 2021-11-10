@@ -197,7 +197,7 @@ instance FromJSON Pokemon where
         hiddenAbility = (map (T.pack . _name) . filter isHidden) allAbilities
         ha = if length hiddenAbility == 1 then Just $ head hiddenAbility else Nothing
         abilities' = maybe abilities (: abilities) ha
-    return $ Pokemon name typing abilities' baseStats (Right []) "" False (div weight 10)
+    return $ Pokemon name 0 typing abilities' baseStats (Right []) "" False (div weight 10)
 
 data EffectEntry = EffectEntry
   { language :: T.Text,

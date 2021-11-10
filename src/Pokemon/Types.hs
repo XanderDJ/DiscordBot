@@ -71,16 +71,20 @@ instance Show Nature where
 data Stat = HP | ATK | DEF | SPATK | SPDEF | SPEED | NEUTRAL deriving (Eq)
 
 instance Show Stat where
-  show HP = "hp"
-  show ATK = "attack"
-  show DEF = "defense"
-  show SPATK = "special attack"
-  show SPDEF = "special defense"
-  show SPEED = "speed"
+  show HP = "Hp"
+  show ATK = "Attack"
+  show DEF = "Defense"
+  show SPATK = "Special attack"
+  show SPDEF = "Special defense"
+  show SPEED = "Speed"
   show NEUTRAL = "neutral"
 
 -- | Data type for a pokemon stat, the stat it represents and the value of that stat
-data BaseStat = BaseStat Stat Int deriving (Show, Eq)
+data BaseStat = BaseStat Stat Int deriving (Eq)
+
+instance Show BaseStat where
+  show (BaseStat name val) = show name ++ ": " ++ show val
+
 
 -- | List of base stats
 type BaseStats = [BaseStat]
@@ -137,6 +141,7 @@ instance Read Type where
 -- Should contain more maybes to cover for data not being present in pokemon api
 data Pokemon = Pokemon
   { pName :: Name,
+    pNum :: Int,
     pTyping :: Typing,
     abilities :: [Name],
     baseStats :: BaseStats,
@@ -148,7 +153,7 @@ data Pokemon = Pokemon
   deriving (Eq)
 
 instance Show Pokemon where
-  show (Pokemon name types abilities bs _ colour nfe weight) =
+  show (Pokemon name num types abilities bs _ colour nfe weight) =
     "Pokemon "
       ++ show name
       ++ " " ++ show types ++ " " ++ show abilities ++ " " ++ show bs ++ " colour=" ++ show colour ++ " weight=" ++ show weight
