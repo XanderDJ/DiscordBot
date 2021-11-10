@@ -67,11 +67,11 @@ createPokemonEmbed mon opts =
     { createEmbedImage = Just $ CreateEmbedImageUrl (if gif then getGifUrl mon else getImageUrl mon opts),
       createEmbedTitle = L.foldl append "" [pName mon, " (", pack . show $ pNum mon,")"],
       createEmbedFields =
-        [ EmbedField "STATS" (getStats mon) (Just True),
-          EmbedField "ABILITIES" (getAbilities mon) (Just True),
+        [ EmbedField "Stats" (getStats mon) (Just True),
+          EmbedField "Abilities" (getAbilities mon) (Just True),
           EmbedField "---------------------------------------------------" "**---------------------------------------------------**" Nothing,
           EmbedField "Typing" (getTyping mon) (Just True),
-          EmbedField "MISC" (getMisc mon) (Just True)
+          EmbedField "Misc" (getMisc mon) (Just True)
         ]
     }
   where
