@@ -11,7 +11,7 @@ import Data.Either
 import qualified Data.List as L
 import qualified Data.Map as M
 import Data.Maybe
-import Data.Text hiding (map)
+import Data.Text hiding (null, length, map)
 import Database.PostgreSQL.Simple
 import Discord
 import qualified Discord.Requests as R
@@ -53,6 +53,9 @@ handleDt'' con dt opts m = do
 
 dtFound :: DTType -> M.Map Text Text -> Message -> DiscordHandler ()
 dtFound (DtPokemon mon) opts m = sendMessage (R.CreateMessageEmbed (messageChannel m) "" (createPokemonEmbed mon opts))
+dtFound (DtAbility ability) opts m = sendMessage (R.CreateMessageEmbed (messageChannel m) "" (createAbilityEmbed ability))
+dtFound (DtItem item) opts m = sendMessage (R.CreateMessageEmbed (messageChannel m) "" (createItemEmbed item))
+dtFound (DtMove move) opts m = sendMessage (R.CreateMessageEmbed (messageChannel m) "" (createMoveEmbed move))
 dtFound dt _ m = sendMessage $ R.CreateMessage (messageChannel m) (append (pingUserText m) (pack $ ", " ++ show dt))
 
 dtNotFound :: Message -> DiscordHandler ()
@@ -76,6 +79,34 @@ createPokemonEmbed mon opts =
     }
   where
     gif = "gif" `M.member` opts
+
+createAbilityEmbed :: Ability -> CreateEmbed
+createAbilityEmbed (Ability name (Just desc)) = def {
+  createEmbedTitle = name,
+  createEmbedDescription = desc
+}
+createAbilityEmbed (Ability name Nothing) = def { createEmbedTitle = name, createEmbedDescription = "No description for this ability yet!"}
+
+createItemEmbed :: Item -> CreateEmbed
+createItemEmbed (Item name (Just desc) flingBp) = def {
+  createEmbedTitle = L.foldl append name [" (flingBP=", pack . show $ flingBp, ")"],
+  createEmbedDescription = desc
+}
+createItemEmbed (Item name Nothing flingBp) = def { createEmbedTitle = L.foldl append name [" (flingBP=", pack . show $ flingBp, ")"], createEmbedDescription = "No description for this item yet!"}
+
+createMoveEmbed :: Move -> CreateEmbed
+createMoveEmbed move = def {
+  createEmbedTitle = mName move,
+  createEmbedDescription = if isNothing (mDescription move) then "" else fromJust . mDescription $ move,
+  createEmbedFields = [EmbedField "Stats" (getStatsText move) (Just True), EmbedField "Flags" (if null (mFlags move) then "No flags" else intercalate "\n" (mFlags move)) (Just True) ]
+}
+
+getStatsText :: Move -> Text
+getStatsText move = intercalate "\n" [typeText, dmgClassText, bpText, accuracyText]
+  where bpText = if isNothing (mBp move) then "**bp**: 0" else append "**bp:** " (pack . show . fromJust . mBp $ move)
+        accuracyText = if isNothing (mAccuracy move) then "**accuracy**: never misses" else append "**accuracy:** " (pack . show . fromJust . mAccuracy $ move)
+        typeText = pack . show . mTipe $ move
+        dmgClassText = pack . show . mDClass $ move
 
 discordShow :: BaseStat -> Text
 discordShow (BaseStat stat val) = L.foldl append "" ["**", (pack . show) stat, "**: ", (pack . show) val]

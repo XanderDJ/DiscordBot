@@ -43,15 +43,16 @@ data Move = Move
     mDClass :: AttackType,
     mBp :: Maybe Int,
     mAccuracy :: Maybe Int,
-    mDescription :: Maybe Description
+    mDescription :: Maybe Description,
+    mFlags :: [Text]
   }
   deriving (Show, Eq)
 
 instance Ord Move where
-  (Move _ _ _ (Just b) _ _) <= (Move _ _ _ (Just b') _ _) = b <= b'
-  (Move _ _ _ (Just b) _ _) <= (Move _ _ _ Nothing _ _) = False
-  (Move _ _ _ Nothing _ _) <= (Move _ _ _ (Just b') _ _) = True
-  (Move _ _ _ Nothing _ _) <= (Move _ _ _ Nothing _ _) = True
+  (Move _ _ _ (Just b) _ _ _) <= (Move _ _ _ (Just b') _ _ _) = b <= b'
+  (Move _ _ _ (Just b) _ _ _) <= (Move _ _ _ Nothing _ _ _) = False
+  (Move _ _ _ Nothing _ _ _) <= (Move _ _ _ (Just b') _ _ _) = True
+  (Move _ _ _ Nothing _ _ _) <= (Move _ _ _ Nothing _ _ _) = True
   
 
 -- | Attack type
