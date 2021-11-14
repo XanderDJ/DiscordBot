@@ -66,7 +66,7 @@ data NatureEffect = NNegative | NNeutral | NPositive deriving (Show, Eq)
 
 instance Show Nature where
   show (Nature name NEUTRAL NEUTRAL) = name ++ ": No effects on stats"
-  show (Nature name positive negative) = name ++ ": 10 % increase for " ++ show positive ++ " and 10% decrease for " ++ show negative
+  show (Nature name positive negative) = name ++ ": 10% increase for " ++ show positive ++ " and 10% decrease for " ++ show negative
 
 -- | All different stats for a pokemon
 data Stat = HP | ATK | DEF | SPATK | SPDEF | SPEED | NEUTRAL deriving (Eq)

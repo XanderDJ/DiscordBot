@@ -12,7 +12,7 @@ import Data.Text
 import qualified Data.Text.IO as TIO
 import Discord
   ( DiscordHandler,
-    RunDiscordOpts (discordOnEvent, discordOnLog, discordToken, discordOnEnd),
+    RunDiscordOpts (discordOnEvent, discordOnLog, discordToken, discordOnEnd, discordOnStart),
     restCall,
     runDiscord,
   )
@@ -43,7 +43,8 @@ auctionBot = do
         { discordToken = append "Bot " (pack token),
           discordOnLog = print,
           discordOnEvent = eventHandler mVar,
-          discordOnEnd = putStrLn "Ending" 
+          discordOnEnd = putStrLn "Ending",
+          discordOnStart = lift $ putStrLn "Starting"
         }
   TIO.putStrLn userFacingError
 
