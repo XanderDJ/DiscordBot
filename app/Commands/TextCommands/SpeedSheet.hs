@@ -22,7 +22,7 @@ import Pokemon.DBConversion ( toPokemon )
 import Pokemon.Types 
 import Text.Parsec ( parse )
 import Control.Lens ( (&), (?~) )
-import qualified Data.ByteString.Lazy as L
+import qualified Data.ByteString.Lazy as L hiding (concat)
 import qualified Data.ByteString as LS
 import Database.PostgreSQL.Simple (Connection, close)
 import PokemonDB.Connection (getDbConnEnv)
@@ -64,10 +64,10 @@ makeSS m teams = do
       fileName = tsToFileName teams' ""
       speedtables = map (speedTable . sortOnSpeed . getMons) teams'
       sheet = insertTables speedtables (1, 1) emptySheet
-      team = head teams
-      moveMaps = map (\pokemon -> (pName pokemon, pokemonMoveMap HORIZONTAL pokemon)) (getMons team)
+      teams'' = tail teams'
+      moveMaps = map (map (\pokemon -> (pName pokemon, pokemonMoveMap HORIZONTAL pokemon)) . L.nub .  getMons) teams''
       xl' = emptyXlsx & atSheet "SpeedTiers" ?~ sheet
-      xl = insertMoveMaps xl' moveMaps
+      xl = insertMoveMaps xl' (L.concat moveMaps)
   time <- lift getPOSIXTime
   sendMessage $ R.CreateMessageUploadFile (messageChannel m) fileName (L.toStrict (fromXlsx time xl))
 
