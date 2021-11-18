@@ -62,7 +62,7 @@ nonValidDt m = void . restCall $ R.CreateMessage (messageChannel m) "Usage: ldt 
 createPokemonEmbed :: Pokemon -> M.Map Text Text -> CreateEmbed
 createPokemonEmbed mon opts =
   def
-    { createEmbedImage = Just $ CreateEmbedImageUrl (if gif then getGifUrl mon else getImageUrl mon opts),
+    { createEmbedImage = Just $ CreateEmbedImageUrl (if gif then getGifUrl mon opts else getImageUrl mon opts),
       createEmbedTitle = L.foldl append "" [pName mon, " (", pack . show $ pNum mon, ")"],
       createEmbedColor = sideColor,
       createEmbedFields =
@@ -142,8 +142,11 @@ getTyping mon = intercalate "\n" (map (pack . show) . pTyping $ mon)
 getAbilities :: Pokemon -> Text
 getAbilities mon = intercalate "\n" (abilities mon)
 
-getGifUrl :: Pokemon -> Text
-getGifUrl Pokemon {..} = L.foldl append "http://play.pokemonshowdown.com/sprites/ani/" [toLower pName, ".gif"]
+getGifUrl :: Pokemon -> M.Map Text Text -> Text
+getGifUrl Pokemon {..} opts = L.foldl append base [toLower pName, ".gif"]
+  where
+    isShiny = M.member "shiny" opts
+    base = if isShiny then "http://play.pokemonshowdown.com/sprites/ani-shiny/" else "http://play.pokemonshowdown.com/sprites/ani/"
 
 getImageUrl :: Pokemon -> M.Map Text Text -> Text
 getImageUrl Pokemon {..} opts = L.foldl append "https://www.serebii.net/" image
