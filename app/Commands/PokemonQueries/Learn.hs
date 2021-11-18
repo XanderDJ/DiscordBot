@@ -43,7 +43,8 @@ createMovesEmbed pId moves allMoves =
       createEmbedFields =
         [ EmbedField "Moves learnable" (if null moves then "Can't learn any of the provided moves" else createMovesText moves) Nothing,
           EmbedField "Moves not learnable" (if null allMovesNotLearnable then "All moves provided can be learned" else T.intercalate ", " allMovesNotLearnable) Nothing
-        ]
+        ],
+      createEmbedColor = sideColor
     }
   where
     allMovesNotLearnable = getMovesNotLearnable (map (toId. mName) moves) allMoves

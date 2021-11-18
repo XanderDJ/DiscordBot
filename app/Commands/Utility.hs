@@ -25,6 +25,7 @@ extractLeft :: Either a b -> a
 extractLeft  (Left a) = a
 extractLeft  (Right b) = error "Tried extracting Left from Right"
 
+sideColor = Just 0xf984ef
 
 ifElse :: Bool -> DiscordHandler a -> DiscordHandler a -> DiscordHandler a
 ifElse True a _ = a

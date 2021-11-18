@@ -64,7 +64,7 @@ createPokemonEmbed mon opts =
   def
     { createEmbedImage = Just $ CreateEmbedImageUrl (if gif then getGifUrl mon else getImageUrl mon opts),
       createEmbedTitle = L.foldl append "" [pName mon, " (", pack . show $ pNum mon, ")"],
-      createEmbedColor = Just 0xf984ef,
+      createEmbedColor = sideColor,
       createEmbedFields =
         [ EmbedField "Stats" (getStats mon) (Just True),
           EmbedField "Abilities" (getAbilities mon) (Just True),
@@ -80,13 +80,13 @@ createNatureEmbed :: Nature -> CreateEmbed
 createNatureEmbed (Nature name NEUTRAL NEUTRAL) =
   def
     { createEmbedTitle = pack name,
-      createEmbedColor = Just 0xf984ef,
+      createEmbedColor = sideColor,
       createEmbedDescription = "No effect on stats!"
     }
 createNatureEmbed (Nature name pos neg) =
   def
     { createEmbedTitle = pack name,
-      createEmbedColor = Just 0xf984ef,
+      createEmbedColor = sideColor,
       createEmbedDescription = L.foldl append "10% increase for " [(pack . show) pos, ", 10% decrease for ", (pack . show) neg, "!"]
     }
 
@@ -94,7 +94,7 @@ createAbilityEmbed :: Ability -> CreateEmbed
 createAbilityEmbed (Ability name (Just desc)) =
   def
     { createEmbedTitle = name,
-      createEmbedColor = Just 0xf984ef,
+      createEmbedColor = sideColor,
       createEmbedDescription = desc
     }
 createAbilityEmbed (Ability name Nothing) = def {createEmbedTitle = name, createEmbedDescription = "No description for this ability yet!"}
@@ -103,7 +103,7 @@ createItemEmbed :: Item -> CreateEmbed
 createItemEmbed (Item name (Just desc) flingBp) =
   def
     { createEmbedTitle = L.foldl append name [" (flingBP=", pack . show $ flingBp, ")"],
-      createEmbedColor = Just 0xf984ef,
+      createEmbedColor = sideColor,
       createEmbedDescription = desc
     }
 createItemEmbed (Item name Nothing flingBp) = def {createEmbedTitle = L.foldl append name [" (flingBP=", pack . show $ flingBp, ")"], createEmbedDescription = "No description for this item yet!"}
@@ -112,7 +112,7 @@ createMoveEmbed :: Move -> CreateEmbed
 createMoveEmbed move =
   def
     { createEmbedTitle = mName move,
-      createEmbedColor = Just 0xf984ef,
+      createEmbedColor = sideColor,
       createEmbedDescription = if isNothing (mDescription move) then "" else fromJust . mDescription $ move,
       createEmbedFields = [EmbedField "Stats" (getStatsText move) (Just True), EmbedField "Flags" (if null (mFlags move) then "No flags" else intercalate "\n" (mFlags move)) (Just True)]
     }
