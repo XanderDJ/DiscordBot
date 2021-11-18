@@ -1,34 +1,32 @@
 module Commands.TextCommands.SpeedSheet (speedSheetCommand) where
 
-import Data.Time.Clock.POSIX (getPOSIXTime)
-import Codec.Xlsx ( Worksheet, atSheet, fromXlsx )
-import Commands.Types ( Command(..), CommandFunction(TextCommand) )
-import Commands.Utility ( pingUserText, sendMessage, invalidMons, noConnection, ifElse)
-import Control.Concurrent.Async ( mapConcurrently )
-import Control.Monad.Trans ( MonadTrans(lift) )
-import Data.ByteString.Char8 (intercalate)
-import Data.Either ( lefts, rights )
-import qualified Data.List as L
-import qualified Data.Text as T
-import Discord ( DiscordHandler )
-import qualified Discord.Requests as R
-import Discord.Types ( Message(messageText, messageChannel) )
-import Excel
-import Commands.Parsers ( parseNOrP, NOrP(..) )
-import Pokemon.Excel ( speedTable , pokemonMoveMap)
-import Pokemon.Functions ( sortOnSpeed )
-import qualified PokemonDB.Queries as Q
-import Pokemon.DBConversion ( toPokemon )
-import Pokemon.Types 
-import Text.Parsec ( parse )
-import Control.Lens ( (&), (?~) )
-import qualified Data.ByteString.Lazy as L hiding (concat)
+import Codec.Xlsx (Worksheet, atSheet, fromXlsx)
+import Commands.Parsers (NOrP (..), parseNOrP)
+import Commands.Types (Command (..), CommandFunction (TextCommand))
+import Commands.Utility (ifElse, invalidMons, noConnection, pingUserText, pokemonDb, sendMessage)
+import Control.Concurrent.Async (mapConcurrently)
+import Control.Lens ((&), (?~))
+import Control.Monad.Trans (MonadTrans (lift))
 import qualified Data.ByteString as LS
-import Database.PostgreSQL.Simple (Connection, close)
-import PokemonDB.Connection (getDbConnEnv)
+import Data.ByteString.Char8 (intercalate)
+import qualified Data.ByteString.Lazy as L hiding (concat)
+import Data.Either (lefts, rights)
+import qualified Data.List as L
 import Data.Maybe
-
-
+import qualified Data.Text as T
+import Data.Time.Clock.POSIX (getPOSIXTime)
+import Database.PostgreSQL.Simple (Connection, close)
+import Discord (DiscordHandler)
+import qualified Discord.Requests as R
+import Discord.Types (Message (messageChannel, messageText))
+import Excel
+import Pokemon.DBConversion (toPokemon)
+import Pokemon.Excel (pokemonMoveMap, speedTable)
+import Pokemon.Functions (sortOnSpeed)
+import Pokemon.Types
+import PokemonDB.Connection (getDbConnEnv)
+import qualified PokemonDB.Queries as Q
+import Text.Parsec (parse)
 
 speedSheetCommand :: Command
 speedSheetCommand = Com "lss - makes an excel sheet of speed tiers with the teams specified in the message" (TextCommand makeSpeedSheet)
@@ -43,15 +41,10 @@ makeSpeedSheet m = do
 makeSpeedSheet' :: Message -> [NOrP] -> DiscordHandler ()
 makeSpeedSheet' m norps = do
   let teams = nOrPsToTeams norps
-  if null teams then spCommandHelp m else makeSpeedSheet'' m teams
+  if null teams then spCommandHelp m else pokemonDb (makeSpeedSheet'' teams) m
 
-makeSpeedSheet'' :: Message -> [Team] -> DiscordHandler ()
-makeSpeedSheet'' m teams = do
-  con <- lift $ getDbConnEnv
-  ifElse (isNothing con) (noConnection m) (makeSpeedSheet''' (fromJust con) m teams)
-
-makeSpeedSheet''' :: Connection -> Message -> [Team] -> DiscordHandler ()
-makeSpeedSheet''' con m teams = do
+makeSpeedSheet'' :: [Team] -> Connection -> Message -> DiscordHandler ()
+makeSpeedSheet'' teams con m = do
   teams' <- lift $ mapConcurrently (mkTeamExcel con) teams
   lift $ close con
   let lfts = concat $ getLefts teams'
@@ -59,13 +52,12 @@ makeSpeedSheet''' con m teams = do
 
 makeSS :: Message -> [TeamExcel] -> DiscordHandler ()
 makeSS m teams = do
-  let 
-      teams' = reverse teams
+  let teams' = reverse teams
       fileName = tsToFileName teams' ""
       speedtables = map (speedTable . sortOnSpeed . getMons) teams'
       sheet = insertTables speedtables (1, 1) emptySheet
       teams'' = tail teams'
-      moveMaps = map (map (\pokemon -> (pName pokemon, pokemonMoveMap HORIZONTAL pokemon)) . L.nub .  getMons) teams''
+      moveMaps = map (map (\pokemon -> (pName pokemon, pokemonMoveMap HORIZONTAL pokemon)) . L.nub . getMons) teams''
       xl' = emptyXlsx & atSheet "SpeedTiers" ?~ sheet
       xl = insertMoveMaps xl' (L.concat moveMaps)
   time <- lift getPOSIXTime

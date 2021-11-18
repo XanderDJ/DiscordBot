@@ -28,16 +28,11 @@ beatUpCom = Com "l(bu|beatup) mon with spaces, mon-without-spaces, mon2" (TextCo
 beatUpCommand :: Message -> DiscordHandler ()
 beatUpCommand m = do
   let mons = parse parseBeatUp "Parsing beat up command" (messageText m)
-  ifElse (isLeft mons || (length (extractRight mons) == 1 && (T.null . head . extractRight) mons)) (beatUpUsage m) (beatUpCommand' m (extractRight mons))
+  ifElse (isLeft mons || (length (extractRight mons) == 1 && (T.null . head . extractRight) mons)) (beatUpUsage m) (pokemonDb (beatUpCommand' (extractRight mons)) m)
 
 
-beatUpCommand' :: Message -> [Text] -> DiscordHandler ()
-beatUpCommand' m ts = do
-  con <- lift $ getDbConnEnv
-  ifElse (isNothing con) (noConnection m) (beatUpCommand'' (fromJust con) m ts)
-
-beatUpCommand'' :: Connection -> Message -> [Text] -> DiscordHandler ()
-beatUpCommand'' con m ts = do
+beatUpCommand' :: [Text] -> Connection -> Message -> DiscordHandler ()
+beatUpCommand' ts con m = do
   mons <- lift $ mapConcurrently (Q.getCompletePokemon con) ts
   lift $ close con
   let lfts = lefts mons

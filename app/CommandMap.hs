@@ -37,5 +37,7 @@ commandMap =
       ("adddefaultroles", addDefRoleCom),
       ("rdr", removeDefCom),
       ("removedefaultrole", removeDefCom),
-      ("removedefaultroles", removeDefCom)
+      ("removedefaultroles", removeDefCom),
+      ("l", learnCom),
+      ("learn", learnCom)
     ]

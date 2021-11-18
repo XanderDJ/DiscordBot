@@ -16,6 +16,9 @@ import Text.Parsec.Text (Parser)
 import Text.Parsec.Number ( fractional, int ) 
 import Commands.Utility (toId)
 
+parseSep :: Parser Text
+parseSep = T.singleton <$> char ','
+
 parseMaybeInt :: Parser (Maybe Int)
 parseMaybeInt = do
   spaces
@@ -61,8 +64,8 @@ parseUser = U . pack <$> many (noneOf "#") <*> (char '#' *> parseMaybeInt)
 parseCommand :: Parser Text
 parseCommand = pack <$> (char 'l' *> many letter)
 
-parsePokemon :: Parser Text
-parsePokemon = pack . map (\s -> if s == ' ' then '-' else toLower s) <$> (spaces *> many (satisfy (not . isPunctuation)))
+parseId :: Parser Text
+parseId = toId . pack  <$> (spaces *> many (noneOf ","))
 
 -- Message example = !auction lpl 5000
 
@@ -100,7 +103,7 @@ parseN :: Parser Text
 parseN = toId . pack . dropHeadPattern "lss" . filter (/= ' ') <$> (many1 (noneOf ":") <* char ':')
 
 parsePN :: Parser Text
-parsePN = toId . pack  <$> many1 anyChar
+parsePN = parseId
 
 dropHeadPattern :: String -> String -> String
 dropHeadPattern p s
@@ -154,10 +157,10 @@ parseOptions t =
 -- | Parse a command to get a list of pokemon names
 -- Ex: l(bu|beatup) mon with space, mon2, mon3, ...
 parseBeatUp :: Parser [Text]
-parseBeatUp = (try (string "lbeatup") <|> string "lbu") *> spaces *> sepByComma parsePokemon
+parseBeatUp = (try (string "lbeatup") <|> string "lbu") *> spaces *> sepByComma parseId
 
 sepByComma :: Parser a -> Parser [a]
-sepByComma p = sepBy p (char ',')
+sepByComma p = sepBy p parseSep
 
 -- lct (0.9|9/10) (0.85|85/100)
 parseCT :: Parser (Double, Double)
@@ -180,3 +183,13 @@ parseCC = do
 
 parseDN :: Parser Text
 parseDN = pack <$> (string "ldn" *> spaces *> many alphaNum)
+
+
+parseLC :: Parser (Text, [Text])
+parseLC = do
+  try (string "ll") <|> string "llearn"
+  spaces
+  mon <- parseId
+  parseSep
+  moves <- sepByComma parseId
+  return (mon, moves)

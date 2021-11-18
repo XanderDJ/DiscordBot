@@ -1,6 +1,6 @@
 module Commands.Utility where
 
-import Data.Text hiding (map) 
+import Control.Monad.Trans
 import qualified Data.Text as T hiding (map)
 import Discord ( restCall, DiscordHandler )
 import qualified Discord.Requests as R
@@ -11,6 +11,8 @@ import DiscordDB.Tables (GuildRoleF)
 import Data.Maybe
 import Data.Either
 import DiscordDB.Types (GuildRoleT(GuildRoleT))
+import Database.PostgreSQL.Simple (Connection)
+import PokemonDB.Connection (getDbConnEnv)
 
 sendMessage :: R.ChannelRequest Message -> DiscordHandler ()
 sendMessage = void . restCall
@@ -19,27 +21,35 @@ extractRight :: Either a b -> b
 extractRight (Right b) = b
 extractRight (Left a) = error "Tried extracting Right value from Left"
 
+extractLeft :: Either a b -> a
+extractLeft  (Left a) = a
+extractLeft  (Right b) = error "Tried extracting Left from Right"
+
+
 ifElse :: Bool -> DiscordHandler a -> DiscordHandler a -> DiscordHandler a
 ifElse True a _ = a
 ifElse False _ a = a
 
-pingUserText :: Message -> Text
-pingUserText m = pack $ "<@" ++ show (userId . messageAuthor $ m) ++ ">"
+pingUserText :: Message -> T.Text
+pingUserText m = T.pack $ "<@" ++ show (userId . messageAuthor $ m) ++ ">"
+
+reportError ::  T.Text -> Message -> DiscordHandler ()
+reportError t m = sendMessage $ R.CreateMessage (messageChannel m) (T.append (pingUserText m) t) 
 
 invalidMons :: Message -> [T.Text] -> DiscordHandler ()
 invalidMons m lfts = sendMessage $ R.CreateMessage (messageChannel m) (T.append (pingUserText m) (T.append ", couldn't the following mons: " (T.intercalate "," lfts)))
 
 invalidGuild :: Message -> DiscordHandler ()
-invalidGuild m = sendMessage $ R.CreateMessage (messageChannel m) (append (pingUserText m) ", you need to send this command in a guild!")
+invalidGuild = reportError ", you need to send this command in a guild!"
 
 noConnection :: Message -> DiscordHandler ()
-noConnection m = sendMessage $ R.CreateMessage (messageChannel m) (T.append (pingUserText m) ", couldn't connect to the database!")
+noConnection = reportError ", couldn't connect to the database!"
 
 getOptionWithDefault :: Ord k => a -> [k] -> M.Map k a -> a
 getOptionWithDefault def [] m = def
 getOptionWithDefault def (k:ks) m = if M.member k m then m M.! k else getOptionWithDefault def ks m
 
-toId :: Text -> Text
+toId :: T.Text -> T.Text
 toId = T.replace " " "" . T.replace "-" "" . T.toLower
 
 makeGuildRole :: Snowflake -> Snowflake -> GuildRoleF
@@ -80,3 +90,9 @@ rolePositions rIds rs = map (findRolePos rs) rIds
      findRolePos :: [Role] -> RoleId -> Int
      findRolePos [] rId = 0
      findRolePos (r:rs) rId = if roleId r == rId then fromIntegral (rolePos r) else findRolePos rs rId
+
+
+pokemonDb :: (Connection -> Message -> DiscordHandler ()) -> Message -> DiscordHandler ()
+pokemonDb f m = do
+    con <- lift $ getDbConnEnv
+    ifElse (isNothing con) (noConnection m) (f (fromJust con) m)
