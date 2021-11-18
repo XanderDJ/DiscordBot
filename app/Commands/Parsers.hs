@@ -187,7 +187,7 @@ parseDN = pack <$> (string "ldn" *> spaces *> many alphaNum)
 
 parseLC :: Parser (Text, [Text])
 parseLC = do
-  try (string "ll") <|> string "llearn"
+  try (string "llearn") <|> string "ll"
   spaces
   mon <- parseId
   parseSep
