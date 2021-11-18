@@ -27,7 +27,7 @@ packages:
     hackage: parsec3-numbers-0.1.0@sha256:2f32295f9f4023f7f97da851549aaaf5e72866e98bf016a1ac3c6e8715bbaf8a,685
 snapshots:
 - completed:
-    size: 585817
-    url: https://raw.githubusercontent.com/commercialhaskell/stackage-snapshots/master/lts/18/4.yaml
-    sha256: ea3a318eafa9e9cc56bfbe46099fd0d54d32641ab7bbe1d182ed8f5de39f804c
-  original: lts-18.4
+    size: 586292
+    url: https://raw.githubusercontent.com/commercialhaskell/stackage-snapshots/master/lts/18/17.yaml
+    sha256: e66e70a7f998036025e8f40abc89b8eeb79c88f57727020cba1b54f375aa7ca0
+  original: lts-18.17
