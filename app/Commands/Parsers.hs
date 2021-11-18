@@ -147,7 +147,7 @@ parseMaxCalcStat = do
 
 parseOptions :: Text -> (Text, M.Map Text Text)
 parseOptions t =
-  let ts = T.splitOn "--" t
+  let ts = T.split (\c -> c == '-' || c == '—') t
       getOpts :: M.Map Text Text -> [Text] -> M.Map Text Text
       getOpts m [] = m
       getOpts m (t : ts) = let ws = T.words t in if (not . null) ws then getOpts (M.insert (head ws) (T.intercalate " " (tail ws)) m) ts else getOpts m ts
