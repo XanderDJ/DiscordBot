@@ -91,6 +91,7 @@ nOrPsToTeams = go []
     go [] ((PN _) : norps) = []
     go ts [] = ts
     go ts ((N name) : norps) = go (Team name [] : ts) norps
+    go ts ((PN "") : norps) = go ts norps
     go ts ((PN name) : norps) =
       let t : ts' = ts
           (Team tname mons) = t
