@@ -103,10 +103,14 @@ createItemEmbed :: Item -> CreateEmbed
 createItemEmbed (Item name (Just desc) flingBp) =
   def
     { createEmbedTitle = L.foldl append name [" (flingBP=", pack . show $ flingBp, ")"],
+      createEmbedThumbnail = (Just . CreateEmbedImageUrl . getItemUrl) name,
       createEmbedColor = sideColor,
       createEmbedDescription = desc
     }
 createItemEmbed (Item name Nothing flingBp) = def {createEmbedTitle = L.foldl append name [" (flingBP=", pack . show $ flingBp, ")"], createEmbedDescription = "No description for this item yet!"}
+
+getItemUrl :: Text -> Text
+getItemUrl name = L.foldl append "https://www.serebii.net/itemdex/sprites/pgl/" [toId name,".png"]
 
 createMoveEmbed :: Move -> CreateEmbed
 createMoveEmbed move =
