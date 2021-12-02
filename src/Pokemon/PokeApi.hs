@@ -224,7 +224,7 @@ instance FromJSON Item where
     bp <- jsn .: "fling_power"
     let effects' = filter (\(EffectEntry lang _) -> lang == "en") effects
         effect' = if (not . null) effects then (Just . eDescription . head) effects' else Nothing
-    return $ Item name effect' bp
+    return $ Item name effect' False bp Nothing Nothing Nothing
 
 instance FromJSON Move where
   parseJSON (Object jsn) = do

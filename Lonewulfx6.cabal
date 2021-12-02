@@ -4,7 +4,7 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 7e60048cd4c74d0d5d390ff4b88213061d49df63f8d4e5d93871994aae95692c
+-- hash: b4eae781b31d14e401933addc8aed5d5bc226acec02d0d1ccd67f5c3b6172f77
 
 name:           Lonewulfx6
 version:        0.1.0.0
@@ -36,7 +36,10 @@ library
       DiscordDB.Tables
       DiscordDB.Types
       Excel
+      Pokemon.DamageCalc
       Pokemon.DamageCalc.DamageCalc
+      Pokemon.DamageCalc.Functions
+      Pokemon.DamageCalc.Types
       Pokemon.DBConversion
       Pokemon.Excel
       Pokemon.Functions

@@ -1,5 +1,3 @@
-{-# LANGUAGE GeneralizedNewtypeDeriving #-}
-
 module Pokemon.Types where
 
 import Data.Char
@@ -30,11 +28,20 @@ instance Show Ability where
   show (Ability name _) = show name ++ ": no description yet in the api."
 
 -- | Item contains the name of an item and it's description
-data Item = Item Name (Maybe Description) Int deriving (Eq)
+data Item = Item
+  { iName :: Name,
+    iDesc :: Maybe Description,
+    iBerry :: Bool,
+    iFlingBp :: Int,
+    iOnPlate :: Maybe T.Text,
+    iOnDrive :: Maybe T.Text,
+    iOnMemory :: Maybe T.Text
+  }
+  deriving (Eq)
 
 instance Show Item where
-  show (Item name (Just description) bp) = show name ++ "(flingBP=" ++ show bp ++ "): " ++ show description
-  show (Item name _ bp) = show name ++ ": no description yet in the api."
+  show (Item name (Just description) _ bp _ _ _) = show name ++ "(flingBP=" ++ show bp ++ "): " ++ show description
+  show (Item name _ _ bp _ _ _) = show name ++ ": no description yet in the api."
 
 -- | Data type representing a move, dClass is either physical or special, bp can be battle power, accuracy is only applicable to moves that have accuracy
 data Move = Move
@@ -53,7 +60,6 @@ instance Ord Move where
   (Move _ _ _ (Just b) _ _ _) <= (Move _ _ _ Nothing _ _ _) = False
   (Move _ _ _ Nothing _ _ _) <= (Move _ _ _ (Just b') _ _ _) = True
   (Move _ _ _ Nothing _ _ _) <= (Move _ _ _ Nothing _ _ _) = True
-  
 
 -- | Attack type
 data AttackType = PHYSICAL | SPECIAL | OTHER deriving (Eq, Ord, Show)
@@ -85,7 +91,6 @@ data BaseStat = BaseStat Stat Int deriving (Eq)
 
 instance Show BaseStat where
   show (BaseStat name val) = show name ++ ": " ++ show val
-
 
 -- | List of base stats
 type BaseStats = [BaseStat]
@@ -157,39 +162,16 @@ instance Show Pokemon where
   show (Pokemon name num types abilities bs _ colour nfe weight) =
     "Pokemon "
       ++ show name
-      ++ " " ++ show types ++ " " ++ show abilities ++ " " ++ show bs ++ " colour=" ++ show colour ++ " weight=" ++ show weight
-
-data PokemonS = PokemonS
-  { pokemon :: Pokemon,
-    pLevel :: Int,
-    pItem :: Item,
-    pNature :: Nature,
-    pAbility :: T.Text,
-    pEvs :: EVs,
-    pIvs :: IVs,
-    pMultiplier :: StatMultiplier
-  }
-  deriving (Show, Eq)
-
-data EVs = EVS
-  { hpEv :: Int,
-    atkEv :: Int,
-    defEv :: Int,
-    spatkEv :: Int,
-    spdefEv :: Int,
-    spdEv :: Int
-  }
-  deriving (Show, Eq)
-
-data IVs = IVS
-  { hpIv :: Int,
-    atkIv :: Int,
-    defIv :: Int,
-    spatkIv :: Int,
-    spdefIv :: Int,
-    spdIv :: Int
-  }
-  deriving (Show, Eq)
+      ++ " "
+      ++ show types
+      ++ " "
+      ++ show abilities
+      ++ " "
+      ++ show bs
+      ++ " colour="
+      ++ show colour
+      ++ " weight="
+      ++ show weight
 
 -- | Level of a pokemon 0 - 100
 type Level = Int
@@ -198,37 +180,69 @@ type Level = Int
 data MoveCategory = STATUS | ATTACK | HAZARD | BOOST | UTILITY | RECOVERY | REST deriving (Eq, Show, Ord)
 
 -- | Status types
-data Status = BURN | PARALYZED | POISONED | SLEEP | FROZEN deriving (Show, Eq, Ord)
+data Status = BURN | PARALYZED | POISONED | SLEEP | FROZEN | BADLY_POISONED deriving (Show, Eq, Ord)
 
 instance Read Status where
   readsPrec _ input = case map toLower input of
     'p' : 's' : 'n' : rest -> [(POISONED, rest)]
+    'p' : 'o' : 'i' : 's' : 'o' : 'n' : 'e' : 'd' : rest -> [(POISONED, rest)]
     'b' : 'r' : 'n' : rest -> [(BURN, rest)]
-    't' : 'o' : 'x' : rest -> [(POISONED, rest)]
+    'b' : 'u' : 'r' : 'n' : 'e' : 'd' : rest -> [(BURN, rest)]
+    't' : 'o' : 'x' : rest -> [(BADLY_POISONED, rest)]
+    't' : 'o' : 'x' : 'i' : 'c' : rest -> [(BADLY_POISONED, rest)]
+    'p' : 'a' : 'r' : 'a' : 'l' : 'y' : 'z' : 'e' : 'd' : rest -> [(PARALYZED, rest)]
     'p' : 'a' : 'r' : rest -> [(PARALYZED, rest)]
     's' : 'l' : 'p' : rest -> [(SLEEP, rest)]
+    's' : 'l' : 'e' : 'e' : 'p' : rest -> [(SLEEP, rest)]
     'f' : 'r' : 'z' : rest -> [(FROZEN, rest)]
+    'f' : 'r' : 'o' : 'z' : 'e' : 'n' : rest -> [(FROZEN, rest)]
     _ -> []
 
 -- | Weather
-data Weather = SANDSTORM | HAIL | RAIN | SUN | HEAVYRAIN | HEAVYSUN deriving (Show, Eq, Ord)
+data Weather = SANDSTORM | HAIL | RAIN | SUN | HEAVYRAIN | HEAVYSUN | STRONGWIND deriving (Show, Eq, Ord)
+
+parseWeather :: T.Text -> Maybe Weather
+parseWeather "sand" = Just SANDSTORM
+parseWeather "sandstorm" = Just SANDSTORM
+parseWeather "hail" = Just HAIL
+parseWeather "rain" = Just RAIN
+parseWeather "sun" = Just SUN
+parseWeather "primordialsea" = Just HEAVYRAIN
+parseWeather "primordial" = Just HEAVYRAIN
+parseWeather "desolateland" = Just HEAVYSUN
+parseWeather "desolate" = Just HEAVYSUN
+parseWeather "deltastream" = Just STRONGWIND
+parseWeather "delta" = Just STRONGWIND
+parseWeather "strongwind" = Just STRONGWIND
+parseWeather _ = Nothing
 
 -- | Terrain
 data Terrain = ELECTRIC_T | PSYCHIC_T | MISTY | GRASSY deriving (Show, Eq, Ord)
+
+parseTerrain :: T.Text -> Maybe Terrain
+parseTerrain "electricterrain" = Just ELECTRIC_T
+parseTerrain "elec" = Just ELECTRIC_T
+parseTerrain "electric" = Just ELECTRIC_T
+parseTerrain "grassyterrain" = Just GRASSY
+parseTerrain "grassy" = Just GRASSY
+parseTerrain "mistyterrain" = Just MISTY
+parseTerrain "misty" = Just MISTY
+parseTerrain "psychicterrain" = Just PSYCHIC_T
+parseTerrain "psychic" = Just PSYCHIC_T
+parseTerrain "psy" = Just PSYCHIC_T
+parseTerrain _ = Nothing
+
+data Screen = AURORA_VEIL | LIGHT_SCREEN | REFLECT deriving (Show, Eq, Ord)
+
+parseScreen :: T.Text -> Maybe Screen
+parseScreen "reflect" = Just REFLECT
+parseScreen "lightscreen" = Just LIGHT_SCREEN
+parseScreen "light" = Just LIGHT_SCREEN
+parseScreen "auroraveil" = Just AURORA_VEIL
+parseScreen "aurora" = Just AURORA_VEIL
+parseScreen _ = Nothing
 
 -- | Hazards
 data Hazards = SPIKES | TOXIC_SPIKES | STEALTH_ROCKS | STICKY_WEBS | VOLCALITH | CANNONADE | VINELASH | WILDFIRE deriving (Show, Eq, Ord)
 
 data Volatile = LEECH_SEED | TAUNT | DESTINY_BOND | CONFUSION | YAWN deriving (Show, Eq, Ord)
-
-data Screen = AURORA_VEIL | LIGHT_SCREEN | REFLECT deriving (Show, Eq, Ord)
-
-data Environment = Env
-  { activeTerrain :: Maybe Terrain,
-    activeWeather :: Maybe Weather,
-    screens :: [Screen],
-    isDiving :: Bool,
-    isMinimized :: Bool,
-    isDigging :: Bool
-  }
-  deriving (Show, Eq)

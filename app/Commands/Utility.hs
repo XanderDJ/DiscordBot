@@ -50,12 +50,19 @@ getOptionWithDefault :: Ord k => a -> [k] -> M.Map k a -> a
 getOptionWithDefault def [] m = def
 getOptionWithDefault def (k:ks) m = if M.member k m then m M.! k else getOptionWithDefault def ks m
 
+
+getOption :: Ord k => [k] -> M.Map k a -> Maybe a
+getOption [] m = Nothing
+getOption (k:ks) m = if k `M.member` m then Just (m M.! k) else getOption ks m
+
 toId :: T.Text -> T.Text
 toId = T.replace " " "" . T.replace "-" "" . T.toLower
 
 makeGuildRole :: Snowflake -> Snowflake -> GuildRoleF
 makeGuildRole gId rId = GuildRoleT (fromIntegral gId) (fromIntegral rId)
 
+rightToMaybe :: Either a b -> Maybe b
+rightToMaybe = either (const Nothing) Just
 
 checkAllowed :: Message -> DiscordHandler Bool
 checkAllowed m = do
@@ -97,3 +104,6 @@ pokemonDb :: (Connection -> Message -> DiscordHandler ()) -> Message -> DiscordH
 pokemonDb f m = do
     con <- lift $ getDbConnEnv
     ifElse (isNothing con) (noConnection m) (f (fromJust con) m)
+
+printIO :: Show a => a -> DiscordHandler ()
+printIO a = lift $ print a

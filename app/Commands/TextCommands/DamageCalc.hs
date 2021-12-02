@@ -1,17 +1,211 @@
-module Commands.TextCommands.DamageCalc where
+{-# LANGUAGE RecordWildCards #-}
 
+module Commands.TextCommands.DamageCalc (damageCalcCom) where
+
+import Commands.Parsers
 import Commands.Types
 import Commands.Utility
+import Control.Monad (when)
+import Control.Monad.Trans
+import Data.Either
+import qualified Data.Map as M
+import Data.Maybe
+import qualified Data.Text as T
+import Database.PostgreSQL.Simple
 import Discord
-import Discord.Types
 import qualified Discord.Requests as R
-import Commands.Parsers
+import Discord.Types
+import Pokemon.DBConversion
+import Pokemon.DamageCalc.DamageCalc (runCalc)
+import Pokemon.DamageCalc.Types
+import Pokemon.Nature (adamant, bold, careful, gentle, getNature, impish, jolly, modest, serious, timid, calm)
+import Pokemon.Types
+import PokemonDB.Queries
+import PokemonDB.Types
+import Text.Read (readMaybe)
 
 damageCalcCom :: Command
-damageCalcCom = Com "ldc figure this out" (TextCommand dcCommand)
-
+damageCalcCom = Com "ldc mon1 --options, move --environmentoptions, mon2 --options" (TextCommand dcCommand)
 
 dcCommand :: Message -> DiscordHandler ()
 dcCommand msg = do
-    let (m, opts) = parseOptions (messageText msg)
-    undefined
+  let parsedMessage = parseDC (messageText msg)
+  ifElse (isLeft parsedMessage) (dcUsage msg) (pokemonDb (validMessage (extractRight parsedMessage)) msg)
+
+validMessage :: (T.Text, T.Text, T.Text) -> Connection -> Message -> DiscordHandler ()
+validMessage (mt1, mt, mt2) con m = do
+  let (mon1', m1Opts) = parseOptions mt1
+      (move', moveOpts) = parseOptions mt
+      (mon2', m2Opts) = parseOptions mt2
+      mon1 = cleanMon mon1'
+      mon2 = cleanMon mon2'
+      move = toId move'
+      item1 = toId <$> M.lookup "item" m1Opts
+      item2 = toId <$> M.lookup "item" m2Opts
+  m1 <- lift $ getCompletePokemon con mon1
+  m2 <- lift $ getCompletePokemon con mon2
+  mv <- lift $ getMove con move
+  i1 <- if isJust item1 then do Just <$> lift (getItem con (fromJust item1)) else return Nothing
+  i2 <- if isJust item2 then do Just <$> lift (getItem con (fromJust item2)) else return Nothing
+  let pokemonErrMsg = T.intercalate ", " (pokemonErr [m1, m2])
+      moveErrMsg = if length mv /= 1 then move else ""
+      itemErrMsg = T.intercalate ", " (itemErr [(item1, i1), (item2, i2)])
+      errorMsg = errorMessage pokemonErrMsg moveErrMsg itemErrMsg
+  lift $ close con
+  ifElse (T.null errorMsg) (validDbData (extractRight m1, m1Opts) (extractRight m2, m2Opts) (head mv, moveOpts) (head <$> i1) (head <$> i2) m) (reportError errorMsg m)
+  where
+    pokemonErr [] = []
+    pokemonErr ((Left id) : ms) = id : pokemonErr ms
+    pokemonErr ((Right _) : ms) = pokemonErr ms
+    itemErr [] = []
+    itemErr ((Nothing, _) : is) = itemErr is
+    itemErr ((Just iId, Just i) : is) = if length i /= 1 then iId : itemErr is else itemErr is
+    itemErr _ = error "Unreachable situation"
+    cleanMon = toId . T.strip . T.replace "ldc" "" . T.replace "ldamagecalc" ""
+
+validDbData :: (DBCompletePokemon, M.Map T.Text T.Text) -> (DBCompletePokemon, M.Map T.Text T.Text) -> (DBMove, M.Map T.Text T.Text) -> Maybe DBItem -> Maybe DBItem -> Message -> DiscordHandler ()
+validDbData (mon1, m1Opts) (mon2, m2Opts) (move, moveOpts) i1 i2 m = do
+  let env = parseEnv moveOpts
+      effectiveMove = toEffectiveMove move
+      parsedMon1 = parseMon (toPokemon mon1) (toItem <$> i1) m1Opts effectiveMove
+      parsedMon2 = parseMon (toPokemon mon2) (toItem <$> i2) m2Opts effectiveMove
+      damageCalcState = DCS env parsedMon1 parsedMon2 effectiveMove
+      -- (min, max) = runCalc damageCalcState
+      -- calcMessage = makeCalcMessage (min, max) damageCalcState
+  printIO damageCalcState
+
+makeCalcMessage :: (Int, Int) -> DCS -> T.Text
+makeCalcMessage (min, max) DCS {dcsEnv =Env {..}} = undefined
+
+parseMon :: Pokemon -> Maybe Item -> M.Map T.Text T.Text -> EffectiveMove -> EffectivePokemon
+parseMon Pokemon {..} i opts EM {..} =
+  EP
+    { epName = pName,
+      epAbility =  fromMaybe ((toId . head) abilities) (getOption ["a", "ability"] opts >>= \s -> return (toId s)),
+      epTyping = pTyping,
+      epStats = baseStats,
+      epLevel = let level = opts M.!? "level" in fromMaybe 100 (level >>= \l -> readMaybe (T.unpack l)),
+      epItem = i,
+      epNature = fromMaybe (maybe (getDefaultNature emCategory) third set) nature,
+      epEvs = maybe (EVS hpev atkev defev spaev spdev speev) first set,
+      epIvs = maybe (IVS hpiv atkiv defiv spaiv spdiv speiv) second set,
+      epStatus = let status = opts M.!? "status" in status >>= \s -> readMaybe (T.unpack s),
+      epNfe = pNfe,
+      epWeight = pWeight,
+      epMultiplier = let mult = getOptionWithDefault "0" ["m", "multiplier", "b", "boost"] opts in (fromInteger . read . T.unpack) mult
+    }
+  where
+    hpiv = fromMaybe 31 (getOption ["hpiv"] opts >>= \iv -> readMaybe (T.unpack iv))
+    atkiv = fromMaybe 31 (getOption ["attackiv", "atkiv"] opts >>= \iv -> readMaybe (T.unpack iv))
+    defiv = fromMaybe 31 (getOption ["defenseiv", "defiv"] opts >>= \iv -> readMaybe (T.unpack iv))
+    spaiv = fromMaybe 31 (getOption ["specialattackiv", "spaiv", "spatkiv"] opts >>= \iv -> readMaybe (T.unpack iv))
+    spdiv = fromMaybe 31 (getOption ["specialdefenseiv", "spdiv", "spdefiv"] opts >>= \iv -> readMaybe (T.unpack iv))
+    speiv = fromMaybe 31 (getOption ["speediv", "speiv"] opts >>= \iv -> readMaybe (T.unpack iv))
+    hpev = fromMaybe 0 (getOption ["hpev"] opts >>= \ev -> readMaybe (T.unpack ev))
+    atkev = fromMaybe 252 (getOption ["attackev", "atkev"] opts >>= \ev -> readMaybe (T.unpack ev))
+    defev = fromMaybe 0 (getOption ["defenseev", "defev"] opts >>= \ev -> readMaybe (T.unpack ev))
+    spaev = fromMaybe 252 (getOption ["specialattackev", "spaev", "spatkev"] opts >>= \ev -> readMaybe (T.unpack ev))
+    spdev = fromMaybe 0 (getOption ["specialdefenseev", "spdev", "spdefev"] opts >>= \ev -> readMaybe (T.unpack ev))
+    speev = fromMaybe 252 (getOption ["speedev", "speev"] opts >>= \ev -> readMaybe (T.unpack ev))
+    getDefaultNature PHYSICAL = jolly
+    getDefaultNature SPECIAL = timid
+    getDefaultNature OTHER = serious
+    nature = getOption ["nature", "n"] opts >>= getNature
+    set = getOption ["set", "s"] opts >>= \s -> parseSet emCategory (toId s)
+    first (a, b, c) = a
+    second (a, b, c) = b
+    third (a, b, c) = c
+
+
+
+parseSet :: AttackType -> T.Text -> Maybe (EVs, IVs, Nature)
+parseSet at "hyperoffense" = Just $ getCorrectType at (maxAtkEVs, usualIvs, jolly) (maxSpaEVs, specialIvs, timid)
+parseSet at "ho" = Just $ getCorrectType at (maxAtkEVs, usualIvs, jolly) (maxSpaEVs, specialIvs, timid)
+parseSet at "bulkyoffense" = Just $ getCorrectType at (bulkyAtkEVs, usualIvs, adamant) (bulkySpaEVs, specialIvs, modest)
+parseSet at "bo" = Just $ getCorrectType at (bulkyAtkEVs, usualIvs, adamant) (bulkySpaEVs, specialIvs, modest)
+parseSet at "bulkysweeper" = Just $ getCorrectType at (bulkyAtkEVs, usualIvs, adamant) (bulkySpaEVs, specialIvs, modest)
+parseSet at "fullspdef" = Just $ getCorrectType at (maxSpdefEvs, usualIvs, careful) (maxSpdefEvs, specialIvs, calm)
+parseSet at "fulldef" = Just $ getCorrectType at (maxDefEvs, usualIvs, impish) (maxDefEvs, specialIvs, bold)
+parseSet at "maxdef" = Just $ getCorrectType at (maxDefEvs, usualIvs, impish) (maxDefEvs, specialIvs, bold)
+parseSet at "maxspdef" = Just $ getCorrectType at (maxSpdefEvs, usualIvs, careful) (maxSpdefEvs, specialIvs, calm)
+parseSet at "utility" = Just $ getCorrectType at (utilityEVs, usualIvs, jolly) (utilityEVs, specialIvs, timid)
+parseSet at "util" = Just $ getCorrectType at (utilityEVs, usualIvs, jolly) (utilityEVs, specialIvs, timid)
+parseSet at "trickroom" = Just $ getCorrectType at (maxAtkEVs, trickroomIvs, adamant) (maxSpaEVs, trickroomSIvs, modest)
+parseSet at "tr" = Just $ getCorrectType at (maxAtkEVs, trickroomIvs, adamant) (maxSpaEVs, trickroomSIvs, modest)
+parseSet _ _ = Nothing
+
+getCorrectType PHYSICAL t _ = t
+getCorrectType SPECIAL _ t = t
+getCorrectType OTHER t _ = t
+
+maxAtkEVs :: EVs
+maxAtkEVs = EVS 0 252 0 0 4 252
+
+bulkyAtkEVs :: EVs
+bulkyAtkEVs = EVS 252 252 0 0 4 0
+
+maxSpaEVs :: EVs
+maxSpaEVs = EVS 0 0 0 252 4 252
+
+bulkySpaEVs :: EVs
+bulkySpaEVs = EVS 252 0 0 252 4 0
+
+utilityEVs :: EVs
+utilityEVs = EVS 252 0 0 0 4 252
+
+maxSpdefEvs :: EVs
+maxSpdefEvs = EVS 252 0 4 0 252 0
+
+maxDefEvs :: EVs
+maxDefEvs = EVS 252 0 252 0 4 0
+
+usualIvs :: IVs
+usualIvs = IVS 31 31 31 31 31 31
+
+specialIvs :: IVs
+specialIvs = IVS 31 0 31 31 31 31
+
+trickroomIvs :: IVs
+trickroomIvs = IVS 31 31 31 31 31 0
+
+trickroomSIvs :: IVs
+trickroomSIvs = IVS 31 0 31 31 31 0
+
+parseEnv :: M.Map T.Text T.Text -> Environment
+parseEnv m = Env terrain weather s g mr wr ps b tw div minimized dig pr mpr
+  where
+    terrain = M.lookup "terrain" m >>= \t -> parseTerrain (toId t)
+    weather = M.lookup "weather" m >>= \w -> parseWeather (toId w)
+    s' = M.lookup "screens" m >>= \s -> let ss = T.splitOn "," s in return . mapMaybe (parseScreen . toId . T.strip) $ ss
+    s = fromMaybe [] s'
+    g = "gravity" `M.member` m || "g" `M.member` m || "grav" `M.member` m
+    mr = "magicroom" `M.member` m || "magic" `M.member` m
+    wr = "wonderroom" `M.member` m || "wonder" `M.member` m
+    ps = "powerspot" `M.member` m || "power" `M.member` m
+    b = "battery" `M.member` m || "batt" `M.member` m
+    tw = "tailwind" `M.member` m || "tail" `M.member` m
+    div = "diving" `M.member` m || "dive" `M.member` m
+    dig = "digging" `M.member` m || "dig" `M.member` m
+    minimized = "minimized" `M.member` m || "minimize" `M.member` m || M.member "min" m
+    pr = M.member "protect" m || M.member "prot" m
+    mpr = M.member "maxguard" m || M.member "maxg" m
+
+errorMessage :: T.Text -> T.Text -> T.Text -> T.Text
+errorMessage "" "" "" = ""
+errorMessage pErr "" "" = T.append "Couldn't find the following mons: " pErr
+errorMessage "" mErr "" = T.append "Not a valid move: " mErr
+errorMessage "" "" iErr = T.append "Couldn't find the following items: " iErr
+errorMessage pErr mErr "" = T.intercalate "\n" [errorMessage pErr "" "", errorMessage "" mErr ""]
+errorMessage pErr "" iErr = T.intercalate "\n" [errorMessage pErr "" "", errorMessage "" "" iErr]
+errorMessage "" mErr iErr = T.intercalate "\n" [errorMessage "" mErr "", errorMessage "" "" iErr]
+errorMessage pErr mErr iErr = T.intercalate "\n" [errorMessage pErr "" "", errorMessage "" mErr "", errorMessage "" "" iErr]
+
+dcUsage :: Message -> DiscordHandler ()
+dcUsage = reportError "You need to have 2 commas, text before the first comma is mon1 and the options for that mon, text between the two commas is the move used by mon1 and the settings of the environment, last section is mon2 and their options."
+
+parseDC :: T.Text -> Either T.Text (T.Text, T.Text, T.Text)
+parseDC t = if length st == 3 then Right (t3 st) else Left "Message given wasn't in the correct format!"
+  where
+    st = T.splitOn "," t
+    t3 [x, y, z] = (x, y, z)
+    t3 _ = error "Unreachable situation"

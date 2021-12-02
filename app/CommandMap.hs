@@ -4,6 +4,7 @@ import Commands.Commands
 import Commands.Types ( Command )
 import Data.Map ( Map, fromList )
 import Data.Text ( Text )
+import Commands.TextCommands.DamageCalc (damageCalcCom)
 
 commandMap :: Map Text Command
 commandMap =
@@ -39,5 +40,7 @@ commandMap =
       ("removedefaultrole", removeDefCom),
       ("removedefaultroles", removeDefCom),
       ("l", learnCom),
-      ("learn", learnCom)
+      ("learn", learnCom),
+      ("damagecalc", damageCalcCom),
+      ("dc", damageCalcCom)
     ]

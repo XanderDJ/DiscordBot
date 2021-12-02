@@ -1,9 +1,12 @@
+{-# LANGUAGE RecordWildCards #-}
+
 module Pokemon.DBConversion where
 
 import qualified Data.Text as T
 import Pokemon.Types
 import qualified PokemonDB.Queries as Q
 import PokemonDB.Types
+import Pokemon.DamageCalc.Types
 
 toPokemon :: DBCompletePokemon -> Pokemon
 toPokemon (dbPoke, types, abilities, moves) =
@@ -78,10 +81,18 @@ toAbility :: DBAbility -> Ability
 toAbility dbAbility = Ability (abilityName dbAbility) (Just (abilityDesc dbAbility))
 
 toItem :: DBItem -> Item
-toItem dbItem = Item (itemName dbItem) (Just (itemDesc dbItem)) (flingBp dbItem)
+toItem dbItem = Item (itemName dbItem) (Just (itemDesc dbItem)) (isBerry dbItem) (flingBp dbItem) (onPlate dbItem) (onDrive dbItem) (onMemory dbItem)
 
 toDTType :: DBData -> DTType
 toDTType (DTI item) = DtItem (toItem item)
 toDTType (DTA ability) = DtAbility (toAbility ability)
 toDTType (DTM move) = DtMove (toMove move)
 toDTType (DTP pokemon) = DtPokemon (toPokemon pokemon)
+
+toEffectiveMove :: DBMove -> EffectiveMove
+toEffectiveMove MoveT {..} = EM moveName moveBp (toDamageClass moveCategory) ((read . T.unpack . T.toLower)  moveType) moveContact moveUTO moveUDAO moveINO moveIPD moveIO moveID moveII moveIsMax moveBullet movePunch moveBite movePowder moveSound moveDance moveWillCrit
+ where
+   toDamageClass "Status" = OTHER
+   toDamageClass "Physical" = PHYSICAL
+   toDamageClass "Special" = SPECIAL
+   toDamageClass other = OTHER

@@ -1,11 +1,16 @@
 module Pokemon.DamageCalc.DamageCalc where
 
 import Control.Monad.Reader
+import Pokemon.DamageCalc.Types
+import Pokemon.DamageCalc.Functions
 import Pokemon.Types
 import Pokemon.Functions
 import Data.StatMultiplier
 
-data DCS = DCS Environment PokemonS PokemonS Move deriving (Eq, Show)
+
+runCalc :: DCS -> (Int, Int)
+runCalc = runReader calcDamage
+
 
 calcDamage :: Reader DCS (Int, Int)
 calcDamage =
@@ -30,10 +35,10 @@ baseDamage = do
     defender <- getDefendingPokemon
     move <- getMove
     let bp = getBp move attacker defender
-        moveType = mDClass move
-        atk =  fromIntegral (getAttackStat (pItem attacker) moveType attacker) *// (getMultiplier . pMultiplier) attacker
-        def = fromIntegral (getDefenseStat (pItem defender) moveType defender) *// (getMultiplier . pMultiplier) defender
-        lvl = pLevel attacker
+        moveType = emCategory  move
+        atk =  fromIntegral (getAttackStat (epItem attacker) moveType attacker) *// (getMultiplier . epMultiplier) attacker
+        def = fromIntegral (getDefenseStat (epItem defender) moveType defender) *// (getMultiplier . epMultiplier) defender
+        lvl = epLevel attacker
     return $ div ((div (2 * lvl) 5 + 2) * bp * div atk def) 50 + 2
 
 targetsMultiplier :: Int -> Reader DCS Int
@@ -86,14 +91,14 @@ getEnvironment :: Reader DCS Environment
 getEnvironment = reader f
  where f (DCS env _ _ _) = env
 
-getAttackingPokemon :: Reader DCS PokemonS
+getAttackingPokemon :: Reader DCS EffectivePokemon 
 getAttackingPokemon = reader f
  where f (DCS _ p _ _) = p
 
-getDefendingPokemon :: Reader DCS PokemonS
+getDefendingPokemon :: Reader DCS EffectivePokemon 
 getDefendingPokemon = reader f
  where f (DCS _ _ p _) = p
 
-getMove :: Reader DCS Move
+getMove :: Reader DCS EffectiveMove 
 getMove = reader f
  where f (DCS _ _ _ move) = move
