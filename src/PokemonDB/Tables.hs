@@ -77,7 +77,7 @@ abilityTable =
 selectAbility :: Select AbilityF
 selectAbility = selectTable abilityTable
 
-type MoveF = MoveT (Field SqlBool) (Field SqlInt4) (Field SqlText) (FieldNullable SqlInt4) (FieldNullable SqlText)
+type MoveF = MoveT (Field SqlBool) (Field SqlInt4) (Field SqlText) (FieldNullable SqlInt4) (FieldNullable SqlFloat8) (FieldNullable SqlText)
 
 $(makeAdaptorAndInstance "pMove" ''MoveT)
 
@@ -95,6 +95,9 @@ moveTable =
             movePP = tableField "pp",
             movePriority = tableField "priority",
             moveDrain = tableField "drain",
+            moveDrainPercentage = tableField "drainPercentage",
+            moveRecoil = tableField "recoil",
+            moveRecoilPercentage = tableField "recoilPercentage",
             moveCategory = tableField "category",
             moveType = tableField "type",
             moveContact = tableField "contact",

@@ -33,7 +33,7 @@ data AbilityT t n = AbilityT {
 
 type DBAbility = AbilityT Text Int
 
-data MoveT b n t mn mt = MoveT {
+data MoveT b n t mn mf mt = MoveT {
   moveId :: t,
   moveName :: t,
   moveNum :: n,
@@ -47,6 +47,9 @@ data MoveT b n t mn mt = MoveT {
   moveSecondaryChance :: mn,
   moveDesc :: t,
   moveDrain :: b,
+  moveDrainPercentage :: mf,
+  moveRecoil :: b,
+  moveRecoilPercentage :: mf,
   moveUTO :: b,
   moveUDAO :: b,
   moveINO :: b,
@@ -70,7 +73,7 @@ data MoveT b n t mn mt = MoveT {
   moveWillCrit :: b
 } deriving Show
 
-type DBMove = MoveT Bool Int Text (Maybe Int) (Maybe Text)
+type DBMove = MoveT Bool Int Text (Maybe Int) (Maybe Double) (Maybe Text)
 
 
 data PokemonT b d n t = PokemonT {

@@ -56,6 +56,7 @@ getFlags dbMove = getList
   [ (isBullet, "Bullet"),
     (isPulse, "Pulse"),
     (isDrain, "Draining"),
+    (isRecoil, "Recoil"),
     (isBite, "Bite"),
     (isPunch, "Punch"),
     (isPowder, "Powder"),
@@ -66,6 +67,7 @@ getFlags dbMove = getList
     (isContact, "Contact")
   ]
   where
+    isRecoil = moveRecoil dbMove
     isBullet = moveBullet dbMove
     isPulse = movePulse dbMove
     isDrain = moveDrain dbMove
@@ -93,7 +95,7 @@ toDTType (DTM move) = DtMove (toMove move)
 toDTType (DTP pokemon) = DtPokemon (toPokemon pokemon)
 
 toEffectiveMove :: DBMove -> EffectiveMove
-toEffectiveMove MoveT {..} = EM moveName moveBp movePriority(toDamageClass moveCategory) ((read . T.unpack . T.toLower)  moveType) moveContact (isJust moveSecondaryChance) moveUTO moveUDAO moveINO moveIPD moveIO moveID moveII moveIsMax moveBullet movePulse movePunch moveBite movePowder moveSound moveDance moveWillCrit 0 1
+toEffectiveMove MoveT {..} = EM moveName moveBp movePriority(toDamageClass moveCategory) ((read . T.unpack . T.toLower)  moveType) moveDrain moveDrainPercentage moveRecoil moveRecoilPercentage moveContact (isJust moveSecondaryChance) moveUTO moveUDAO moveINO moveIPD moveIO moveID moveII moveIsMax moveBullet movePulse movePunch moveBite movePowder moveSound moveDance moveWillCrit 0 1
  where
    toDamageClass "Status" = OTHER
    toDamageClass "Physical" = PHYSICAL
