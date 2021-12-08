@@ -9,7 +9,8 @@ import Data.Functor ((<&>))
 import qualified Data.List as L
 import Data.List.Utility (hasAny)
 import qualified Data.Map as M
-import Data.Maybe (fromMaybe)
+import Data.Maybe (fromMaybe, isJust)
+import Data.StatMultiplier (getMultiplier)
 import qualified Data.Text as T
 import Pokemon.DamageCalc.Types
 import Pokemon.Functions
@@ -25,18 +26,50 @@ getMoveOrder attacker defender move env
   | otherwise = if trickRoom env then flipOrder order else order
   where
     attackerSpeed = getSpeedAttacker attacker env
-    defenderSpeed = getSpeedDefender defender
+    defenderSpeed = getSpeedDefender defender env
+    moveType = getMoveType attacker defender env move
     order = if attackerSpeed >= defenderSpeed then FIRST else LAST
     flipOrder FIRST = LAST
     flipOrder LAST = FIRST
-    prio = emPriority move
+    prio = getMovePriority attacker defender move env
 
-getSpeedAttacker attacker env = if tailWind env then (fromIntegral . getSpeed) attacker *// 2 else getSpeed attacker
+getMovePriority :: EffectivePokemon -> EffectivePokemon -> EffectiveMove -> Environment -> Int
+getMovePriority attacker defender move env = prio
+  where
+    moveType = getMoveType attacker defender env move
+    prio
+      | FLYING `elem` moveType && epHPPercentage attacker == 100 = 1 + emPriority move
+      | (toId . epAbility) attacker == "stall" = -6
+      | (toId . epAbility) attacker == "triage" && emDrain move = 3
+      | otherwise = emPriority move
 
+getSpeedAttacker :: EffectivePokemon -> Environment -> Int
+getSpeedAttacker attacker env = if tailWind env then fromIntegral speed *// 2 else speed
+  where
+    speed = getSpeed attacker env
+
+getSpeedDefender :: EffectivePokemon -> Environment -> Int
 getSpeedDefender = getSpeed
 
-getSpeed :: t -> a0
-getSpeed = error "not implemented"
+getSpeed :: EffectivePokemon -> Environment -> Int
+getSpeed ep@EP {..} env = fromIntegral speedStat *// totalMultiplier
+  where
+    speedMultiplier = getSpeedMultiplier (toId epAbility) ep env
+    boostMultiplier = (getMultiplier . speM) epMultiplier
+    totalMultiplier = speedMultiplier * boostMultiplier
+    natureEffect = getNatureEffect SPEED epNature
+    speedStat = calcStat epLevel (spdIv epIvs) (spdEv epEvs) natureEffect (findBaseStat epStats SPEED)
+
+getSpeedMultiplier :: T.Text -> EffectivePokemon -> Environment -> Double
+getSpeedMultiplier "quickfeet" EP {epStatus = Just x} _ = 1.5
+getSpeedMultiplier "slowstart" _ _ = 0.5
+getSpeedMultiplier "slushrush" _ Env {activeWeather = Just HAIL} = 2
+getSpeedMultiplier "swiftswim" _ Env {activeWeather = Just RAIN} = 2
+getSpeedMultiplier "swiftswim" _ Env {activeWeather = Just HEAVYRAIN} = 2
+getSpeedMultiplier "chlorophyll" _ Env {activeWeather = Just HEAVYSUN} = 2
+getSpeedMultiplier "chlorophyll" _ Env {activeWeather = Just SUN} = 2
+getSpeedMultiplier "surgesurfer" _ Env {activeTerrain = Just ELECTRIC_T} = 2
+getSpeedMultiplier ability mon env = 1
 
 getBp :: EffectiveMove -> EffectivePokemon -> EffectivePokemon -> Int
 getBp m a d = undefined
@@ -74,12 +107,16 @@ getDefensiveAbilityMultiplier "prismarmor" _ _ _ _ ar = if ar `elem` [SuperEffec
 getDefensiveAbilityMultiplier "punkrock" _ EM {emSound = isSound} _ _ _ = if isSound then 0.5 else 1
 getDefensiveAbilityMultiplier "soundproof" _ EM {emSound = isSound} _ _ _ = if isSound then 0 else 1
 getDefensiveAbilityMultiplier "waterbubble" _ _ typing _ _ = if FIRE `elem` typing then 0.5 else 1
-getDefensiveAbilityMultiplier "aurabreak" _ _ typing _ _ = if hasAny [FAIRY, DARK] typing then 3/4 else 1
-getDefensiveAbilityMultiplier "damp" _ EM { emName = name} _ _ _ = if toId name `elem` ["selfdestruct", "explosion", "mindblown", "mistyexplosion"] then 0 else 1
+getDefensiveAbilityMultiplier "aurabreak" _ _ typing _ _ = if hasAny [FAIRY, DARK] typing then 3 / 4 else 1
+getDefensiveAbilityMultiplier "damp" _ EM {emName = name} _ _ _ = if toId name `elem` ["selfdestruct", "explosion", "mindblown", "mistyexplosion"] then 0 else 1
 getDefensiveAbilityMultiplier "dazzling" _ EM {emPriority = prio} _ _ _ = if prio > 0 then 0 else 1
 getDefensiveAbilityMultiplier "dryskin" _ _ typing _ _ = if FIRE `elem` typing then 1.25 else 1
 getDefensiveAbilityMultiplier "queenlymajesty" _ EM {emPriority = prio} _ _ _ = if prio > 0 then 0 else 1
 getDefensiveAbilityMultiplier ab ep em typing cat super = 1
+
+getAttackAbilityMultiplier :: T.Text -> EffectivePokemon -> EffectivePokemon -> EffectiveMove -> Environment -> [Type] -> AttackType -> AttackRelation -> Double
+getAttackAbilityMultiplier "neuroforce" _ _ _ _ _ _ SuperEffective = 1.25 
+getAttackAbilityMultiplier ab attacker defender em env typing cat effectiveness = 1
 
 getPokemonType :: EffectivePokemon -> [Type]
 getPokemonType ep@EP {epName = "silvally"} = fromMaybe (epTyping ep) (epItem ep >>= iOnMemory >>= (fmap (: []) . readMaybe . T.unpack))
@@ -225,6 +262,7 @@ enrichTmWithAbility atkAbility defAbility moveName tm@(TM am dm)
   | defAbility `elem` ["motordrive", "voltabsorb", "lightningrod"] = TM am (M.insert ELECTRIC Immune dm)
   | defAbility == "sapsipper" = TM am (M.insert GRASS Immune dm)
   | defAbility == "wonderguard" = TM am wonderguardDm
+  | defAbility == "scrappy" = TM am (M.insert GHOST Neutral dm)
   | otherwise = tm
   where
     wonderguardFilter StronglyEffective = Just StronglyEffective
@@ -233,6 +271,12 @@ enrichTmWithAbility atkAbility defAbility moveName tm@(TM am dm)
     wonderguardDm' = foldl (flip $ M.update wonderguardFilter) dm (M.keys dm)
     allTypesNotPresent = allTypes L.\\ M.keys dm
     wonderguardDm = foldl (\m a -> M.insert a Immune m) wonderguardDm' allTypesNotPresent
+
+enrichTmWithWeather :: Maybe Weather -> Bool -> Typing -> TypeMatchup -> TypeMatchup
+enrichTmWithWeather (Just STRONGWIND) bool typing tm@(TM am dm) =
+  let dm' = M.fromList [(ROCK, Resisted), (ICE, Resisted), (ELECTRIC, Resisted)]
+   in if bool || FLYING `notElem` typing then tm else TM am (combineDefenseMap dm' dm)
+enrichTmWithWeather _ _ _ tm = tm
 
 thousandArrows :: T.Text -> Typing -> Int -> TypeMatchup -> TypeMatchup
 thousandArrows "thousandarrows" defenderTyping tu (TM am dm) = let relation = if tu > 0 || FLYING `notElem` defenderTyping then Neutral else Resisted in TM am (M.insert GROUND relation dm)
@@ -355,9 +399,17 @@ getWeatherMult mType RAIN
   | hasAny mType [WATER] = 1.5
   | hasAny mType [FIRE] = 0.5
   | otherwise = 1
+getWeatherMult mType HEAVYRAIN 
+  | hasAny mType [WATER] = 1.5
+  | hasAny mType [FIRE] = 0
+  | otherwise = 1
 getWeatherMult mType SUN
   | hasAny mType [FIRE] = 1.5
   | hasAny mType [WATER] = 0.5
+  | otherwise = 1
+getWeatherMult mType HEAVYSUN 
+  | hasAny mType [FIRE] = 1.5
+  | hasAny mType [WATER] = 0
   | otherwise = 1
 getWeatherMult _ _ = 1
 

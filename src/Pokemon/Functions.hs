@@ -37,14 +37,20 @@ getStat "speed" = SPEED
 getStat "spe" = SPEED
 getStat s = error $ s ++ " is not a stat."
 
-getNatureEffect :: String -> NatureEffect
-getNatureEffect "positive" = NPositive
-getNatureEffect "pos" = NPositive
-getNatureEffect "neutral" = NNeutral
-getNatureEffect "neu" = NNeutral
-getNatureEffect "negative" = NNegative
-getNatureEffect "neg" = NNegative
-getNatureEffect _ = NNeutral
+parseNatureEffect :: String -> NatureEffect
+parseNatureEffect "positive" = NPositive
+parseNatureEffect "pos" = NPositive
+parseNatureEffect "neutral" = NNeutral
+parseNatureEffect "neu" = NNeutral
+parseNatureEffect "negative" = NNegative
+parseNatureEffect "neg" = NNegative
+parseNatureEffect _ = NNeutral
+
+getNatureEffect :: Stat -> Nature -> NatureEffect
+getNatureEffect s (Nature _ pos neg)
+  | s == pos = NPositive
+  | s == neg = NNegative
+  | otherwise = NNeutral
 
 -- | Get the base stat of a pokemon using a string as a name
 getBaseStat :: String -> Pokemon -> BaseStat
@@ -738,8 +744,7 @@ multiTargetMoves =
 
 movesThatIgnoreAbilities :: [T.Text]
 movesThatIgnoreAbilities =
-  [
-    "gmaxdrumsolo",
+  [ "gmaxdrumsolo",
     "gmaxfireball",
     "gmaxhydrosnipe",
     "lightthatburnsthesky",
@@ -755,7 +760,6 @@ abilityIgnoringAbilities = ["moldbreaker", "teravolt", "turboblaze"]
 
 toId :: T.Text -> T.Text
 toId = T.replace " " "" . T.replace "-" "" . T.toLower
-
 
 allTypes :: [Type]
 allTypes = [NORMAL, DRAGON, DARK, FAIRY, BUG, PSYCHIC, GHOST, POISON, WATER, GRASS, FIRE, ELECTRIC, FLYING, FIGHTING, ICE, ROCK, STEEL, GROUND]

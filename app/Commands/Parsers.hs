@@ -9,12 +9,13 @@ import Data.Maybe
 import Data.StatMultiplier
 import Data.Text (Text, dropWhileEnd, pack, replace, unpack)
 import qualified Data.Text as T
-import Pokemon.Functions (getNatureEffect, getStat)
+import Pokemon.Functions (parseNatureEffect, getStat)
 import Pokemon.Types (BaseStat (BaseStat), Level, NatureEffect (NPositive))
 import Text.Parsec
 import Text.Parsec.Text (Parser)
 import Text.Parsec.Number ( fractional, int ) 
 import Commands.Utility (toId)
+import SplitSubstr
 
 parseSep :: Parser Text
 parseSep = T.singleton <$> char ','
@@ -133,7 +134,7 @@ parseCalcStat = do
   bs <- read <$> many digit
   spaces
   natureEffect <- try (string "positive") <|> string "pos" <|> try (string "neutral") <|> try (string "neu") <|> try (string "negative") <|> string "neg"
-  return $ CS (BaseStat (getStat stat) bs) (getNatureEffect natureEffect)
+  return $ CS (BaseStat (getStat stat) bs) (parseNatureEffect natureEffect)
 
 parseMaxCalcStat :: Parser CalcStat
 parseMaxCalcStat = do
@@ -143,11 +144,12 @@ parseMaxCalcStat = do
   stat <- string "hp" <|> string "atk" <|> string "def" <|> try (string "spatk") <|> try (string "spdef") <|> string "spd"
   char ':'
   bs <- read <$> many digit
-  return $ CS (BaseStat (getStat stat) bs) (NPositive)
+  return $ CS (BaseStat (getStat stat) bs) NPositive
 
 parseOptions :: Text -> (Text, M.Map Text Text)
 parseOptions t =
-  let ts = T.split (\c -> c == '-' || c == '—') t
+  let ss = splitOnSubstrs ["--", "—"] (T.unpack t)
+      ts = map T.pack ss
       getOpts :: M.Map Text Text -> [Text] -> M.Map Text Text
       getOpts m [] = m
       getOpts m (t : ts) = let ws = T.words t in if (not . null) ws then getOpts (M.insert (head ws) (T.intercalate " " (tail ws)) m) ts else getOpts m ts

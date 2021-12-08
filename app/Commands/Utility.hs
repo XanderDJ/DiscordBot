@@ -58,7 +58,6 @@ getOption (k:ks) m = if k `M.member` m then Just (m M.! k) else getOption ks m
 hasOption :: Ord k => [k] -> M.Map k a -> Bool
 hasOption ks m = any (`elem` ks) (M.keys m)
 
-
 toId :: T.Text -> T.Text
 toId = T.replace " " "" . T.replace "-" "" . T.toLower
 

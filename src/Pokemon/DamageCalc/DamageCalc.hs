@@ -106,13 +106,17 @@ typeEffectivenessMultiplier dmg = do
   defender <- getDefendingPokemon
   env <- getEnvironment
   let moveType = getMoveType attacker defender env move
+      atkAbility = toId . epAbility $ attacker
+      defAbility = toId . epAbility $ defender
       defenderType = getPokemonType defender
       defenderItem = fromMaybe "" (epItem defender <&> iName)
       moveName = toId . emName $ move
       tm' = fromMaybe mempty (getCombinedMatchup defenderType)
+      weatherBool = atkAbility `elem` ["cloudnine", "airlock"] || defAbility `elem` ["cloudnine", "airlock"]
       tm =
         ( enrichTmWithAbility (toId . epAbility $ attacker) (toId . epAbility $ defender) (toId . emName $ move)
             >>> updateTmWithItem defenderItem (magicRoom env)
+            >>> enrichTmWithWeather (activeWeather env)  weatherBool moveType
             >>> thousandArrows moveName defenderType (emTimesUsed move)
         )
           tm'
@@ -169,12 +173,15 @@ abilityMultiplier dmg = do
       defAbility = toId . epAbility $ defender
       ar = getTypeMatchup moveType defenderType
       moveCategory = emCategory move
-      atkMult = if defAbility == "neutralizinggas" then 1 else undefined
+      movePrio = getMovePriority attacker defender move env
+      atkMult = if defAbility == "neutralizinggas" then 1 else getAttackAbilityMultiplier atkAbility attacker defender move env moveType moveCategory ar
       defMult =
         if (atkAbility == "neutralizinggas" || defAbility /= "prismarmor") && (atkAbility `elem` abilityIgnoringAbilities || (toId . emName) move `elem` movesThatIgnoreAbilities)
           then 1
-          else getDefensiveAbilityMultiplier defAbility defender move moveType moveCategory ar
+          else getDefensiveAbilityMultiplier defAbility defender move {emPriority = movePrio} moveType moveCategory ar
   multiply dmg (atkMult * defMult)
+
+
 
 itemMultiplier :: Int -> Reader DCS Int
 itemMultiplier dmg = do

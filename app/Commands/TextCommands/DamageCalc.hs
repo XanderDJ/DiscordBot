@@ -103,11 +103,14 @@ parseMon Pokemon {..} i opts EM {..} =
     risen = hasOption ["telekinesis", "tele", "tel", "magnetrise", "magnet", "mr", "levitating", "levitate"] opts
     t' = getOption ["type", "t"] opts >>= \t -> let tt = T.splitOn ";" t in let rs = mapMaybe (readMaybe . T.unpack . toId . T.strip) tt in if null rs then Nothing else Just rs
     typing = fromMaybe pTyping t'
-    atkMult = fromMaybe (0 %% 0) ((getOption ["atkm", "atkmultiplier", "attackmultiplier"] opts >>= readMaybe . T.unpack) <&> fromIntegral)
-    defMult = fromMaybe (0 %% 0) ((getOption ["defm", "defmultiplier", "defensemultiplier"] opts >>= readMaybe . T.unpack) <&> fromIntegral)
-    spaMult = fromMaybe (0 %% 0) ((getOption ["spam", "spamultiplier", "specialattackmultiplier"] opts >>= readMaybe . T.unpack) <&> fromIntegral)
-    spdMult = fromMaybe (0 %% 0) ((getOption ["spdm", "spdmultiplier", "specialdefensemultiplier"] opts >>= readMaybe . T.unpack) <&> fromIntegral)
-    speMult = fromMaybe (0 %% 0) ((getOption ["spem", "spemultiplier", "speedmultiplier"] opts >>= readMaybe . T.unpack) <&> fromIntegral)
+    atkMult = fromMaybe (0 %% 0) ((getOption ["atkm", "atkmultiplier", "attackmultiplier"] opts >>= readMaybeInt . T.unpack) <&> fromIntegral)
+    defMult = fromMaybe (0 %% 0) ((getOption ["defm", "defmultiplier", "defensemultiplier"] opts >>= readMaybeInt . T.unpack) <&> fromIntegral)
+    spaMult = fromMaybe (0 %% 0) ((getOption ["spam", "spamultiplier", "specialattackmultiplier"] opts >>= readMaybeInt . T.unpack) <&> fromIntegral)
+    spdMult = fromMaybe (0 %% 0) ((getOption ["spdm", "spdmultiplier", "specialdefensemultiplier"] opts >>= readMaybeInt . T.unpack) <&> fromIntegral)
+    speMult = fromMaybe (0 %% 0) ((getOption ["spem", "spemultiplier", "speedmultiplier"] opts >>= readMaybeInt . T.unpack) <&> fromIntegral)
+
+    readMaybeInt :: String -> Maybe Int
+    readMaybeInt = readMaybe
     hpiv = fromMaybe 31 (getOption ["hpiv"] opts >>= \iv -> readMaybe (T.unpack iv))
     atkiv = fromMaybe 31 (getOption ["attackiv", "atkiv"] opts >>= \iv -> readMaybe (T.unpack iv))
     defiv = fromMaybe 31 (getOption ["defenseiv", "defiv"] opts >>= \iv -> readMaybe (T.unpack iv))
@@ -203,10 +206,10 @@ parseEnv m = Env terrain weather s c g mr wr tr ps b electrified tw minimized in
     tw = hasOption ["tailwind", "tail", "tw", "wind"] m
     invulnerable = hasOption ["diving", "dive", "digging", "dig", "invulnerable", "flying", "phantomforce", "phantom", "fly"] m
     minimized = hasOption ["minimized", "minimize", "min"] m
-    electrified = hasOption ["electrify", "electrified", "iondeluge", "ion","ion-deluge"] m
+    electrified = hasOption ["electrify", "electrified", "iondeluge", "ion", "ion-deluge"] m
     pr = hasOption ["protect", "prot"] m
     lc = hasOption ["luckychant", "lucky-chant", "lc"] m
-    mpr = hasOption ["maxguard", "maxg","maxprot", "maxprotect"] m
+    mpr = hasOption ["maxguard", "maxg", "maxprot", "maxprotect"] m
     double = hasOption ["double", "doublebattle"] m
 
 parseMove :: DBMove -> M.Map T.Text T.Text -> EffectiveMove
