@@ -113,6 +113,7 @@ moveTable =
             moveStatus = tableField "status",
             moveVolatileStatus = tableField "volatilestatus",
             moveBullet = tableField "bullet",
+            movePulse = tableField "pulse",
             movePunch = tableField "punch",
             moveBite = tableField "bite",
             movePowder = tableField "powder",

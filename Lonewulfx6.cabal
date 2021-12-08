@@ -4,7 +4,7 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: b4eae781b31d14e401933addc8aed5d5bc226acec02d0d1ccd67f5c3b6172f77
+-- hash: c5e8daa4b68afd19816eec8380ebfac08dd7a085829bf6f0cc46effb1d9f7740
 
 name:           Lonewulfx6
 version:        0.1.0.0
@@ -30,6 +30,7 @@ library
       ChanceCalculator
       ChanceCalculator.ChanceCalculator
       ChanceCalculator.ChanceList
+      Data.List.Utility
       Data.StatMultiplier
       DiscordDB.Connection
       DiscordDB.Queries
@@ -51,6 +52,7 @@ library
       Pokemon.Stats.Functions
       Pokemon.Stats.Stats
       Pokemon.Stats.Types
+      Pokemon.TypeMatchups
       Pokemon.Types
       PokemonDB.Connection
       PokemonDB.Queries

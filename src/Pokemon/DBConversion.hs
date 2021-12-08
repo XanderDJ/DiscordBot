@@ -7,6 +7,7 @@ import Pokemon.Types
 import qualified PokemonDB.Queries as Q
 import PokemonDB.Types
 import Pokemon.DamageCalc.Types
+import Data.Maybe
 
 toPokemon :: DBCompletePokemon -> Pokemon
 toPokemon (dbPoke, types, abilities, moves) =
@@ -53,6 +54,7 @@ toMove dbMove =
 getFlags :: DBMove -> [T.Text]
 getFlags dbMove = getList
   [ (isBullet, "Bullet"),
+    (isPulse, "Pulse"),
     (isDrain, "Draining"),
     (isBite, "Bite"),
     (isPunch, "Punch"),
@@ -65,6 +67,7 @@ getFlags dbMove = getList
   ]
   where
     isBullet = moveBullet dbMove
+    isPulse = movePulse dbMove
     isDrain = moveDrain dbMove
     isBite = moveBite dbMove
     isPunch = movePunch dbMove
@@ -90,7 +93,7 @@ toDTType (DTM move) = DtMove (toMove move)
 toDTType (DTP pokemon) = DtPokemon (toPokemon pokemon)
 
 toEffectiveMove :: DBMove -> EffectiveMove
-toEffectiveMove MoveT {..} = EM moveName moveBp (toDamageClass moveCategory) ((read . T.unpack . T.toLower)  moveType) moveContact moveUTO moveUDAO moveINO moveIPD moveIO moveID moveII moveIsMax moveBullet movePunch moveBite movePowder moveSound moveDance moveWillCrit
+toEffectiveMove MoveT {..} = EM moveName moveBp movePriority(toDamageClass moveCategory) ((read . T.unpack . T.toLower)  moveType) moveContact (isJust moveSecondaryChance) moveUTO moveUDAO moveINO moveIPD moveIO moveID moveII moveIsMax moveBullet movePulse movePunch moveBite movePowder moveSound moveDance moveWillCrit 0 1
  where
    toDamageClass "Status" = OTHER
    toDamageClass "Physical" = PHYSICAL

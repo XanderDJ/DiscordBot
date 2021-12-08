@@ -118,7 +118,7 @@ data Type
   | DRAGON
   | DARK
   | FAIRY
-  deriving (Show, Eq)
+  deriving (Show, Eq, Ord)
 
 -- | Make read be able to parse strings into types, "normal" -> NORMAL
 instance Read Type where

@@ -1,10 +1,11 @@
 {-# LANGUAGE RecordWildCards #-}
+
 module Pokemon.DamageCalc.Types where
 
+import qualified Data.List as L
 import Data.StatMultiplier
 import qualified Data.Text as T
 import Pokemon.Types
-import qualified Data.List as L
 
 data DCS = DCS
   { dcsEnv :: Environment,
@@ -12,18 +13,28 @@ data DCS = DCS
     dcsDefender :: EffectivePokemon,
     dcsMove :: EffectiveMove
   }
-  deriving Eq
+  deriving (Eq)
 
 instance Show DCS where
-  show DCS {..} = "DCS {\n" ++ L.intercalate "\n\n" ["ENV = " ++ show dcsEnv,"ATTACKER = " ++ show dcsAttacker,"DEFENDER = " ++ show dcsDefender,"MOVE = " ++ show dcsMove] ++ "\n}" 
-  
+  show DCS {..} = "DCS {\n" ++ L.intercalate "\n\n" ["ENV = " ++ show dcsEnv, "ATTACKER = " ++ show dcsAttacker, "DEFENDER = " ++ show dcsDefender, "MOVE = " ++ show dcsMove] ++ "\n}"
+
+data Multipliers = Multipliers
+  { atkM :: StatMultiplier,
+    defM :: StatMultiplier,
+    spaM :: StatMultiplier,
+    spdM :: StatMultiplier,
+    speM :: StatMultiplier
+  }
+  deriving (Eq, Show)
 
 data EffectiveMove = EM
   { emName :: T.Text,
     emBp :: Int,
+    emPriority :: Int,
     emCategory :: AttackType,
     emType :: Type,
     isContact :: Bool,
+    hasSecondary :: Bool,
     emUTO :: Bool,
     emUDAO :: Bool,
     emINO :: Bool,
@@ -33,12 +44,15 @@ data EffectiveMove = EM
     emII :: Bool,
     emIsMax :: Bool,
     emBullet :: Bool,
+    emPulse :: Bool,
     emPunch :: Bool,
     emBite :: Bool,
     emPowder :: Bool,
     emSound :: Bool,
     emDance :: Bool,
-    emWillCrit :: Bool
+    emWillCrit :: Bool,
+    emTimesUsed :: Int,
+    emHits :: Int
   }
   deriving (Eq, Show)
 
@@ -55,7 +69,9 @@ data EffectivePokemon = EP
     epStatus :: Maybe Status,
     epNfe :: Bool,
     epWeight :: Int,
-    epMultiplier :: StatMultiplier
+    epRisen :: Bool,
+    epMultiplier :: Multipliers,
+    epHPPercentage :: Int
   }
   deriving (Show, Eq)
 
@@ -83,16 +99,22 @@ data Environment = Env
   { activeTerrain :: Maybe Terrain,
     activeWeather :: Maybe Weather,
     screens :: [Screen],
+    crit :: Bool,
     gravity :: Bool,
     magicRoom :: Bool,
     wonderRoom :: Bool,
+    trickRoom :: Bool,
     powerspot :: Bool,
     battery :: Bool,
+    electrified :: Bool,
     tailWind :: Bool,
-    isDiving :: Bool,
     isMinimized :: Bool,
-    isDigging :: Bool,
+    isInvulnerable :: Bool,
+    luckyChant :: Bool,
     protecting :: Bool,
-    maxProtecting :: Bool
+    maxProtecting :: Bool,
+    isDoubleBattle :: Bool
   }
   deriving (Show, Eq)
+
+data MoveOrder = FIRST | LAST deriving (Show, Eq, Ord)

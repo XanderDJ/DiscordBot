@@ -60,6 +60,7 @@ data MoveT b n t mn mt = MoveT {
   moveVolatileStatus :: mt, 
   moveStatus :: mt,
   moveBullet :: b,
+  movePulse :: b,
   movePunch :: b,
   moveBite :: b,
   movePowder :: b,

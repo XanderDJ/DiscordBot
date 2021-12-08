@@ -35,7 +35,7 @@ pingUserText :: Message -> T.Text
 pingUserText m = T.pack $ "<@" ++ show (userId . messageAuthor $ m) ++ ">"
 
 reportError ::  T.Text -> Message -> DiscordHandler ()
-reportError t m = sendMessage $ R.CreateMessage (messageChannel m) (T.append (pingUserText m) t) 
+reportError t m = sendMessage $ R.CreateMessage (messageChannel m) (T.append (pingUserText m) t)
 
 invalidMons :: Message -> [T.Text] -> DiscordHandler ()
 invalidMons m lfts = sendMessage $ R.CreateMessage (messageChannel m) (T.append (pingUserText m) (T.append ", couldn't the following mons: " (T.intercalate "," lfts)))
@@ -55,6 +55,10 @@ getOption :: Ord k => [k] -> M.Map k a -> Maybe a
 getOption [] m = Nothing
 getOption (k:ks) m = if k `M.member` m then Just (m M.! k) else getOption ks m
 
+hasOption :: Ord k => [k] -> M.Map k a -> Bool
+hasOption ks m = any (`elem` ks) (M.keys m)
+
+
 toId :: T.Text -> T.Text
 toId = T.replace " " "" . T.replace "-" "" . T.toLower
 
@@ -72,7 +76,7 @@ checkAllowed m = do
         else do
             let gId = fromJust mgId
             allRoles <- restCall $ R.GetGuildRoles gId
-            if isLeft allRoles 
+            if isLeft allRoles
                 then return False
                 else do
                     let allRoles' = extractRight allRoles

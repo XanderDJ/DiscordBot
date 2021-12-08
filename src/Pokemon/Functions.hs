@@ -669,3 +669,93 @@ notGen8 =
     775,
     779
   ]
+
+multiTargetMoves :: [T.Text]
+multiTargetMoves =
+  [ "boomburst",
+    "brutalswing",
+    "bulldoze",
+    "discharge",
+    "earthquake",
+    "explosion",
+    "lavaplume",
+    "magnitude",
+    "mindblown",
+    "parabolicharge",
+    "petalblizzard",
+    "searingshot",
+    "selfdestruct",
+    "sludgewave",
+    "sparklingaria",
+    "surf",
+    "synchronoise",
+    "acid",
+    "aircutter",
+    "astralbarrage",
+    "blizzard",
+    "breakingswipe",
+    "bubble",
+    "burningjealousy",
+    "clangingscales",
+    "clangoroussoulblaze",
+    "coreenforcer",
+    "dazzlinggleam",
+    "diamondstorm",
+    "disarmingvoice",
+    "dragonenergy",
+    "electroweb",
+    "eruption",
+    "expandingforce",
+    "fierywrath",
+    "glaciallance",
+    "glaciate",
+    "heatwave",
+    "hypervoice",
+    "icywind",
+    "incinerate",
+    "landswrath",
+    "muddywater",
+    "originpulse",
+    "overdrive",
+    "poisongas",
+    "powdersnow",
+    "precipiceblades",
+    "razorleaf",
+    "razorwind",
+    "relicsong",
+    "rockslide",
+    "shelltrap",
+    "snarl",
+    "splishysplash",
+    "strugglebug",
+    "swift",
+    "thousandarrows",
+    "thousandwaves",
+    "twister",
+    "venomdrench",
+    "waterspout"
+  ]
+
+movesThatIgnoreAbilities :: [T.Text]
+movesThatIgnoreAbilities =
+  [
+    "gmaxdrumsolo",
+    "gmaxfireball",
+    "gmaxhydrosnipe",
+    "lightthatburnsthesky",
+    "menacingmoonrazemaelstrom",
+    "moongeistbeam",
+    "photongeyser",
+    "searingsunrazesmash",
+    "sunsteelstrike"
+  ]
+
+abilityIgnoringAbilities :: [T.Text]
+abilityIgnoringAbilities = ["moldbreaker", "teravolt", "turboblaze"]
+
+toId :: T.Text -> T.Text
+toId = T.replace " " "" . T.replace "-" "" . T.toLower
+
+
+allTypes :: [Type]
+allTypes = [NORMAL, DRAGON, DARK, FAIRY, BUG, PSYCHIC, GHOST, POISON, WATER, GRASS, FIRE, ELECTRIC, FLYING, FIGHTING, ICE, ROCK, STEEL, GROUND]
