@@ -8,6 +8,7 @@ import qualified PokemonDB.Queries as Q
 import PokemonDB.Types
 import Pokemon.DamageCalc.Types
 import Data.Maybe
+import Pokemon.Functions ( toId )
 
 toPokemon :: DBCompletePokemon -> Pokemon
 toPokemon (dbPoke, types, abilities, moves) =
@@ -28,9 +29,9 @@ getBaseStats (PokemonT _ _ _ hpS atkS defS spaS spdS speS _ _ _) =
   [ BaseStat HP hpS,
     BaseStat ATK atkS,
     BaseStat DEF defS,
-    BaseStat SPATK spaS,
-    BaseStat SPDEF spdS,
-    BaseStat SPEED speS
+    BaseStat SPA spaS,
+    BaseStat SPD spdS,
+    BaseStat SPE speS
   ]
 
 toMove :: DBMove -> Move
@@ -41,6 +42,7 @@ toMove dbMove =
       mDClass = (toDamageClass . moveCategory) dbMove,
       mBp = (toMbp . moveBp) dbMove,
       mAccuracy = moveAccuracy dbMove,
+      mPrio = movePriority dbMove,
       mDescription = Just $ moveDesc dbMove,
       mFlags = getFlags dbMove
     }
@@ -95,8 +97,9 @@ toDTType (DTM move) = DtMove (toMove move)
 toDTType (DTP pokemon) = DtPokemon (toPokemon pokemon)
 
 toEffectiveMove :: DBMove -> EffectiveMove
-toEffectiveMove MoveT {..} = EM moveName moveBp movePriority(toDamageClass moveCategory) ((read . T.unpack . T.toLower)  moveType) moveDrain moveDrainPercentage moveRecoil moveRecoilPercentage moveContact (isJust moveSecondaryChance) moveUTO moveUDAO moveINO moveIPD moveIO moveID moveII moveIsMax moveBullet movePulse movePunch moveBite movePowder moveSound moveDance moveWillCrit 0 1
+toEffectiveMove MoveT {..} = EM (toId moveName) moveBp movePriority(toDamageClass moveCategory) ((read . T.unpack . T.toLower)  moveType) hasSecondary moveDrain moveDrainPercentage moveRecoil moveRecoilPercentage moveContact (isJust moveSecondaryChance) moveUTO moveUDAO moveINO moveIPD moveIO moveID moveII moveIsMax moveBullet movePulse movePunch moveBite movePowder moveSound moveDance moveWillCrit 0 1 Nothing
  where
+   hasSecondary = isJust moveSecondaryChance
    toDamageClass "Status" = OTHER
    toDamageClass "Physical" = PHYSICAL
    toDamageClass "Special" = SPECIAL

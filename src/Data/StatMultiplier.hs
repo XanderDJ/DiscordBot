@@ -1,4 +1,4 @@
-module Data.StatMultiplier (StatMultiplier, (%%), raise, raiseSharply, raiseDrastically, lower, lowerSharply, lowerDrastically, getMultiplier) where
+module Data.StatMultiplier (StatMultiplier, (%%), raise, raiseSharply, raiseDrastically, lower, lowerSharply, lowerDrastically, getMultiplier, getPositiveBoosts, getNegativeBoosts) where
 
 type PositiveBoosts = Int
 
@@ -42,3 +42,9 @@ lowerDrastically = lower . lower . lower
 
 getMultiplier :: StatMultiplier -> Double
 getMultiplier (SM pb nb) = (fromIntegral pb + 2) / (fromIntegral nb + 2)
+
+getPositiveBoosts :: StatMultiplier -> Int
+getPositiveBoosts (SM pb nb) = pb
+
+getNegativeBoosts :: StatMultiplier -> Int
+getNegativeBoosts (SM pb nb) = nb

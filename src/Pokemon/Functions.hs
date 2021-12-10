@@ -29,12 +29,12 @@ getStat "attack" = ATK
 getStat "atk" = ATK
 getStat "defense" = DEF
 getStat "def" = DEF
-getStat "special-attack" = SPATK
-getStat "spa" = SPATK
-getStat "special-defense" = SPDEF
-getStat "spd" = SPDEF
-getStat "speed" = SPEED
-getStat "spe" = SPEED
+getStat "special-attack" = SPA
+getStat "spa" = SPA
+getStat "special-defense" = SPD
+getStat "spd" = SPD
+getStat "speed" = SPE
+getStat "spe" = SPE
 getStat s = error $ s ++ " is not a stat."
 
 parseNatureEffect :: String -> NatureEffect
@@ -112,7 +112,7 @@ maxSpeedWithScarf :: Pokemon -> Int
 maxSpeedWithScarf = (*// 1.5) . fromIntegral . maxSpeed
 
 getMoveCategory :: Move -> MoveCategory
-getMoveCategory (Move name tipe dClass bp' accuracy _ _)
+getMoveCategory (Move name tipe dClass bp' _ accuracy _ _)
   | toName name `elem` hazards = HAZARD
   | toName name `elem` utility = UTILITY
   | toName name `elem` recovery = RECOVERY

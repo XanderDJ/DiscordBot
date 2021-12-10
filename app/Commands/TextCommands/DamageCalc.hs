@@ -96,7 +96,9 @@ parseMon Pokemon {..} i opts EM {..} =
       epWeight = pWeight,
       epRisen = risen,
       epMultiplier = Multipliers atkMult defMult spaMult spdMult speMult,
-      epHPPercentage = hpPercentage
+      epHPPercentage = hpPercentage,
+      epStatsLowered = hasOption ["statslowered", "sl", "lashout", "lash"] opts,
+      epFlashFire = hasOption ["flashfire", "flash", "ff"] opts
     }
   where
     hpPercentage = fromMaybe 100 (getOption ["percentage", "hp", "hp%"] opts >>= readMaybe . T.unpack >>= toPercentage)
@@ -190,7 +192,7 @@ trickroomSIvs :: IVs
 trickroomSIvs = IVS 31 0 31 31 31 0
 
 parseEnv :: M.Map T.Text T.Text -> Environment
-parseEnv m = Env terrain weather s c g mr wr tr ps b electrified tw minimized invulnerable lc pr mpr double
+parseEnv m = Env terrain weather s c g mr wr tr ps b electrified tw minimized invulnerable lc hb so pr mpr double
   where
     terrain = M.lookup "terrain" m >>= \t -> parseTerrain (toId t)
     weather = M.lookup "weather" m >>= \w -> parseWeather (toId w)
@@ -209,6 +211,8 @@ parseEnv m = Env terrain weather s c g mr wr tr ps b electrified tw minimized in
     electrified = hasOption ["electrify", "electrified", "iondeluge", "ion", "ion-deluge"] m
     pr = hasOption ["protect", "prot"] m
     lc = hasOption ["luckychant", "lucky-chant", "lc"] m
+    hb = hasOption ["hit", "hitbefore"] m
+    so = hasOption ["switchingout", "switching", "switch"] m
     mpr = hasOption ["maxguard", "maxg", "maxprot", "maxprotect"] m
     double = hasOption ["double", "doublebattle"] m
 
@@ -218,7 +222,8 @@ parseMove move@MoveT {moveBp = bp, moveType = tipe} opts =
     { emBp = fromMaybe bp ((opts M.!? "bp") >>= readMaybe . T.unpack),
       emType = fromMaybe ((read . T.unpack) tipe) (getOption ["type", "t"] opts >>= (readMaybe . T.unpack . toId . T.strip)),
       emTimesUsed = timesUsed,
-      emHits = hits
+      emHits = hits,
+      emStockPile = getOption ["stockpile", "stock", "sp"] opts >>= readMaybe . T.unpack
     }
   where
     em = toEffectiveMove move

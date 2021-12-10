@@ -241,7 +241,7 @@ instance FromJSON Move where
         effect' = if (not . null) effects then (Just . eDescription . head) effects' else Nothing
         mType = read tipe
         effect'' = Effect chance effect'
-    return $ Move name mType (toDClass dClass) power acc (getCompleteDescription effect'') []
+    return $ Move name mType (toDClass dClass) power 0 acc (getCompleteDescription effect'') []
     where
       toDClass :: String -> AttackType
       toDClass "special" = SPECIAL

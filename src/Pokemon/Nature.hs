@@ -1,83 +1,83 @@
 module Pokemon.Nature where
 
 import Pokemon.Types
-    ( Stat(SPATK, NEUTRAL, ATK, DEF, SPEED, SPDEF), Nature(..) )
+    ( Stat(SPA, NEU, ATK, DEF, SPE, SPD), Nature(..) )
 import Data.Text
 
 hardy :: Nature
-hardy = Nature "Hardy" NEUTRAL NEUTRAL
+hardy = Nature "Hardy" NEU NEU
 
 docile :: Nature
-docile = Nature "Docile" NEUTRAL NEUTRAL
+docile = Nature "Docile" NEU NEU
 
 serious :: Nature
-serious = Nature "Serious" NEUTRAL NEUTRAL
+serious = Nature "Serious" NEU NEU
 
 bashful :: Nature
-bashful = Nature "Bashful" NEUTRAL NEUTRAL
+bashful = Nature "Bashful" NEU NEU
 
 quirky :: Nature
-quirky = Nature "Quirky" NEUTRAL NEUTRAL
+quirky = Nature "Quirky" NEU NEU
 
 lonely :: Nature
 lonely = Nature "Lonely" ATK DEF
 
 brave :: Nature
-brave = Nature "Brave" ATK SPEED
+brave = Nature "Brave" ATK SPE
 
 adamant :: Nature
-adamant = Nature "Adamant" ATK SPATK
+adamant = Nature "Adamant" ATK SPA
 
 naughty :: Nature
-naughty = Nature "Naughty" ATK SPDEF
+naughty = Nature "Naughty" ATK SPD
 
 bold :: Nature
 bold = Nature "Bold" DEF ATK
 
 relaxed :: Nature
-relaxed = Nature "Relaxed" DEF SPEED
+relaxed = Nature "Relaxed" DEF SPE
 
 impish :: Nature
-impish = Nature "Impish" DEF SPATK
+impish = Nature "Impish" DEF SPA
 
 lax :: Nature
-lax = Nature "Lax" DEF SPDEF
+lax = Nature "Lax" DEF SPD
 
 timid :: Nature
-timid = Nature "Timid" SPEED ATK
+timid = Nature "Timid" SPE ATK
 
 hasty :: Nature
-hasty = Nature "Hasty" SPEED DEF
+hasty = Nature "Hasty" SPE DEF
 
 jolly :: Nature
-jolly = Nature "Jolly" SPEED SPATK
+jolly = Nature "Jolly" SPE SPA
 
 naïve :: Nature
-naïve = Nature "Naïve" SPEED SPDEF
+naïve = Nature "Naïve" SPE SPD
 
 modest :: Nature
-modest = Nature "Modest" SPATK ATK
+modest = Nature "Modest" SPA ATK
 
 mild :: Nature
-mild = Nature "Mild" SPATK DEF
+mild = Nature "Mild" SPA DEF
 
 quiet :: Nature
-quiet = Nature "Quiet" SPATK SPEED
+quiet = Nature "Quiet" SPA SPE
 
 rash :: Nature
-rash = Nature "Rash" SPATK SPDEF
+rash = Nature "Rash" SPA SPD
 
 calm :: Nature
-calm = Nature "Calm" SPDEF ATK
+calm = Nature "Calm" SPD ATK
 
 gentle :: Nature
-gentle = Nature "Gentle" SPDEF DEF
+gentle = Nature "Gentle" SPD DEF
 
 sassy :: Nature
-sassy = Nature "Sassy" SPDEF SPEED
+sassy = Nature "Sassy" SPD SPE
 
 careful :: Nature
-careful = Nature "Careful" SPDEF SPATK
+careful = Nature "Careful" SPD SPA
 
 getNature :: Text -> Maybe Nature
 getNature "hardy" = Just hardy

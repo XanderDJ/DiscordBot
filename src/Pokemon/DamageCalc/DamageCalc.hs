@@ -12,7 +12,7 @@ import Pokemon.DamageCalc.Functions
 import Pokemon.DamageCalc.Types
 import Pokemon.Functions
 import Pokemon.TypeMatchups
-import Pokemon.Types
+import Pokemon.Types 
 
 runCalc :: DCS -> (Int, Int)
 runCalc = runReader calcDamage
@@ -38,18 +38,22 @@ baseDamage = do
   attacker <- getAttackingPokemon
   defender <- getDefendingPokemon
   move <- getMove
-  let bp = getBp move attacker defender
-      moveCategory = emCategory move
-      atk = fromIntegral (getAttackStat (epItem attacker) moveCategory attacker) *// (getMultiplier . getAttackMultiplier moveCategory . epMultiplier) attacker
-      def = fromIntegral (getDefenseStat (epItem defender) moveCategory defender) *// (getMultiplier . getDefenseMultiplier moveCategory . epMultiplier) defender
+  env <- getEnvironment
+  let 
       lvl = epLevel attacker
-      getAttackMultiplier PHYSICAL = atkM
-      getAttackMultiplier SPECIAL = spaM
-      getAttackMultiplier OTHER = atkM
-      getDefenseMultiplier PHYSICAL = defM
-      getDefenseMultiplier SPECIAL = spdM
-      getDefenseMultiplier OTHER = spdM
-  return $ div ((div (2 * lvl) 5 + 2) * bp * div atk def) 50 + 2
+      baseBp = getBp move attacker defender env
+      bpMultiplier = getMoveMultiplier attacker defender move env  * getAbilityMultiplier (emName move) move attacker defender env * getTerrainMultiplier env move
+      moveCategory = getEMCategory attacker move attackerStats (epMultiplier attacker) defenderStats (epMultiplier defender)
+      attackerStats = getEffectiveStats attacker
+      defenderStats = getEffectiveStats defender
+      attackMultipliers = getMultipliers defender (epMultiplier attacker)
+      defenseMultipliers = getMultipliers attacker (epMultiplier defender)
+      atkMult = (getMultiplier . atkM) attackMultipliers * getAttackStatMultiplier (epAbility attacker) move attacker defender env * if powerspot env then 1.3 else 1 * if isBurned attacker && epAbility attacker /= "guts" && emName move /= "facade" then 0.5 else 1 * facadeMultiplier move attacker
+      spaMult = (getMultiplier . spaM) attackMultipliers * getSpecialStatMultiplier (epAbility attacker) move attacker defender env * if battery env then 1.3 else 1
+      defMult = (getMultiplier . defM) defenseMultipliers * getDefenseStatMultiplier (epAbility defender) move attacker defender env * if canUseItem defender env && hasItem "eviolite" defender && epNfe defender then 1.5 else 1
+      spdMult = (getMultiplier . spdM) defenseMultipliers * getSpecialDefenseStatMultiplier (epAbility defender) move attacker defender env * if canUseItem defender env && hasItem "assaultvest" defender then 1.5 else 1 * if canUseItem defender env && hasItem "eviolite" defender && epNfe defender then 1.5 else 1
+  undefined
+  -- return $ div ((div (2 * lvl) 5 + 2) * bp * div atk def) 50 + 2
 
 targetsMultiplier :: Int -> Reader DCS Int
 targetsMultiplier dmg = do
@@ -80,7 +84,7 @@ criticalHitMultiplier dmg = do
   move <- getMove
   let 
       defAbility = toId . epAbility $ defender
-      isCrit = defAbility /= "battlearmor" && defAbility /= "shellarmor" && (crit env || emWillCrit move)
+      isCrit = defAbility /= "battlearmor" && defAbility /= "shellarmor" && (crit env || emWillCrit move || willCrit attacker defender)
       mult = if isCrit then 1.5 else 1
   multiply dmg mult
 
@@ -95,6 +99,8 @@ stabMultiplier dmg = do
       attackerType = epTyping attacker
       mult
         | atkAbility == "adaptability" && hasAny mType attackerType = 2
+        | atkAbility == "protean" = 1.5
+        | atkAbility == "libero" = 1.5
         | hasAny mType attackerType = 1.5
         | otherwise = 1
   multiply dmg mult
@@ -117,16 +123,19 @@ typeEffectivenessMultiplier dmg = do
         ( enrichTmWithAbility (toId . epAbility $ attacker) (toId . epAbility $ defender) (toId . emName $ move)
             >>> updateTmWithItem defenderItem (magicRoom env)
             >>> enrichTmWithWeather (activeWeather env)  weatherBool moveType
+            >>> enrichTmWithEnv env
             >>> thousandArrows moveName defenderType (emTimesUsed move)
         )
           tm'
       ars = map (getDefenseRelation (defenseM tm)) moveType
+      tintedLensMult = if mult < 1 then 2 else 1
       mult = toMultiplier $ foldl (<>) Neutral ars
-  multiply dmg mult
+  multiply dmg (mult * tintedLensMult)
 
 screensMultiplier :: Int -> Reader DCS Int
 screensMultiplier dmg = do
   attacker <- getAttackingPokemon
+  defender <- getDefendingPokemon
   move <- getMove
   env <- getEnvironment
   let screen = screens env
@@ -134,7 +143,7 @@ screensMultiplier dmg = do
       moveName = emName move
       mult =
         if toId moveName `notElem` ["psychicfangs", "brickbreak", "gmaxwindrage"]
-          then getScreenMultiplier screen (toId . epAbility $ attacker) (emWillCrit move || crit env) categoryMove
+          then getScreenMultiplier screen (toId . epAbility $ attacker) (emWillCrit move || crit env || willCrit attacker defender) categoryMove
           else 1
   multiply dmg mult
 

@@ -49,6 +49,7 @@ data Move = Move
     mTipe :: Type,
     mDClass :: AttackType,
     mBp :: Maybe Int,
+    mPrio :: Int,
     mAccuracy :: Maybe Int,
     mDescription :: Maybe Description,
     mFlags :: [Text]
@@ -56,10 +57,10 @@ data Move = Move
   deriving (Show, Eq)
 
 instance Ord Move where
-  (Move _ _ _ (Just b) _ _ _) <= (Move _ _ _ (Just b') _ _ _) = b <= b'
-  (Move _ _ _ (Just b) _ _ _) <= (Move _ _ _ Nothing _ _ _) = False
-  (Move _ _ _ Nothing _ _ _) <= (Move _ _ _ (Just b') _ _ _) = True
-  (Move _ _ _ Nothing _ _ _) <= (Move _ _ _ Nothing _ _ _) = True
+  (Move _ _ _ (Just b) _ _ _ _) <= (Move _ _ _ (Just b') _ _ _ _) = b <= b'
+  (Move _ _ _ (Just b) _ _ _ _) <= (Move _ _ _ Nothing _ _ _ _) = False
+  (Move _ _ _ Nothing _ _ _ _) <= (Move _ _ _ (Just b') _ _ _ _) = True
+  (Move _ _ _ Nothing _ _ _ _) <= (Move _ _ _ Nothing _ _ _ _) = True
 
 -- | Attack type
 data AttackType = PHYSICAL | SPECIAL | OTHER deriving (Eq, Ord, Show)
@@ -71,20 +72,20 @@ data Nature = Nature String Stat Stat deriving (Eq)
 data NatureEffect = NNegative | NNeutral | NPositive deriving (Show, Eq)
 
 instance Show Nature where
-  show (Nature name NEUTRAL NEUTRAL) = name ++ ": No effects on stats"
+  show (Nature name NEU NEU) = name ++ ": No effects on stats"
   show (Nature name positive negative) = name ++ ": 10% increase for " ++ show positive ++ " and 10% decrease for " ++ show negative
 
 -- | All different stats for a pokemon
-data Stat = HP | ATK | DEF | SPATK | SPDEF | SPEED | NEUTRAL deriving (Eq)
+data Stat = HP | ATK | DEF | SPA | SPD | SPE | NEU deriving (Eq)
 
 instance Show Stat where
   show HP = "Hp"
   show ATK = "Attack"
   show DEF = "Defense"
-  show SPATK = "Special attack"
-  show SPDEF = "Special defense"
-  show SPEED = "Speed"
-  show NEUTRAL = "neutral"
+  show SPA = "Special attack"
+  show SPD = "Special defense"
+  show SPE = "Speed"
+  show NEU = "neutral"
 
 -- | Data type for a pokemon stat, the stat it represents and the value of that stat
 data BaseStat = BaseStat Stat Int deriving (Eq)

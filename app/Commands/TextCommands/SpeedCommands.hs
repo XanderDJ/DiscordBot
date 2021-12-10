@@ -10,7 +10,7 @@ import qualified Discord.Requests as R
 import Discord.Types (Message (messageChannel, messageText))
 import Commands.Parsers (parseOutspeedLevel)
 import Pokemon.Functions (maxStatAt, neutralMaxStatAt, (*//))
-import Pokemon.Types (BaseStat (BaseStat), Level, Stat (SPEED))
+import Pokemon.Types 
 import Text.Parsec (parse)
 
 -- OUTSPEED COMMAND
@@ -44,10 +44,10 @@ outspeed :: Int -> Level -> (Int, Int, Int, Int)
 outspeed i lvl = go i 1 lvl Nothing Nothing Nothing Nothing
   where
     go :: Int -> Int -> Level -> Maybe Int -> Maybe Int -> Maybe Int -> Maybe Int -> (Int, Int, Int, Int)
-    go i bs lvl Nothing Nothing Nothing Nothing = if fromIntegral (maxStatAt lvl (BaseStat SPEED bs)) *// 1.5 > i then go i bs lvl Nothing Nothing Nothing (Just bs) else go i (bs + 1) lvl Nothing Nothing Nothing Nothing
-    go i bs lvl Nothing Nothing Nothing (Just ms) = if fromIntegral (neutralMaxStatAt lvl (BaseStat SPEED bs)) *// 1.5 > i then go i bs lvl Nothing (Just bs) Nothing (Just ms) else go i (bs + 1) lvl Nothing Nothing Nothing (Just ms)
-    go i bs lvl Nothing (Just ns) Nothing ms = if maxStatAt lvl (BaseStat SPEED bs) > i then go i bs lvl Nothing (Just ns) (Just bs) ms else go i (bs + 1) lvl Nothing (Just ns) Nothing ms
-    go i bs lvl Nothing ns (Just m) ms = if neutralMaxStatAt lvl (BaseStat SPEED bs) > i then go i bs lvl (Just bs) ns (Just m) ms else go i (bs + 1) lvl Nothing ns (Just m) ms
+    go i bs lvl Nothing Nothing Nothing Nothing = if fromIntegral (maxStatAt lvl (BaseStat SPE bs)) *// 1.5 > i then go i bs lvl Nothing Nothing Nothing (Just bs) else go i (bs + 1) lvl Nothing Nothing Nothing Nothing
+    go i bs lvl Nothing Nothing Nothing (Just ms) = if fromIntegral (neutralMaxStatAt lvl (BaseStat SPE bs)) *// 1.5 > i then go i bs lvl Nothing (Just bs) Nothing (Just ms) else go i (bs + 1) lvl Nothing Nothing Nothing (Just ms)
+    go i bs lvl Nothing (Just ns) Nothing ms = if maxStatAt lvl (BaseStat SPE bs) > i then go i bs lvl Nothing (Just ns) (Just bs) ms else go i (bs + 1) lvl Nothing (Just ns) Nothing ms
+    go i bs lvl Nothing ns (Just m) ms = if neutralMaxStatAt lvl (BaseStat SPE bs) > i then go i bs lvl (Just bs) ns (Just m) ms else go i (bs + 1) lvl Nothing ns (Just m) ms
     go i bs lvl (Just n) (Just ns) (Just m) (Just ms) = (n, ns, m, ms)
     go i bs lvl _ _ _ _ = error "Unachievable situation reached while calculating minimum basespeeds to outspeed a certain speed stat"
 

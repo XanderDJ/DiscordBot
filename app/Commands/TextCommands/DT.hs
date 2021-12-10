@@ -77,7 +77,7 @@ createPokemonEmbed mon opts =
     gif = "gif" `M.member` opts
 
 createNatureEmbed :: Nature -> CreateEmbed
-createNatureEmbed (Nature name NEUTRAL NEUTRAL) =
+createNatureEmbed (Nature name NEU NEU) =
   def
     { createEmbedTitle = pack name,
       createEmbedColor = sideColor,
@@ -115,11 +115,15 @@ getItemUrl name = L.foldl append "https://www.serebii.net/itemdex/sprites/pgl/" 
 createMoveEmbed :: Move -> CreateEmbed
 createMoveEmbed move =
   def
-    { createEmbedTitle = mName move,
+    { createEmbedTitle = moveTitle move,
       createEmbedColor = sideColor,
       createEmbedDescription = if isNothing (mDescription move) then "" else fromJust . mDescription $ move,
       createEmbedFields = [EmbedField "Stats" (getStatsText move) (Just True), EmbedField "Flags" (if null (mFlags move) then "No flags" else intercalate "\n" (mFlags move)) (Just True)]
     }
+
+
+moveTitle :: Move -> Text
+moveTitle Move {..} = pack (unpack mName ++ " (Prio=" ++ show mPrio ++ ")")
 
 getStatsText :: Move -> Text
 getStatsText move = intercalate "\n" [typeText, dmgClassText, bpText, accuracyText]

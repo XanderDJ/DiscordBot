@@ -33,6 +33,7 @@ data EffectiveMove = EM
     emPriority :: Int,
     emCategory :: AttackType,
     emType :: Type,
+    emHasSecondary :: Bool,
     emDrain :: Bool,
     emDrainPercentage :: Maybe Double,
     emRecoil :: Bool,
@@ -56,7 +57,8 @@ data EffectiveMove = EM
     emDance :: Bool,
     emWillCrit :: Bool,
     emTimesUsed :: Int,
-    emHits :: Int
+    emHits ::  Int,
+    emStockPile :: Maybe Int
   }
   deriving (Eq, Show)
 
@@ -75,7 +77,9 @@ data EffectivePokemon = EP
     epWeight :: Int,
     epRisen :: Bool,
     epMultiplier :: Multipliers,
-    epHPPercentage :: Int
+    epHPPercentage :: Double,
+    epStatsLowered :: Bool,
+    epFlashFire :: Bool
   }
   deriving (Show, Eq)
 
@@ -83,9 +87,9 @@ data EVs = EVS
   { hpEv :: Int,
     atkEv :: Int,
     defEv :: Int,
-    spatkEv :: Int,
-    spdefEv :: Int,
-    spdEv :: Int
+    spaEv :: Int,
+    spdEv :: Int,
+    speEv :: Int
   }
   deriving (Show, Eq)
 
@@ -93,11 +97,20 @@ data IVs = IVS
   { hpIv :: Int,
     atkIv :: Int,
     defIv :: Int,
-    spatkIv :: Int,
-    spdefIv :: Int,
-    spdIv :: Int
+    spaIv :: Int,
+    spdIv :: Int,
+    speIv :: Int
   }
   deriving (Show, Eq)
+
+data EffectiveStats = ES {
+  hpStat :: Int,
+  atkStat :: Int,
+  defStat :: Int,
+  spaStat :: Int,
+  spdStat :: Int,
+  speStat :: Int
+}
 
 data Environment = Env
   { activeTerrain :: Maybe Terrain,
@@ -115,6 +128,8 @@ data Environment = Env
     isMinimized :: Bool,
     isInvulnerable :: Bool,
     luckyChant :: Bool,
+    hitBefore :: Bool,
+    switchingOut :: Bool,
     protecting :: Bool,
     maxProtecting :: Bool,
     isDoubleBattle :: Bool

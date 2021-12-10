@@ -5,12 +5,14 @@ module Pokemon.DamageCalc.Functions where
 
 import qualified Codec.Xlsx.Types.DataValidation as L
 import Control.Arrow ((>>>))
+import Data.Function (on)
 import Data.Functor ((<&>))
 import qualified Data.List as L
 import Data.List.Utility (hasAny)
 import qualified Data.Map as M
 import Data.Maybe (fromMaybe, isJust)
-import Data.StatMultiplier (getMultiplier)
+import Data.Monoid (Sum (Sum, getSum))
+import Data.StatMultiplier (StatMultiplier, getMultiplier, getPositiveBoosts)
 import qualified Data.Text as T
 import Pokemon.DamageCalc.Types
 import Pokemon.Functions
@@ -18,6 +20,96 @@ import Pokemon.TypeMatchups
 import Pokemon.Types
 import PokemonDB.Types (ItemT (isBerry), MoveT (moveType))
 import Text.Read (readMaybe)
+
+getMultipliers :: EffectivePokemon -> Multipliers -> Multipliers
+getMultipliers EP {epAbility = "unaware"} sm = Multipliers 0 0 0 0 0
+getMultipliers _ sm = sm
+
+facadeMultiplier :: EffectiveMove -> EffectivePokemon -> Double
+facadeMultiplier EM {emName = "facade"} EP {epStatus = Just x} = 2
+facadeMultiplier _ _ = 1
+
+getMoveMultiplier :: EffectivePokemon -> EffectivePokemon -> EffectiveMove -> Environment -> Double
+getMoveMultiplier attacker defender em@EM {emName = "fishiousrend"} env = let moveOrder = getMoveOrder attacker defender em env in if moveOrder == FIRST then 2 else 1
+getMoveMultiplier attacker defender em@EM {emName = "boltbeak"} env = let moveOrder = getMoveOrder attacker defender em env in if moveOrder == FIRST then 2 else 1
+getMoveMultiplier _ _ em@EM {emName = "avalanche"} env = if hitBefore env then 2 else 1
+getMoveMultiplier _ _ em@EM {emName = "assurance"} env = if hitBefore env then 2 else 1
+getMoveMultiplier _ EP {epHPPercentage = rem} EM {emName = "brine"} env = if rem < 50 then 2 else 1
+getMoveMultiplier _ _ EM {emName = "pursuit"} Env {switchingOut = switchingOut} = if switchingOut then 2 else 1
+getMoveMultiplier EP {epItem = Nothing} _ EM {emName = "acrobatics"} _ = 2
+getMoveMultiplier EP {epStatsLowered = True} _ EM {emName = "lashout"} _ = 2
+getMoveMultiplier _ _ EM {emName = "mistyexplosion"} Env {activeTerrain = Just MISTY} = 1.5
+getMoveMultiplier _ _ EM {emName = "risingvoltage"} Env {activeTerrain = Just ELECTRIC_T} = 2
+getMoveMultiplier _ _ EM {emName = "expandingforce"} Env {activeTerrain = Just PSYCHIC_T} = 2
+getMoveMultiplier _ EP {epStatus = Just PARALYZED} EM {emName = "smellingsalts"} _ = 2
+getMoveMultiplier _ EP {epStatus = Just x} EM {emName = "hex"} _ = 2
+getMoveMultiplier _ EP {epStatus = Just POISONED} EM {emName = "venoshock"} _ = 2
+getMoveMultiplier _ EP {epStatus = Just SLEEP} EM {emName = "wakeupslap"} _ = 2
+getMoveMultiplier attacker defender move env = 1
+
+getTerrainMultiplier :: Environment -> EffectiveMove -> Double
+getTerrainMultiplier Env {activeTerrain = Just GRASSY} EM {emType = tipe} = if tipe == GRASS then 1.3 else 1
+getTerrainMultiplier Env {activeTerrain = Just ELECTRIC_T} EM {emType = tipe} = if tipe == ELECTRIC then 1.3 else 1
+getTerrainMultiplier Env {activeTerrain = Just PSYCHIC_T} EM {emType = tipe} = if tipe == PSYCHIC then 1.3 else 1
+getTerrainMultiplier _ _ = 1
+
+-- | AAMM == AttackAbilityMove
+getAbilityMultiplier :: T.Text -> EffectiveMove -> EffectivePokemon -> EffectivePokemon -> Environment -> Double
+getAbilityMultiplier _ _ _ EP {epAbility = "neutralizinggas"} _ = 1
+getAbilityMultiplier "aerilate" EM {emName = moveName, emType = mType} _ _ _ = if moveName `notElem` ["naturalgift", "naturepower"] && NORMAL == mType then 1.2 else 1
+getAbilityMultiplier "galvanize" EM {emName = moveName, emType = mType} _ _ _ = if moveName `notElem` ["naturalgift", "naturepower"] && NORMAL == mType then 1.2 else 1
+getAbilityMultiplier "pixilate" EM {emName = moveName, emType = mType} _ _ _ = if moveName `notElem` ["naturalgift", "naturepower"] && NORMAL == mType then 1.2 else 1
+getAbilityMultiplier "refrigerate" EM {emName = moveName, emType = mType} _ _ _ = if moveName `notElem` ["naturalgift", "naturepower"] && NORMAL == mType then 1.2 else 1
+getAbilityMultiplier "sheerforce" EM {emHasSecondary = True} _ _ _ = 1.3
+getAbilityMultiplier "technician" EM {emBp = bp} _ _ _ = if bp <= 60 then 1.5 else 1
+getAbilityMultiplier "analytic" em attacker defender env =
+  let order = getMoveOrder attacker defender em env
+      moveName = emName em
+   in if order == LAST && moveName `notElem` ["futuresight", "doomdesire"] then 1.3 else 1
+getAbilityMultiplier "fairyaura" EM {emType = tipe} _ _ _ = if FAIRY == tipe then 1.33 else 1
+getAbilityMultiplier "darkaura" EM {emType = tipe} _ _ _ = if DARK == tipe then 1.33 else 1
+getAbilityMultiplier _ EM {emType = tipe} EP {epFlashFire = True} _ _ = if FIRE == tipe then 1.5 else 1
+getAbilityMultiplier "ironfist" EM {emPunch = True} _ _ _ = 1.2
+getAbilityMultiplier "punkrock" EM {emSound = True} _ _ _ = 1.3
+getAbilityMultiplier "reckless" EM {emRecoil = True} _ _ _ = 1.2
+getAbilityMultiplier "sandforce" EM {emType = tipe} _ _ Env {activeWeather = Just SANDSTORM} = if tipe `elem` [STEEL, GROUND, ROCK] then 1.3 else 1
+getAbilityMultiplier "steelworker" EM {emType = tipe} _ _ _ = if tipe == STEEL then 1.5 else 1
+getAbilityMultiplier "steelyspirit" EM {emType = tipe} _ _ _ = if tipe == STEEL then 1.5 else 1
+getAbilityMultiplier "defeatist" _ EP {epHPPercentage = percentage} _ _ = if percentage < 50 then 0.5 else 1
+getAbilityMultiplier "strongjaw" EM {emBite = True} _ _ _ = 1.5
+getAbilityMultiplier _ EM {emType = tipe} _ EP {epAbility = "thickfat"} _ = if tipe `elem` [ICE, FIRE] then 0.5 else 1
+getAbilityMultiplier "torrent" EM {emType = tipe} EP {epHPPercentage = percentage} _ _ = if tipe == WATER && percentage < 1 / 3 then 1.5 else 1
+getAbilityMultiplier "blaze" EM {emType = tipe} EP {epHPPercentage = percentage} _ _ = if tipe == FIRE && percentage < 1 / 3 then 1.5 else 1
+getAbilityMultiplier "overgrow" EM {emType = tipe} EP {epHPPercentage = percentage} _ _ = if tipe == GRASS && percentage < 1 / 3 then 1.5 else 1
+getAbilityMultiplier "dragonsmaw" EM {emType = tipe} _ _ _ = if tipe == DRAGON then 1.5 else 1
+getAbilityMultiplier "transistor" EM {emType = tipe} _ _ _ = if tipe == ELECTRIC then 1.5 else 1
+getAbilityMultiplier "waterbubble" EM {emType = tipe} _ _ _ = if tipe == WATER then 2 else 1
+getAbilityMultiplier "megalauncer" EM {emPulse = True} _ _ _ = 1.5
+getAbilityMultiplier "stakeout" _ _ _ Env {switchingOut = True} = 2
+getAbilityMultiplier ability move attacker defender environment = 1
+
+getAttackStatMultiplier :: T.Text -> EffectiveMove -> EffectivePokemon -> EffectivePokemon -> Environment -> Double
+getAttackStatMultiplier "hugepower" _ _ _ _ = 2
+getAttackStatMultiplier "purepower" _ _ _ _ = 2
+getAttackStatMultiplier "hustle" _ _ _ _ = 1.5
+getAttackStatMultiplier "flowergift" _ _ _ Env {activeWeather = Just x} = if x `elem` [SUN, HEAVYSUN] then 1.5 else 1
+getAttackStatMultiplier "gorillatactics" _ _ _ _ = 1.5
+getAttackStatMultiplier "guts" _ EP {epStatus = Just x} _ _ = 1.5
+getAttackStatMultiplier "toxic" _ EP {epStatus = Just POISONED} _ _ = 1.5
+getAttackStatMultiplier _ _ _ _ _ = 1
+
+getDefenseStatMultiplier :: T.Text -> EffectiveMove -> EffectivePokemon -> EffectivePokemon -> Environment -> Double
+getDefenseStatMultiplier "furcoat" _ _ _ _ = 2
+getDefenseStatMultiplier "grasspelt" _ _ _ Env {activeTerrain = Just GRASSY} = 1.5
+getDefenseStatMultiplier "marvelscale" _ _ EP {epStatus = Just x} _ = 1.5
+getDefenseStatMultiplier _ _ _ _ _ = 1
+
+getSpecialStatMultiplier :: T.Text -> EffectiveMove -> EffectivePokemon -> EffectivePokemon -> Environment -> Double
+getSpecialStatMultiplier "flareboost" _ EP {epStatus = Just BURN} _ _ = 1.5
+getSpecialStatMultiplier _ _ _ _ _ = 1
+
+getSpecialDefenseStatMultiplier :: T.Text -> EffectiveMove -> EffectivePokemon -> EffectivePokemon -> Environment -> Double
+getSpecialDefenseStatMultiplier _ _ _ _ _ = 1
 
 getMoveOrder :: EffectivePokemon -> EffectivePokemon -> EffectiveMove -> Environment -> MoveOrder
 getMoveOrder attacker defender move env
@@ -32,6 +124,28 @@ getMoveOrder attacker defender move env
     flipOrder FIRST = LAST
     flipOrder LAST = FIRST
     prio = getMovePriority attacker defender move env
+
+getEMCategory :: EffectivePokemon -> EffectiveMove -> EffectiveStats -> Multipliers -> EffectiveStats -> Multipliers -> AttackType
+getEMCategory EP {epLevel = level} EM {emName = "shellsidearm"} atkStats atkMults defStats defMults =
+  let attackStat = getTotalStat (atkStat atkStats) (atkM atkMults)
+      specialAttackStat = getTotalStat (spaStat atkStats) (spaM atkMults)
+      defenseStat = getTotalStat (defStat defStats) (defM defMults)
+      specialDefenseStat = getTotalStat (spdStat defStats) (spdM defMults)
+   in getShellSideArmCat level attackStat specialAttackStat defenseStat specialDefenseStat
+getEMCategory _ EM {emName = "photongeyser"} atkStats atkMults _ _ =
+  if getTotalStat (atkStat atkStats) (atkM atkMults) > getTotalStat (spaStat atkStats) (spaM atkMults)
+    then PHYSICAL
+    else SPECIAL
+getEMCategory _ em _ _ _ _ = emCategory em
+
+getShellSideArmCat :: Integral a => a -> a -> a -> a -> a -> AttackType
+getShellSideArmCat level atkStat spaStat defStat spdStat = if x > y then PHYSICAL else SPECIAL
+  where
+    x = div (div ((div (2 * level) 5 + 5) * 90 * atkStat) defStat) 50
+    y = div (div ((div (2 * level) 5 + 5) * 90 * spaStat) spdStat) 50
+
+getTotalStat :: (Integral b, Integral a) => a -> StatMultiplier -> b
+getTotalStat stat boost = fromIntegral stat *// getMultiplier boost
 
 getMovePriority :: EffectivePokemon -> EffectivePokemon -> EffectiveMove -> Environment -> Int
 getMovePriority attacker defender move env = prio
@@ -57,8 +171,8 @@ getSpeed ep@EP {..} env = fromIntegral speedStat *// totalMultiplier
     speedMultiplier = getSpeedMultiplier (toId epAbility) ep env
     boostMultiplier = (getMultiplier . speM) epMultiplier
     totalMultiplier = speedMultiplier * boostMultiplier
-    natureEffect = getNatureEffect SPEED epNature
-    speedStat = calcStat epLevel (spdIv epIvs) (spdEv epEvs) natureEffect (findBaseStat epStats SPEED)
+    natureEffect = getNatureEffect SPE epNature
+    speedStat = calcStat epLevel (spdIv epIvs) (spdEv epEvs) natureEffect (findBaseStat epStats SPE)
 
 getSpeedMultiplier :: T.Text -> EffectivePokemon -> Environment -> Double
 getSpeedMultiplier "quickfeet" EP {epStatus = Just x} _ = 1.5
@@ -71,24 +185,99 @@ getSpeedMultiplier "chlorophyll" _ Env {activeWeather = Just SUN} = 2
 getSpeedMultiplier "surgesurfer" _ Env {activeTerrain = Just ELECTRIC_T} = 2
 getSpeedMultiplier ability mon env = 1
 
-getBp :: EffectiveMove -> EffectivePokemon -> EffectivePokemon -> Int
-getBp m a d = undefined
+getBp :: EffectiveMove -> EffectivePokemon -> EffectivePokemon -> Environment -> Int
+getBp m = getBp' (toId . emName $ m) m
 
-getAttackStat :: Maybe Item -> AttackType -> EffectivePokemon -> Int
-getAttackStat i = getAttackStat'
+getBp' :: T.Text -> EffectiveMove -> EffectivePokemon -> EffectivePokemon -> Environment -> Int
+getBp' "heavyslam" _ atk def _ = getWeightRatioPower atk def
+getBp' "heatcrash" _ atk def _ = getWeightRatioPower atk def
+getBp' "lowkick" _ _ def _ = getWeightPower (getWeight def)
+getBp' "grassknot" _ _ def _ = getWeightPower (getWeight def)
+getBp' "skydrop" EM {emBp = bp} _ def _ = if getWeight def >= 200 then 0 else bp
+getBp' "gyroball" _ atk def env =
+  let attackerSpeed = getSpeedAttacker atk env
+      defenderSpeed = getSpeedDefender def env
+   in min 150 (floor (25 * on (/) fromIntegral attackerSpeed defenderSpeed + 1))
+getBp' "electroball" _ atk def env =
+  let attackerSpeed = getSpeedAttacker atk env
+      defenderSpeed = getSpeedDefender def env
+   in getRatioPower (floor (on (/) fromIntegral attackerSpeed defenderSpeed))
+getBp' "fling" _ atk _ _ = fromMaybe 0 (epItem atk <&> iFlingBp)
+getBp' "flail" _ atk _ _ = let ratio = floor $ (epHPPercentage atk * 48) / 100 in getHpRatioPower ratio
+getBp' "reversal" _ atk _ _ = let ratio = floor $ (epHPPercentage atk * 48) / 100 in getHpRatioPower ratio
+getBp' "waterspout" _ EP {epHPPercentage = percentage} _ _ = max 1 (div (floor (percentage * 150)) 100)
+getBp' "eruption" _ EP {epHPPercentage = percentage} _ _ = getHpPercentagePower percentage
+getBp' "dragonenergy" _ EP {epHPPercentage = percentage} _ _ = getHpPercentagePower percentage
+getBp' "powertrip" _ EP {epMultiplier = multipliers} _ _ = getMultipliersPower 20 multipliers
+getBp' "storedpower" _ EP {epMultiplier = multipliers} _ _ = getMultipliersPower 20 multipliers
+getBp' "return" _ _ _ _ = 102
+getBp' "frustration" _ _ _ _ = 102
+getBp' "punishment" _ _ EP {epMultiplier = multipliers} _ = getMultipliersPower 60 multipliers
+getBp' "spitup" EM {emStockPile = sp, emBp = bp} _ _ _ = fromMaybe bp (sp >>= getStockPilePower)
+getBp' "naturalgift" _ atk def env = fst (getNaturalGiftValues atk def env)
+getBp' "naturepower" _ _ _ env = fst (getNaturePowerValues env)
+getBp' "crushgrip" _ _ EP {epHPPercentage = percentage} _ = max 1 (div (round $ 120 * percentage) 100)
+getBp' "furycutter" EM {emTimesUsed = tu} _ _ _ = min 160 (40 * (2 ^ tu))
+getBp' "rollout" EM {emTimesUsed = tu} _ _ _ = 30 * (2 ^ min 4 tu)
+getBp' "iceball" EM {emTimesUsed = tu} _ _ _ = 30 * (2 ^ min 4 tu)
+getBp' "pikapapow" _ _ _ _ = 102
+getBp' name em atk def env = emBp em
 
-getAttackStat' :: AttackType -> EffectivePokemon -> Int
-getAttackStat' PHYSICAL EP {epName = p, epLevel = lvl, epEvs = evs, epIvs = ivs} = undefined
-getAttackStat' SPECIAL EP {epName = name, epLevel = lvl, epEvs = evs, epIvs = ivs} = undefined
-getAttackStat' OTHER p = 0
+getStockPilePower :: Num a => a -> Maybe a
+getStockPilePower sp = Just (100 * sp)
 
-getDefenseStat :: Maybe Item -> AttackType -> EffectivePokemon -> Int
-getDefenseStat i = getDefenseStat'
+getMultipliersPower :: Int -> Multipliers -> Int
+getMultipliersPower base Multipliers {..} = base + getSum x * 20
+  where
+    x = foldMap (Sum . getPositiveBoosts) [atkM, defM, spaM, spdM, speM]
 
-getDefenseStat' :: AttackType -> EffectivePokemon -> Int
-getDefenseStat' PHYSICAL p = undefined
-getDefenseStat' SPECIAL p = undefined
-getDefenseStat' OTHER p = undefined
+getHpPercentagePower :: (Integral a1, RealFrac a2) => a2 -> a1
+getHpPercentagePower percentage = max 1 (div (floor (percentage * 150)) 100)
+
+getHpRatioPower :: Int -> Int
+getHpRatioPower ratio
+  | ratio >= 33 = 20
+  | ratio >= 17 = 40
+  | ratio >= 10 = 80
+  | ratio >= 5 = 100
+  | ratio >= 2 = 150
+  | otherwise = 200
+
+getWeightRatioPower :: EffectivePokemon -> EffectivePokemon -> Int
+getWeightRatioPower atk def = getRatioPower (floor (on (/) (fromIntegral . getWeight) atk def))
+
+getWeightPower :: Int -> Int
+getWeightPower weight
+  | weight >= 200 = 120
+  | weight >= 100 = 100
+  | weight >= 50 = 80
+  | weight >= 25 = 60
+  | weight >= 10 = 40
+  | otherwise = 20
+
+getWeight :: EffectivePokemon -> Int
+getWeight EP {epWeight = baseWeight, epAbility = ability}
+  | toId ability == "heavymetal" = 2 * baseWeight
+  | toId ability == "lightmetal" = fromIntegral baseWeight *// 0.5
+  | otherwise = baseWeight
+
+getRatioPower :: Int -> Int
+getRatioPower ratio
+  | ratio > 5 = 120
+  | ratio == 4 = 100
+  | ratio == 3 = 80
+  | ratio == 2 = 60
+  | otherwise = 40
+
+getEffectiveStats :: EffectivePokemon -> EffectiveStats
+getEffectiveStats EP {..} = ES hp atk def spa spd spe
+  where
+    hp = calcStat epLevel (hpIv epIvs) (hpEv epEvs) (getNatureEffect HP epNature) (findBaseStat epStats HP)
+    atk = calcStat epLevel (atkIv epIvs) (atkEv epEvs) (getNatureEffect ATK epNature) (findBaseStat epStats ATK)
+    def = calcStat epLevel (defIv epIvs) (defEv epEvs) (getNatureEffect DEF epNature) (findBaseStat epStats DEF)
+    spa = calcStat epLevel (spaIv epIvs) (spaEv epEvs) (getNatureEffect SPA epNature) (findBaseStat epStats SPA)
+    spd = calcStat epLevel (spdIv epIvs) (spdEv epEvs) (getNatureEffect SPD epNature) (findBaseStat epStats SPD)
+    spe = calcStat epLevel (speIv epIvs) (speEv epEvs) (getNatureEffect SPE epNature) (findBaseStat epStats SPE)
 
 getDefensiveAbilityMultiplier :: T.Text -> EffectivePokemon -> EffectiveMove -> [Type] -> AttackType -> AttackRelation -> Double
 getDefensiveAbilityMultiplier "bulletproof" _ EM {emBullet = isBullet} _ _ _ = if isBullet then 0 else 1
@@ -115,7 +304,7 @@ getDefensiveAbilityMultiplier "queenlymajesty" _ EM {emPriority = prio} _ _ _ = 
 getDefensiveAbilityMultiplier ab ep em typing cat super = 1
 
 getAttackAbilityMultiplier :: T.Text -> EffectivePokemon -> EffectivePokemon -> EffectiveMove -> Environment -> [Type] -> AttackType -> AttackRelation -> Double
-getAttackAbilityMultiplier "neuroforce" _ _ _ _ _ _ SuperEffective = 1.25 
+getAttackAbilityMultiplier "neuroforce" _ _ _ _ _ _ SuperEffective = 1.25
 getAttackAbilityMultiplier ab attacker defender em env typing cat effectiveness = 1
 
 getPokemonType :: EffectivePokemon -> [Type]
@@ -139,93 +328,98 @@ getMoveBaseType p _ "technoblast" Env {magicRoom = isRoom} t =
     else fromMaybe [t] (epItem p >>= iOnDrive >>= (fmap (: []) . readMaybe . T.unpack))
 getMoveBaseType EP {epTyping = typing} _ "revelationdance" _ _ = [head typing]
 getMoveBaseType EP {epAbility = "normalize"} _ _ _ _ = [NORMAL]
-getMoveBaseType EP {epItem = item, epAbility = ability} EP {epAbility = a'} "naturalgift" Env {magicRoom = isRoom} t =
+getMoveBaseType _ _ _ _ t = [t]
+
+getNaturePowerValues :: Environment -> (Int, Typing)
+getNaturePowerValues Env {activeTerrain = terrain} =
   fromMaybe
-    [NORMAL]
+    (80, [NORMAL])
+    ( terrain
+        >>= \case
+          ELECTRIC_T -> Just (90, [ELECTRIC])
+          PSYCHIC_T -> Just (90, [PSYCHIC])
+          MISTY -> Just (95, [FAIRY])
+          GRASSY -> Just (90, [GRASS])
+    )
+
+getNaturalGiftValues :: EffectivePokemon -> EffectivePokemon -> Environment -> (Int, Typing)
+getNaturalGiftValues EP {epItem = item, epAbility = ability} EP {epAbility = a'} Env {magicRoom = isRoom} =
+  fromMaybe
+    (0, [NORMAL])
     ( item
         >>= \i ->
           if (not . iBerry) i || toId ability == "klutz" || isRoom || toId a' == "unnerve"
-            then Just [NORMAL]
+            then Just (0, [NORMAL])
             else case toId . iName $ i of
-              "cheriberry" -> Just [FIRE]
-              "chestoberry" -> Just [WATER]
-              "pechaberry" -> Just [ELECTRIC]
-              "rawstberry" -> Just [GRASS]
-              "aspearberry" -> Just [ICE]
-              "leppaberry" -> Just [FIGHTING]
-              "oranberry" -> Just [POISON]
-              "persimberry" -> Just [GROUND]
-              "lumberry" -> Just [FLYING]
-              "sitrusberry" -> Just [PSYCHIC]
-              "figyberry" -> Just [BUG]
-              "wikiberry" -> Just [ROCK]
-              "magoberry" -> Just [GHOST]
-              "aguavberry" -> Just [DRAGON]
-              "iapapaberry" -> Just [DARK]
-              "razzberry" -> Just [STEEL]
-              "blukberry" -> Just [FIRE]
-              "nanabberry" -> Just [WATER]
-              "wepearberry" -> Just [ELECTRIC]
-              "pinapberry" -> Just [GRASS]
-              "pomegberry" -> Just [ICE]
-              "kelpsyberry" -> Just [FIGHTING]
-              "qualotberry" -> Just [POISON]
-              "hondewberry" -> Just [GROUND]
-              "grepaberry" -> Just [FLYING]
-              "tamatoberry" -> Just [PSYCHIC]
-              "cornnberry" -> Just [BUG]
-              "magostberry" -> Just [ROCK]
-              "rabutaberry" -> Just [GHOST]
-              "nomelberry" -> Just [DRAGON]
-              "spelonberry" -> Just [DARK]
-              "pamtreberry" -> Just [STEEL]
-              "watmelberry" -> Just [FIRE]
-              "durinberry" -> Just [WATER]
-              "belueberry" -> Just [ELECTRIC]
-              "occaberry" -> Just [FIRE]
-              "passhoberry" -> Just [WATER]
-              "wacanberry" -> Just [ELECTRIC]
-              "rindoberry" -> Just [GRASS]
-              "yacheberry" -> Just [ICE]
-              "chopleberry" -> Just [FIGHTING]
-              "kebiaberry" -> Just [POISON]
-              "shucaberry" -> Just [GROUND]
-              "cobaberry" -> Just [FLYING]
-              "payapaberry" -> Just [PSYCHIC]
-              "tangaberry" -> Just [BUG]
-              "chartiberry" -> Just [ROCK]
-              "kasibberry" -> Just [GHOST]
-              "habanberry" -> Just [DRAGON]
-              "colburberry" -> Just [DARK]
-              "babiriberry" -> Just [STEEL]
-              "chilanberry" -> Just [NORMAL]
-              "liechieberry" -> Just [GRASS]
-              "ganlonberry" -> Just [ICE]
-              "salacberry" -> Just [FIGHTING]
-              "petayaberry" -> Just [POISON]
-              "apicotberry" -> Just [GROUND]
-              "lansatberry" -> Just [FLYING]
-              "starfberry" -> Just [PSYCHIC]
-              "enigmaberry" -> Just [BUG]
-              "micleberry" -> Just [ROCK]
-              "custapberry" -> Just [GHOST]
-              "jabocaberry" -> Just [DRAGON]
-              "rowapberry" -> Just [DARK]
-              "roseliberry" -> Just [FAIRY]
-              "keeberry" -> Just [FAIRY]
-              "marangaberry" -> Just [DARK]
+              "cheriberry" -> Just (60, [FIRE])
+              "chestoberry" -> Just (60, [WATER])
+              "pechaberry" -> Just (60, [ELECTRIC])
+              "rawstberry" -> Just (60, [GRASS])
+              "aspearberry" -> Just (60, [ICE])
+              "leppaberry" -> Just (60, [FIGHTING])
+              "oranberry" -> Just (60, [POISON])
+              "persimberry" -> Just (60, [GROUND])
+              "lumberry" -> Just (60, [FLYING])
+              "sitrusberry" -> Just (60, [PSYCHIC])
+              "figyberry" -> Just (60, [BUG])
+              "wikiberry" -> Just (60, [ROCK])
+              "magoberry" -> Just (60, [GHOST])
+              "aguavberry" -> Just (60, [DRAGON])
+              "iapapaberry" -> Just (60, [DARK])
+              "razzberry" -> Just (60, [STEEL])
+              "blukberry" -> Just (70, [FIRE])
+              "nanabberry" -> Just (70, [WATER])
+              "wepearberry" -> Just (70, [ELECTRIC])
+              "pinapberry" -> Just (70, [GRASS])
+              "pomegberry" -> Just (70, [ICE])
+              "kelpsyberry" -> Just (70, [FIGHTING])
+              "qualotberry" -> Just (70, [POISON])
+              "hondewberry" -> Just (70, [GROUND])
+              "grepaberry" -> Just (70, [FLYING])
+              "tamatoberry" -> Just (70, [PSYCHIC])
+              "cornnberry" -> Just (70, [BUG])
+              "magostberry" -> Just (70, [ROCK])
+              "rabutaberry" -> Just (70, [GHOST])
+              "nomelberry" -> Just (70, [DRAGON])
+              "spelonberry" -> Just (70, [DARK])
+              "pamtreberry" -> Just (70, [STEEL])
+              "watmelberry" -> Just (80, [FIRE])
+              "durinberry" -> Just (80, [WATER])
+              "belueberry" -> Just (80, [ELECTRIC])
+              "occaberry" -> Just (60, [FIRE])
+              "passhoberry" -> Just (60, [WATER])
+              "wacanberry" -> Just (60, [ELECTRIC])
+              "rindoberry" -> Just (60, [GRASS])
+              "yacheberry" -> Just (60, [ICE])
+              "chopleberry" -> Just (60, [FIGHTING])
+              "kebiaberry" -> Just (60, [POISON])
+              "shucaberry" -> Just (60, [GROUND])
+              "cobaberry" -> Just (60, [FLYING])
+              "payapaberry" -> Just (60, [PSYCHIC])
+              "tangaberry" -> Just (60, [BUG])
+              "chartiberry" -> Just (60, [ROCK])
+              "kasibberry" -> Just (60, [GHOST])
+              "habanberry" -> Just (60, [DRAGON])
+              "colburberry" -> Just (60, [DARK])
+              "babiriberry" -> Just (60, [STEEL])
+              "chilanberry" -> Just (60, [NORMAL])
+              "liechieberry" -> Just (80, [GRASS])
+              "ganlonberry" -> Just (80, [ICE])
+              "salacberry" -> Just (80, [FIGHTING])
+              "petayaberry" -> Just (80, [POISON])
+              "apicotberry" -> Just (80, [GROUND])
+              "lansatberry" -> Just (80, [FLYING])
+              "starfberry" -> Just (80, [PSYCHIC])
+              "enigmaberry" -> Just (80, [BUG])
+              "micleberry" -> Just (80, [ROCK])
+              "custapberry" -> Just (80, [GHOST])
+              "jabocaberry" -> Just (80, [DRAGON])
+              "rowapberry" -> Just (80, [DARK])
+              "roseliberry" -> Just (0, [FAIRY])
+              "keeberry" -> Just (0, [FAIRY])
+              "marangaberry" -> Just (0, [DARK])
               _ -> Nothing
     )
-getMoveBaseType EP {epAbility = ability} _ "naturepower" Env {activeTerrain = terrain} t =
-  fromMaybe
-    [t]
-    ( terrain >>= \case
-        ELECTRIC_T -> Just [ELECTRIC]
-        PSYCHIC_T -> Just [PSYCHIC]
-        MISTY -> Just [FAIRY]
-        GRASSY -> Just [GRASS]
-    )
-getMoveBaseType _ _ _ _ t = [t]
 
 ateAbility :: T.Text -> [Type] -> [Type]
 ateAbility "aerilate" [NORMAL] = [FLYING]
@@ -241,10 +435,15 @@ electrify :: Environment -> [Type] -> [Type]
 electrify Env {electrified = electrified} ts = if electrified && head ts == NORMAL then [ELECTRIC] else ts
 
 getMoveType :: EffectivePokemon -> EffectivePokemon -> Environment -> EffectiveMove -> [Type]
-getMoveType attacker defender env move = (getMoveBaseType attacker defender moveName env >>> ateAbility attackerAbility >>> liquidVoice attacker move >>> electrify env) (emType move)
+getMoveType attacker defender env move = (getMoveBaseType attacker defender moveName env >>> ateAbility attackerAbility >>> liquidVoice attacker move >>> getNatureType ((toId . emName) move) attacker defender env >>> electrify env) (emType move)
   where
     moveName = emName move
     attackerAbility = epAbility attacker
+
+getNatureType :: T.Text -> EffectivePokemon -> EffectivePokemon -> Environment -> [Type] -> [Type]
+getNatureType "naturalgift" atk def env _ = snd (getNaturalGiftValues atk def env)
+getNatureType "naturepower" _ _ env _ = snd (getNaturePowerValues env)
+getNatureType _ _ _ _ t = t
 
 updateTmWithItem :: T.Text -> Bool -> TypeMatchup -> TypeMatchup
 updateTmWithItem "airballoon" b tm@(TM am dm) = if not b then let dm' = M.insert FLYING Immune dm in TM am dm' else tm
@@ -277,6 +476,9 @@ enrichTmWithWeather (Just STRONGWIND) bool typing tm@(TM am dm) =
   let dm' = M.fromList [(ROCK, Resisted), (ICE, Resisted), (ELECTRIC, Resisted)]
    in if bool || FLYING `notElem` typing then tm else TM am (combineDefenseMap dm' dm)
 enrichTmWithWeather _ _ _ tm = tm
+
+enrichTmWithEnv :: Environment -> TypeMatchup -> TypeMatchup
+enrichTmWithEnv Env {gravity = gravity} (TM am dm) = if gravity then TM am (M.insert GROUND Neutral dm) else TM am dm
 
 thousandArrows :: T.Text -> Typing -> Int -> TypeMatchup -> TypeMatchup
 thousandArrows "thousandarrows" defenderTyping tu (TM am dm) = let relation = if tu > 0 || FLYING `notElem` defenderTyping then Neutral else Resisted in TM am (M.insert GROUND relation dm)
@@ -399,7 +601,7 @@ getWeatherMult mType RAIN
   | hasAny mType [WATER] = 1.5
   | hasAny mType [FIRE] = 0.5
   | otherwise = 1
-getWeatherMult mType HEAVYRAIN 
+getWeatherMult mType HEAVYRAIN
   | hasAny mType [WATER] = 1.5
   | hasAny mType [FIRE] = 0
   | otherwise = 1
@@ -407,7 +609,7 @@ getWeatherMult mType SUN
   | hasAny mType [FIRE] = 1.5
   | hasAny mType [WATER] = 0.5
   | otherwise = 1
-getWeatherMult mType HEAVYSUN 
+getWeatherMult mType HEAVYSUN
   | hasAny mType [FIRE] = 1.5
   | hasAny mType [WATER] = 0
   | otherwise = 1
@@ -420,3 +622,23 @@ isGrounded EP {..} = grounded
     ability = toId epAbility
     item = fromMaybe "" (epItem <&> toId . iName)
     grounded = FLYING `elem` ts || ability == "levitate" || item == "airballoon" || epRisen
+
+willCrit :: EffectivePokemon -> EffectivePokemon -> Bool
+willCrit EP {epAbility = "merciless"} EP {epStatus = Just x} = True
+willCrit _ _ = False
+
+isBurned :: EffectivePokemon -> Bool
+isBurned EP {epStatus = Just BURN} = True
+isBurned _ = False
+
+hasItem :: T.Text -> EffectivePokemon -> Bool
+hasItem name EP { epItem = Just x} = iName x == name
+hasItem _ _ = False
+
+canUseItem :: EffectivePokemon -> Environment -> Bool
+canUseItem _ Env {magicRoom = True} = False
+canUseItem EP { epAbility = "klutz"} _ = False
+canUseItem _ _ = True
+
+canUseBerry :: EffectivePokemon -> EffectivePokemon -> Environment -> Bool
+canUseBerry berryUser def env = canUseItem berryUser env && epAbility def /= "unnerve"
