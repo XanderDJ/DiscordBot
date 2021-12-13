@@ -76,6 +76,7 @@ getMoveMultiplier _ EP {epStatus = Just SLEEP} EM {emName = "wakeupslap"} _ = 2
 getMoveMultiplier _ _ EM {emName = "terrainpulse"} Env {activeTerrain = Just x} = 2
 getMoveMultiplier _ _ EM {emName = "weatherball"} Env {activeWeather = Just STRONGWIND } = 1
 getMoveMultiplier _ _ EM {emName = "weatherball"} Env {activeWeather = Just x } = 2
+getMoveMultiplier _ EP {epItem = Just x} EM {emName = "knockoff"} _ = 1.5
 getMoveMultiplier attacker defender move env = 1
 
 getTerrainMultiplier :: Environment -> [Type] -> Double
