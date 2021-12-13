@@ -42,8 +42,8 @@ validMessage (mt1, mt, mt2) con m = do
       mon1 = cleanMon mon1'
       mon2 = cleanMon mon2'
       move = toId move'
-      item1 = toId <$> M.lookup "item" m1Opts
-      item2 = toId <$> M.lookup "item" m2Opts
+      item1 = toId <$> getOption ["i", "item", "it"] m1Opts
+      item2 = toId <$> getOption ["i", "item", "it"] m2Opts
   m1 <- lift $ getCompletePokemon con mon1
   m2 <- lift $ getCompletePokemon con mon2
   mv <- lift $ getMove con move
@@ -72,7 +72,8 @@ validDbData (mon1, m1Opts) (mon2, m2Opts) (move, moveOpts) i1 i2 m = do
       parsedMon1 = parseMon (toPokemon mon1) (toItem <$> i1) m1Opts effectiveMove
       parsedMon2 = parseMon (toPokemon mon2) (toItem <$> i2) m2Opts effectiveMove
       damageCalcState = DCS env parsedMon1 parsedMon2 effectiveMove
-  -- (min, max) = runCalc damageCalcState
+      calc = runCalc damageCalcState
+  sendMessage $ R.CreateMessage (messageChannel m) (T.pack (show calc))
   -- calcMessage = makeCalcMessage (min, max) damageCalcState
   printIO damageCalcState
 
@@ -87,7 +88,7 @@ parseMon Pokemon {..} i opts EM {..} =
       epTyping = typing,
       epStats = baseStats,
       epLevel = let level = getOption ["l", "level"] opts in fromMaybe 100 (level >>= \l -> readMaybe (T.unpack l)),
-      epItem = i,
+      epItem = toIdItem <$> i,
       epNature = fromMaybe (maybe (getDefaultNature emCategory) third set) nature,
       epEvs = maybe (EVS hpev atkev defev spaev spdev speev) first set,
       epIvs = maybe (IVS hpiv atkiv defiv spaiv spdiv speiv) second set,
@@ -137,6 +138,9 @@ parseMon Pokemon {..} i opts EM {..} =
       | x < 0 = Just 0
       | x > 100 = Just 100
       | otherwise = Just x
+
+toIdItem :: Item -> Item
+toIdItem i@Item {..} = i {iName = toId iName} 
 
 parseSet :: AttackType -> T.Text -> Maybe (EVs, IVs, Nature)
 parseSet at "hyperoffense" = Just $ getCorrectType at (maxAtkEVs, usualIvs, jolly) (maxSpaEVs, specialIvs, timid)

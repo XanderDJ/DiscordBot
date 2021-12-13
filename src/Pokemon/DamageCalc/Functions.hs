@@ -21,6 +21,32 @@ import Pokemon.Types
 import PokemonDB.Types (ItemT (isBerry), MoveT (moveType))
 import Text.Read (readMaybe)
 
+getAttackAndMult :: T.Text -> AttackType -> (EffectiveStats, Multipliers) -> (EffectiveStats, Multipliers) -> (Double, Double) -> (Int, StatMultiplier, Double)
+getAttackAndMult "bodypress" _ (es, em) _ (atkMult, spaMult) = (defStat es, defM em, atkMult)
+getAttackAndMult "foulplay" _ _ (es, em) (atkMult, spaMult) = (atkStat es, atkM em, atkMult)
+getAttackAndMult move SPECIAL (es, em) _ (atkMult, spaMult) = (spaStat es, spaM em, spaMult)
+getAttackAndMult move PHYSICAL (es, em) _ (atkMult, spaMult) = (atkStat es, atkM em, atkMult)
+getAttackAndMult move OTHER (es, em) _ (atkMult, spaMult) = (0, 0, 0)
+
+getDefenseAndMult :: T.Text -> AttackType -> (EffectiveStats, Multipliers) -> (EffectiveStats, Multipliers) -> (Double, Double) -> (Int, StatMultiplier, Double)
+getDefenseAndMult "psystrike" _ _ (es, em) (defMult, spdMult) = (defStat es, defM em, defMult)
+getDefenseAndMult "psyshock" _ _ (es, em) (defMult, spdMult) = (defStat es, defM em, defMult)
+getDefenseAndMult "secretsword" _ _ (es, em) (defMult, spdMult) = (defStat es, defM em, defMult)
+getDefenseAndMult "naturepower" _ _ (es, em) (defMult, spdMult) = (spdStat es, spdM em, spdMult)
+getDefenseAndMult "sacredsword" _ _ (es, _) (defMult, spdMult) = (defStat es, 0, defMult)
+getDefenseAndMult "darkestlariat" _ _ (es, _) (defMult, spdMult) = (defStat es, 0, defMult)
+getDefenseAndMult "chipaway" _ _ (es, _) (defMult, spdMult) = (defStat es, 0, defMult)
+getDefenseAndMult "wickedblow" _ _ (es, _) (defMult, spdMult) = (defStat es, 0, defMult)
+getDefenseAndMult "surgingstrikes" _ _ (es, _) (defMult, spdMult) = (defStat es, 0, defMult)
+getDefenseAndMult _ PHYSICAL _ (es, em) (defMult, spdMult) = (defStat es, defM em, defMult)
+getDefenseAndMult _ SPECIAL _ (es, em) (defMult, spdMult) = (spdStat es, spdM em, spdMult)
+getDefenseAndMult _ OTHER _ (es, em) (defMult, spdMult) = (defStat es, defM em, defMult)
+
+
+applyWonderRoom :: Environment -> EffectiveStats -> EffectiveStats 
+applyWonderRoom Env {wonderRoom = True} ES {..} = ES hpStat atkStat spdStat spaStat defStat speStat
+applyWonderRoom _ es = es
+
 getMultipliers :: EffectivePokemon -> Multipliers -> Multipliers
 getMultipliers EP {epAbility = "unaware"} sm = Multipliers 0 0 0 0 0
 getMultipliers _ sm = sm
@@ -590,11 +616,11 @@ getPlateMultiplier = getGeneralTypeMultiplier 1.2
 getBerryMultiplier :: Type -> [Type] -> Double
 getBerryMultiplier = getGeneralTypeMultiplier 0.5
 
-getScreenMultiplier :: [Screen] -> T.Text -> Bool -> AttackType -> Double
-getScreenMultiplier [] _ _ _ = 1
-getScreenMultiplier (REFLECT : ss) a b t = if t == PHYSICAL && a /= "infiltrator" && not b then 0.5 else getScreenMultiplier ss a b t
-getScreenMultiplier (LIGHT_SCREEN : ss) a b t = if t == SPECIAL && a /= "infiltrator" && not b then 0.5 else getScreenMultiplier ss a b t
-getScreenMultiplier (AURORA_VEIL : ss) a b t = if a /= "infiltrator" && not b then 0.5 else 1
+getScreenMultiplier :: [Screen] -> T.Text -> AttackType -> Double
+getScreenMultiplier [] _ _ = 1
+getScreenMultiplier (REFLECT : ss) a t = if t == PHYSICAL && a /= "infiltrator" then 0.5 else getScreenMultiplier ss a t
+getScreenMultiplier (LIGHT_SCREEN : ss) a t = if t == SPECIAL && a /= "infiltrator" then 0.5 else getScreenMultiplier ss a t
+getScreenMultiplier (AURORA_VEIL : ss) a t = if a /= "infiltrator" then 0.5 else 1
 
 getWeatherMult :: [Type] -> Weather -> Double
 getWeatherMult mType RAIN
@@ -632,12 +658,12 @@ isBurned EP {epStatus = Just BURN} = True
 isBurned _ = False
 
 hasItem :: T.Text -> EffectivePokemon -> Bool
-hasItem name EP { epItem = Just x} = iName x == name
+hasItem name EP {epItem = Just x} = iName x == name
 hasItem _ _ = False
 
 canUseItem :: EffectivePokemon -> Environment -> Bool
 canUseItem _ Env {magicRoom = True} = False
-canUseItem EP { epAbility = "klutz"} _ = False
+canUseItem EP {epAbility = "klutz"} _ = False
 canUseItem _ _ = True
 
 canUseBerry :: EffectivePokemon -> EffectivePokemon -> Environment -> Bool

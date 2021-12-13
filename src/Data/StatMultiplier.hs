@@ -26,19 +26,19 @@ raise :: StatMultiplier -> StatMultiplier
 raise = (+) (1 %% 0)
 
 raiseSharply :: StatMultiplier -> StatMultiplier
-raiseSharply = raise . raise
+raiseSharply = (+) (2 %% 0)
 
 raiseDrastically :: StatMultiplier -> StatMultiplier
-raiseDrastically = raise . raise . raise
+raiseDrastically = (+) (3 %% 0)
 
 lower :: StatMultiplier -> StatMultiplier
 lower = (+) (0 %% 1)
 
 lowerSharply :: StatMultiplier -> StatMultiplier
-lowerSharply = lower . lower
+lowerSharply = (+) (0 %% 2)
 
 lowerDrastically :: StatMultiplier -> StatMultiplier
-lowerDrastically = lower . lower . lower
+lowerDrastically = (+) (0 %% 3)
 
 getMultiplier :: StatMultiplier -> Double
 getMultiplier (SM pb nb) = (fromIntegral pb + 2) / (fromIntegral nb + 2)

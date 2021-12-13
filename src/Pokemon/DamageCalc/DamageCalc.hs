@@ -2,6 +2,7 @@ module Pokemon.DamageCalc.DamageCalc where
 
 import Control.Arrow
 import Control.Monad.Reader
+import Data.Function
 import Data.Functor ((<&>))
 import Data.List.Utility (hasAny)
 import qualified Data.Map as M
@@ -12,12 +13,13 @@ import Pokemon.DamageCalc.Functions
 import Pokemon.DamageCalc.Types
 import Pokemon.Functions
 import Pokemon.TypeMatchups
-import Pokemon.Types 
+import Pokemon.Types
+import GHC.Float (roundTo)
 
-runCalc :: DCS -> (Int, Int)
+runCalc :: DCS -> Calc
 runCalc = runReader calcDamage
 
-calcDamage :: Reader DCS (Int, Int)
+calcDamage :: Reader DCS Calc
 calcDamage =
   baseDamage
     >>= targetsMultiplier
@@ -30,8 +32,9 @@ calcDamage =
     >>= invulnerableMultiplier
     >>= abilityMultiplier
     >>= itemMultiplier
-    >>= otherMultiplier
+    >>= multiHitMultiplier
     >>= randomMultiplier
+    >>= toCalc
 
 baseDamage :: Reader DCS Int
 baseDamage = do
@@ -39,21 +42,26 @@ baseDamage = do
   defender <- getDefendingPokemon
   move <- getMove
   env <- getEnvironment
-  let 
-      lvl = epLevel attacker
+  let lvl = epLevel attacker
       baseBp = getBp move attacker defender env
-      bpMultiplier = getMoveMultiplier attacker defender move env  * getAbilityMultiplier (emName move) move attacker defender env * getTerrainMultiplier env move
+      bpMultiplier = getMoveMultiplier attacker defender move env * getAbilityMultiplier (emName move) move attacker defender env * getTerrainMultiplier env move
       moveCategory = getEMCategory attacker move attackerStats (epMultiplier attacker) defenderStats (epMultiplier defender)
       attackerStats = getEffectiveStats attacker
       defenderStats = getEffectiveStats defender
       attackMultipliers = getMultipliers defender (epMultiplier attacker)
       defenseMultipliers = getMultipliers attacker (epMultiplier defender)
-      atkMult = (getMultiplier . atkM) attackMultipliers * getAttackStatMultiplier (epAbility attacker) move attacker defender env * if powerspot env then 1.3 else 1 * if isBurned attacker && epAbility attacker /= "guts" && emName move /= "facade" then 0.5 else 1 * facadeMultiplier move attacker
-      spaMult = (getMultiplier . spaM) attackMultipliers * getSpecialStatMultiplier (epAbility attacker) move attacker defender env * if battery env then 1.3 else 1
-      defMult = (getMultiplier . defM) defenseMultipliers * getDefenseStatMultiplier (epAbility defender) move attacker defender env * if canUseItem defender env && hasItem "eviolite" defender && epNfe defender then 1.5 else 1
-      spdMult = (getMultiplier . spdM) defenseMultipliers * getSpecialDefenseStatMultiplier (epAbility defender) move attacker defender env * if canUseItem defender env && hasItem "assaultvest" defender then 1.5 else 1 * if canUseItem defender env && hasItem "eviolite" defender && epNfe defender then 1.5 else 1
-  undefined
-  -- return $ div ((div (2 * lvl) 5 + 2) * bp * div atk def) 50 + 2
+      atkMult = getAttackStatMultiplier (epAbility attacker) move attacker defender env * if powerspot env then 1.3 else 1 * if isBurned attacker && epAbility attacker /= "guts" && emName move /= "facade" then 0.5 else 1 * facadeMultiplier move attacker * if canUseItem attacker env && hasItem "choiceband" attacker then 1.5 else 1
+      spaMult = getSpecialStatMultiplier (epAbility attacker) move attacker defender env * if battery env then 1.3 else 1 * if canUseItem attacker env && hasItem "choicespecs" attacker then 1.5 else 1
+      defMult = getDefenseStatMultiplier (epAbility defender) move attacker defender env * if canUseItem defender env && hasItem "eviolite" defender && epNfe defender then 1.5 else 1
+      spdMult = getSpecialDefenseStatMultiplier (epAbility defender) move attacker defender env * if canUseItem defender env && hasItem "assaultvest" defender then 1.5 else 1 * if canUseItem defender env && hasItem "eviolite" defender && epNfe defender then 1.5 else 1
+      (atk, statAMult, aMult) = getAttackAndMult (emName move) moveCategory (attackerStats, attackMultipliers) (defenderStats, defenseMultipliers) (atkMult, spaMult)
+      (def, statDMult, dMult) = getDefenseAndMult (emName move) moveCategory (attackerStats, attackMultipliers) (applyWonderRoom env defenderStats, defenseMultipliers) (defMult, spdMult)
+      a = fromIntegral atk * (if epAbility attacker == "unaware" || epAbility defender == "unaware" then 1 else getMultiplier statAMult) * aMult
+      d = fromIntegral def * (if epAbility attacker == "unaware" || epAbility defender == "unaware" then 1 else getMultiplier statDMult) * dMult
+      bp = fromIntegral baseBp * bpMultiplier
+  return $ floor ((((2 * fromIntegral lvl) / 5 + 2) * bp * (a/d)) / 50 + 2)
+
+-- return $ div ((div (2 * lvl) 5 + 2) * bp * div atk def) 50 + 2
 
 targetsMultiplier :: Int -> Reader DCS Int
 targetsMultiplier dmg = do
@@ -82,8 +90,7 @@ criticalHitMultiplier dmg = do
   attacker <- getAttackingPokemon
   defender <- getDefendingPokemon
   move <- getMove
-  let 
-      defAbility = toId . epAbility $ defender
+  let defAbility = toId . epAbility $ defender
       isCrit = defAbility /= "battlearmor" && defAbility /= "shellarmor" && (crit env || emWillCrit move || willCrit attacker defender)
       mult = if isCrit then 1.5 else 1
   multiply dmg mult
@@ -122,7 +129,7 @@ typeEffectivenessMultiplier dmg = do
       tm =
         ( enrichTmWithAbility (toId . epAbility $ attacker) (toId . epAbility $ defender) (toId . emName $ move)
             >>> updateTmWithItem defenderItem (magicRoom env)
-            >>> enrichTmWithWeather (activeWeather env)  weatherBool moveType
+            >>> enrichTmWithWeather (activeWeather env) weatherBool moveType
             >>> enrichTmWithEnv env
             >>> thousandArrows moveName defenderType (emTimesUsed move)
         )
@@ -139,11 +146,15 @@ screensMultiplier dmg = do
   move <- getMove
   env <- getEnvironment
   let screen = screens env
-      categoryMove = emCategory move
+      attackerStats = getEffectiveStats attacker
+      defenderStats = getEffectiveStats defender
+      attackMultipliers = getMultipliers defender (epMultiplier attacker)
+      defenseMultipliers = getMultipliers attacker (epMultiplier defender)
+      categoryMove = getEMCategory attacker move attackerStats attackMultipliers defenderStats defenseMultipliers
       moveName = emName move
       mult =
-        if toId moveName `notElem` ["psychicfangs", "brickbreak", "gmaxwindrage"]
-          then getScreenMultiplier screen (toId . epAbility $ attacker) (emWillCrit move || crit env || willCrit attacker defender) categoryMove
+        if toId moveName `notElem` ["psychicfangs", "brickbreak", "gmaxwindrage"] && not (emWillCrit move || crit env || willCrit attacker defender)
+          then getScreenMultiplier screen (toId . epAbility $ attacker) categoryMove
           else 1
   multiply dmg mult
 
@@ -167,7 +178,8 @@ invulnerableMultiplier dmg = do
       mult
         | (toId . emName) move `elem` moves && isInvulnerable env = 2
         | (toId . epAbility) attacker == "noguard" = 1
-        | otherwise = 0
+        | isInvulnerable env = 0
+        | otherwise = 1
   multiply dmg mult
 
 abilityMultiplier :: Int -> Reader DCS Int
@@ -190,8 +202,6 @@ abilityMultiplier dmg = do
           else getDefensiveAbilityMultiplier defAbility defender move {emPriority = movePrio} moveType moveCategory ar
   multiply dmg (atkMult * defMult)
 
-
-
 itemMultiplier :: Int -> Reader DCS Int
 itemMultiplier dmg = do
   move <- getMove
@@ -204,8 +214,31 @@ itemMultiplier dmg = do
       mult = getItemMultiplier (toId . epName $ attacker) move moveType typeMatchup (fromMaybe "" (epItem attacker <&> iName)) (toId . epAbility $ attacker, toId . epAbility $ defender)
   multiply dmg (if magicRoom env then 1 else mult)
 
+multiHitMultiplier :: Int -> Reader DCS Int
+multiHitMultiplier dmg = do
+  attacker <- getAttackingPokemon
+  defender <- getDefendingPokemon
+  move <- getMove
+  env <- getEnvironment
+  let hits = emHits move
+      atkAbility = epAbility attacker
+      defAbility = epAbility defender
+      hasHalved = (defAbility `elem` ["multiscale", "shadowshield"] && epHPPercentage defender == 100) && (atkAbility /= "neutralizinggas" || atkAbility `notElem` abilityIgnoringAbilities || (toId . emName) move `notElem` movesThatIgnoreAbilities)
+      totalDmg = if hasHalved then dmg + 2 * (hits - 1) * dmg else hits * dmg
+  return totalDmg
+
 randomMultiplier :: Int -> Reader DCS (Int, Int)
 randomMultiplier dmg = pure (fromIntegral dmg *// 0.85, dmg)
+
+toCalc :: (Int, Int) -> Reader DCS Calc
+toCalc hp@(minHp, maxHp) = do
+  defender <- getDefendingPokemon
+  let hpS = hpStat (getEffectiveStats defender)
+  return $ Calc hp (round' (on (/) fromIntegral minHp hpS) 3, round' (on (/) fromIntegral maxHp hpS) 3)
+
+round' :: Double -> Integer -> Double
+round' num sg = (fromIntegral . round $ num * f) / f
+    where f = 10^sg
 
 -- HELPER FUNCTIONS
 
@@ -228,9 +261,6 @@ getMove :: Reader DCS EffectiveMove
 getMove = reader f
   where
     f (DCS _ _ _ move) = move
-
-otherMultiplier :: Int -> Reader DCS Int
-otherMultiplier currentDmg = undefined
 
 multiply :: Int -> Double -> Reader DCS Int
 multiply dmg mult = return (fromIntegral dmg *// mult)

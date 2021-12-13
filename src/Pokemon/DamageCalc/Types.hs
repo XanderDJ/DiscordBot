@@ -6,6 +6,8 @@ import qualified Data.List as L
 import Data.StatMultiplier
 import qualified Data.Text as T
 import Pokemon.Types
+import Text.Printf
+
 
 data DCS = DCS
   { dcsEnv :: Environment,
@@ -57,7 +59,7 @@ data EffectiveMove = EM
     emDance :: Bool,
     emWillCrit :: Bool,
     emTimesUsed :: Int,
-    emHits ::  Int,
+    emHits :: Int,
     emStockPile :: Maybe Int
   }
   deriving (Eq, Show)
@@ -103,14 +105,14 @@ data IVs = IVS
   }
   deriving (Show, Eq)
 
-data EffectiveStats = ES {
-  hpStat :: Int,
-  atkStat :: Int,
-  defStat :: Int,
-  spaStat :: Int,
-  spdStat :: Int,
-  speStat :: Int
-}
+data EffectiveStats = ES
+  { hpStat :: Int,
+    atkStat :: Int,
+    defStat :: Int,
+    spaStat :: Int,
+    spdStat :: Int,
+    speStat :: Int
+  }
 
 data Environment = Env
   { activeTerrain :: Maybe Terrain,
@@ -137,3 +139,26 @@ data Environment = Env
   deriving (Show, Eq)
 
 data MoveOrder = FIRST | LAST deriving (Show, Eq, Ord)
+
+data Calc = Calc
+  { dmg :: (Int, Int),
+    hpPercentage :: (Double, Double)
+  }
+
+printPercentage :: (PrintfArg a, Floating a) => Int -> a -> String
+printPercentage = printf "%0.*f%%"
+
+instance Show Calc where
+  show Calc {..} = "minHP = " ++ show (fst dmg) ++ ", maxHP = " ++ show (snd dmg) ++ ", min% = " ++ printPercentage 1 (fst hpPercentage * 100) ++ ", max% = " ++ printPercentage 1 (snd hpPercentage * 100)
+
+getMinDmg :: Calc -> Int
+getMinDmg Calc {..} = fst dmg
+
+getMaxDmg :: Calc -> Int
+getMaxDmg Calc {..} = snd dmg
+
+getMinPercent :: Calc -> Double
+getMinPercent Calc {..} = fst hpPercentage
+
+getMaxPercent :: Calc -> Double
+getMaxPercent Calc {..} = snd hpPercentage
