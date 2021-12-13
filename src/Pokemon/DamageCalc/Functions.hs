@@ -539,6 +539,7 @@ getItemMultiplier "giratinaorigin" _ moveType _ _ _ = if hasAny moveType [DRAGON
 getItemMultiplier _ em _ _ "metronome" _ = min 2 (1 + 0.2 * fromIntegral (emTimesUsed em))
 getItemMultiplier _ _ _ _ "lifeorb" _ = 1.3
 getItemMultiplier _ _ _ SuperEffective "expertbelt" _ = 1.2
+getItemMultiplier _ _ _ StronglyEffective "expertbelt" _ = 1.2
 getItemMultiplier _ _ moveType _ "normalgem" _ = getGemMultiplier NORMAL moveType
 getItemMultiplier _ _ moveType _ "pinkbow" _ = getBowMultiplier NORMAL moveType
 getItemMultiplier _ _ moveType _ "polkadotbow" _ = getBowMultiplier NORMAL moveType
