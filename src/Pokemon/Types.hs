@@ -188,6 +188,7 @@ instance Read Status where
     'p' : 's' : 'n' : rest -> [(POISONED, rest)]
     'p' : 'o' : 'i' : 's' : 'o' : 'n' : 'e' : 'd' : rest -> [(POISONED, rest)]
     'b' : 'r' : 'n' : rest -> [(BURN, rest)]
+    'b' : 'u' : 'r' : 'n' : rest -> [(BURN, rest)]
     'b' : 'u' : 'r' : 'n' : 'e' : 'd' : rest -> [(BURN, rest)]
     't' : 'o' : 'x' : rest -> [(BADLY_POISONED, rest)]
     't' : 'o' : 'x' : 'i' : 'c' : rest -> [(BADLY_POISONED, rest)]

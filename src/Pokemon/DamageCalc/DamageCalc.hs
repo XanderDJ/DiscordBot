@@ -1,7 +1,11 @@
+{-# LANGUAGE GeneralizedNewtypeDeriving #-}
+
 module Pokemon.DamageCalc.DamageCalc where
 
 import Control.Arrow
+import Control.Monad.Identity (Identity (runIdentity), IdentityT (runIdentityT))
 import Control.Monad.Reader
+import Control.Monad.Writer
 import Data.Function
 import Data.Functor ((<&>))
 import Data.List.Utility (hasAny)
@@ -9,22 +13,33 @@ import qualified Data.Map as M
 import Data.Maybe (fromMaybe)
 import Data.StatMultiplier
 import qualified Data.Text as T
+import GHC.Float (roundTo)
 import Pokemon.DamageCalc.Functions
 import Pokemon.DamageCalc.Types
 import Pokemon.Functions
 import Pokemon.TypeMatchups
 import Pokemon.Types
-import GHC.Float (roundTo)
+import Prelude hiding (log)
 
-runCalc :: DCS -> Calc
-runCalc = runReader calcDamage
+runCalc :: DCS -> (CalcResult, [(String, String)])
+runCalc dcs = runCalc' dcs calcDamage
 
-calcDamage :: Reader DCS Calc
+runCalc' :: DCS -> Calc CalcResult -> (CalcResult, [(String, String)])
+runCalc' dcs (Calc m) = runIdentity (runWriterT (runReaderT m dcs))
+
+newtype Calc a = Calc (ReaderT DCS (WriterT [(String, String)] Identity) a)
+  deriving (Functor, Applicative, Monad, MonadReader DCS, MonadWriter [(String, String)])
+
+log :: (String, String) -> Calc ()
+log s = tell [s]
+
+calcDamage :: Calc CalcResult
 calcDamage =
   baseDamage
     >>= targetsMultiplier
     >>= weatherMultiplier
     >>= criticalHitMultiplier
+    >>= randomMultiplier
     >>= stabMultiplier
     >>= typeEffectivenessMultiplier
     >>= screensMultiplier
@@ -33,10 +48,9 @@ calcDamage =
     >>= abilityMultiplier
     >>= itemMultiplier
     >>= multiHitMultiplier
-    >>= randomMultiplier
     >>= toCalc
 
-baseDamage :: Reader DCS Int
+baseDamage :: Calc Int
 baseDamage = do
   attacker <- getAttackingPokemon
   defender <- getDefendingPokemon
@@ -44,8 +58,10 @@ baseDamage = do
   env <- getEnvironment
   let lvl = epLevel attacker
       baseBp = getBp move attacker defender env
-      bpMultiplier = getMoveMultiplier attacker defender move env * getAbilityMultiplier (emName move) move attacker defender env * getTerrainMultiplier env move
+      terrainMultiplier = if isGrounded attacker then getTerrainMultiplier env moveType else 1
+      bpMultiplier = getMoveMultiplier attacker defender move env * getAbilityMultiplier (epAbility attacker) move attacker defender env * terrainMultiplier
       moveCategory = getEMCategory attacker move attackerStats (epMultiplier attacker) defenderStats (epMultiplier defender)
+      moveType = getMoveType attacker defender env move
       attackerStats = getEffectiveStats attacker
       defenderStats = getEffectiveStats defender
       attackMultipliers = getMultipliers defender (epMultiplier attacker)
@@ -59,19 +75,25 @@ baseDamage = do
       a = fromIntegral atk * (if epAbility attacker == "unaware" || epAbility defender == "unaware" then 1 else getMultiplier statAMult) * aMult
       d = fromIntegral def * (if epAbility attacker == "unaware" || epAbility defender == "unaware" then 1 else getMultiplier statDMult) * dMult
       bp = fromIntegral baseBp * bpMultiplier
-  return $ floor ((((2 * fromIntegral lvl) / 5 + 2) * bp * (a/d)) / 50 + 2)
+  log ("base bp", show baseBp)
+  log ("bp", show bp)
+  log ("atk", show a)
+  log ("def", show d)
+  return $ floor ((((2 * fromIntegral lvl) / 5 + 2) * bp * (a / d)) / 50 + 2)
 
 -- return $ div ((div (2 * lvl) 5 + 2) * bp * div atk def) 50 + 2
 
-targetsMultiplier :: Int -> Reader DCS Int
+targetsMultiplier :: Int -> Calc Int
 targetsMultiplier dmg = do
+  log ("base damage", show dmg)
   env <- getEnvironment
   move <- getMove
   let mult = if isDoubleBattle env && (toId . emName) move `elem` multiTargetMoves then 0.75 else 1
   multiply dmg mult
 
-weatherMultiplier :: Int -> Reader DCS Int
+weatherMultiplier :: Int -> Calc Int
 weatherMultiplier dmg = do
+  log ("After targets multiplier", show dmg)
   env <- getEnvironment
   attacker <- getAttackingPokemon
   defender <- getDefendingPokemon
@@ -84,8 +106,9 @@ weatherMultiplier dmg = do
       mult = if atkAbility == "cloudnine" || defAbility == "cloudnine" || defItem == "utilityumbrella" || atkAbility == "airlock" || defAbility == "airlock" then 1 else weatherMult
   multiply dmg mult
 
-criticalHitMultiplier :: Int -> Reader DCS Int
+criticalHitMultiplier :: Int -> Calc Int
 criticalHitMultiplier dmg = do
+  log ("After weather multiplier", show dmg)
   env <- getEnvironment
   attacker <- getAttackingPokemon
   defender <- getDefendingPokemon
@@ -95,8 +118,9 @@ criticalHitMultiplier dmg = do
       mult = if isCrit then 1.5 else 1
   multiply dmg mult
 
-stabMultiplier :: Int -> Reader DCS Int
+stabMultiplier :: (Int, Int) -> Calc (Int, Int)
 stabMultiplier dmg = do
+  log ("After random multiplier", show dmg)
   move <- getMove
   attacker <- getAttackingPokemon
   defender <- getDefendingPokemon
@@ -110,10 +134,11 @@ stabMultiplier dmg = do
         | atkAbility == "libero" = 1.5
         | hasAny mType attackerType = 1.5
         | otherwise = 1
-  multiply dmg mult
+  multiply2 dmg mult
 
-typeEffectivenessMultiplier :: Int -> Reader DCS Int
+typeEffectivenessMultiplier :: (Int, Int) -> Calc (Int, Int)
 typeEffectivenessMultiplier dmg = do
+  log ("after stab multiplier", show dmg)
   move <- getMove
   attacker <- getAttackingPokemon
   defender <- getDefendingPokemon
@@ -124,23 +149,25 @@ typeEffectivenessMultiplier dmg = do
       defenderType = getPokemonType defender
       defenderItem = fromMaybe "" (epItem defender <&> iName)
       moveName = toId . emName $ move
-      tm' = fromMaybe mempty (getCombinedMatchup defenderType)
+      tms = map getMatchup defenderType
       weatherBool = atkAbility `elem` ["cloudnine", "airlock"] || defAbility `elem` ["cloudnine", "airlock"]
-      tm =
+      tms' = map
         ( enrichTmWithAbility (toId . epAbility $ attacker) (toId . epAbility $ defender) (toId . emName $ move)
             >>> updateTmWithItem defenderItem (magicRoom env)
             >>> enrichTmWithWeather (activeWeather env) weatherBool moveType
             >>> enrichTmWithEnv env
             >>> thousandArrows moveName defenderType (emTimesUsed move)
         )
-          tm'
+          tms
+      tm = foldl (<>) mempty tms'
       ars = map (getDefenseRelation (defenseM tm)) moveType
-      tintedLensMult = if mult < 1 then 2 else 1
+      tintedLensMult = if mult < 1 && hasAbility "tintedlens" attacker then 2 else 1
       mult = toMultiplier $ foldl (<>) Neutral ars
-  multiply dmg (mult * tintedLensMult)
+  multiply2 dmg (mult * tintedLensMult)
 
-screensMultiplier :: Int -> Reader DCS Int
+screensMultiplier :: (Int, Int) -> Calc (Int, Int)
 screensMultiplier dmg = do
+  log ("After type effectiveness multiplier", show dmg)
   attacker <- getAttackingPokemon
   defender <- getDefendingPokemon
   move <- getMove
@@ -156,10 +183,11 @@ screensMultiplier dmg = do
         if toId moveName `notElem` ["psychicfangs", "brickbreak", "gmaxwindrage"] && not (emWillCrit move || crit env || willCrit attacker defender)
           then getScreenMultiplier screen (toId . epAbility $ attacker) categoryMove
           else 1
-  multiply dmg mult
+  multiply2 dmg mult
 
-minimizeMultiplier :: Int -> Reader DCS Int
+minimizeMultiplier :: (Int, Int) -> Calc (Int, Int)
 minimizeMultiplier dmg = do
+  log ("after screens multiplier", show dmg)
   env <- getEnvironment
   move <- getMove
   let moves = ["bodyslam", "dragonrush", "flyingpress", "heatcrash", "heavyslam", "maliciousmoonsault", "steamroller", "stomp"]
@@ -167,10 +195,11 @@ minimizeMultiplier dmg = do
         if (toId . emName) move `elem` moves && isMinimized env
           then 2
           else 1
-  multiply dmg mult
+  multiply2 dmg mult
 
-invulnerableMultiplier :: Int -> Reader DCS Int
+invulnerableMultiplier :: (Int, Int) -> Calc (Int, Int)
 invulnerableMultiplier dmg = do
+  log ("after minimize multiplier", show dmg)
   env <- getEnvironment
   attacker <- getAttackingPokemon
   move <- getMove
@@ -180,10 +209,11 @@ invulnerableMultiplier dmg = do
         | (toId . epAbility) attacker == "noguard" = 1
         | isInvulnerable env = 0
         | otherwise = 1
-  multiply dmg mult
+  multiply2 dmg mult
 
-abilityMultiplier :: Int -> Reader DCS Int
+abilityMultiplier :: (Int, Int) -> Calc (Int, Int)
 abilityMultiplier dmg = do
+  log ("after invulnerability multiplier", show dmg)
   attacker <- getAttackingPokemon
   defender <- getDefendingPokemon
   move <- getMove
@@ -200,10 +230,11 @@ abilityMultiplier dmg = do
         if (atkAbility == "neutralizinggas" || defAbility /= "prismarmor") && (atkAbility `elem` abilityIgnoringAbilities || (toId . emName) move `elem` movesThatIgnoreAbilities)
           then 1
           else getDefensiveAbilityMultiplier defAbility defender move {emPriority = movePrio} moveType moveCategory ar
-  multiply dmg (atkMult * defMult)
+  multiply2 dmg (atkMult * defMult)
 
-itemMultiplier :: Int -> Reader DCS Int
+itemMultiplier :: (Int, Int) -> Calc (Int, Int)
 itemMultiplier dmg = do
+  log ("After ability multiplier", show dmg)
   move <- getMove
   attacker <- getAttackingPokemon
   defender <- getDefendingPokemon
@@ -212,10 +243,11 @@ itemMultiplier dmg = do
       defenderType = getPokemonType defender
       typeMatchup = getTypeMatchup moveType defenderType
       mult = getItemMultiplier (toId . epName $ attacker) move moveType typeMatchup (fromMaybe "" (epItem attacker <&> iName)) (toId . epAbility $ attacker, toId . epAbility $ defender)
-  multiply dmg (if magicRoom env then 1 else mult)
+  multiply2 dmg (if magicRoom env then 1 else mult)
 
-multiHitMultiplier :: Int -> Reader DCS Int
+multiHitMultiplier :: (Int, Int) -> Calc (Int, Int)
 multiHitMultiplier dmg = do
+  log ("after item multiplier", show dmg)
   attacker <- getAttackingPokemon
   defender <- getDefendingPokemon
   move <- getMove
@@ -224,43 +256,53 @@ multiHitMultiplier dmg = do
       atkAbility = epAbility attacker
       defAbility = epAbility defender
       hasHalved = (defAbility `elem` ["multiscale", "shadowshield"] && epHPPercentage defender == 100) && (atkAbility /= "neutralizinggas" || atkAbility `notElem` abilityIgnoringAbilities || (toId . emName) move `notElem` movesThatIgnoreAbilities)
-      totalDmg = if hasHalved then dmg + 2 * (hits - 1) * dmg else hits * dmg
+      totalDmg = both (\dmg -> if hasHalved then dmg + 2 * (hits - 1) * dmg else hits * dmg) dmg
   return totalDmg
 
-randomMultiplier :: Int -> Reader DCS (Int, Int)
-randomMultiplier dmg = pure (fromIntegral dmg *// 0.85, dmg)
+both :: (a -> b) -> (a, a) -> (b, b)
+both f (a1, a2) = (f a1, f a2)
 
-toCalc :: (Int, Int) -> Reader DCS Calc
+randomMultiplier :: Int -> Calc (Int, Int)
+randomMultiplier dmg = log ("After crit multiplier", show dmg) >> pure (fromIntegral dmg *// 0.85, dmg)
+
+toCalc :: (Int, Int) -> Calc CalcResult
 toCalc hp@(minHp, maxHp) = do
   defender <- getDefendingPokemon
   let hpS = hpStat (getEffectiveStats defender)
-  return $ Calc hp (round' (on (/) fromIntegral minHp hpS) 3, round' (on (/) fromIntegral maxHp hpS) 3)
+  return $ CalcResult hp (round' (on (/) fromIntegral minHp hpS) 3, round' (on (/) fromIntegral maxHp hpS) 3)
 
 round' :: Double -> Integer -> Double
 round' num sg = (fromIntegral . round $ num * f) / f
-    where f = 10^sg
+  where
+    f = 10 ^ sg
 
 -- HELPER FUNCTIONS
 
-getEnvironment :: Reader DCS Environment
+getEnvironment :: Calc Environment
 getEnvironment = reader f
   where
     f (DCS env _ _ _) = env
 
-getAttackingPokemon :: Reader DCS EffectivePokemon
+getAttackingPokemon :: Calc EffectivePokemon
 getAttackingPokemon = reader f
   where
     f (DCS _ p _ _) = p
 
-getDefendingPokemon :: Reader DCS EffectivePokemon
+getDefendingPokemon :: Calc EffectivePokemon
 getDefendingPokemon = reader f
   where
     f (DCS _ _ p _) = p
 
-getMove :: Reader DCS EffectiveMove
+getMove :: Calc EffectiveMove
 getMove = reader f
   where
     f (DCS _ _ _ move) = move
 
-multiply :: Int -> Double -> Reader DCS Int
+multiply :: Int -> Double -> Calc Int
 multiply dmg mult = return (fromIntegral dmg *// mult)
+
+multiply2 :: (Int, Int) -> Double -> Calc (Int, Int)
+multiply2 (min, max) mult = return (fromIntegral min *// mult, fromIntegral max *// mult)
+
+hasAbility :: T.Text -> EffectivePokemon -> Bool
+hasAbility a ep = epAbility ep == a

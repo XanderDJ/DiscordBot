@@ -140,7 +140,7 @@ data Environment = Env
 
 data MoveOrder = FIRST | LAST deriving (Show, Eq, Ord)
 
-data Calc = Calc
+data CalcResult = CalcResult
   { dmg :: (Int, Int),
     hpPercentage :: (Double, Double)
   }
@@ -148,17 +148,17 @@ data Calc = Calc
 printPercentage :: (PrintfArg a, Floating a) => Int -> a -> String
 printPercentage = printf "%0.*f%%"
 
-instance Show Calc where
-  show Calc {..} = "minHP = " ++ show (fst dmg) ++ ", maxHP = " ++ show (snd dmg) ++ ", min% = " ++ printPercentage 1 (fst hpPercentage * 100) ++ ", max% = " ++ printPercentage 1 (snd hpPercentage * 100)
+instance Show CalcResult where
+  show CalcResult {..} = "minHP = " ++ show (fst dmg) ++ ", maxHP = " ++ show (snd dmg) ++ ", min% = " ++ printPercentage 1 (fst hpPercentage * 100) ++ ", max% = " ++ printPercentage 1 (snd hpPercentage * 100)
 
-getMinDmg :: Calc -> Int
-getMinDmg Calc {..} = fst dmg
+getMinDmg :: CalcResult -> Int
+getMinDmg CalcResult {..} = fst dmg
 
-getMaxDmg :: Calc -> Int
-getMaxDmg Calc {..} = snd dmg
+getMaxDmg :: CalcResult -> Int
+getMaxDmg CalcResult {..} = snd dmg
 
-getMinPercent :: Calc -> Double
-getMinPercent Calc {..} = fst hpPercentage
+getMinPercent :: CalcResult -> Double
+getMinPercent CalcResult {..} = fst hpPercentage
 
-getMaxPercent :: Calc -> Double
-getMaxPercent Calc {..} = snd hpPercentage
+getMaxPercent :: CalcResult -> Double
+getMaxPercent CalcResult {..} = snd hpPercentage

@@ -24,6 +24,8 @@ import Text.Read (readMaybe)
 getAttackAndMult :: T.Text -> AttackType -> (EffectiveStats, Multipliers) -> (EffectiveStats, Multipliers) -> (Double, Double) -> (Int, StatMultiplier, Double)
 getAttackAndMult "bodypress" _ (es, em) _ (atkMult, spaMult) = (defStat es, defM em, atkMult)
 getAttackAndMult "foulplay" _ _ (es, em) (atkMult, spaMult) = (atkStat es, atkM em, atkMult)
+getAttackAndMult "naturepower" _ (es, em) _ (atkMult, spaMult) = (atkStat es, atkM em, atkMult)
+getAttackAndMult "naturalgift" _ (es, em) _ (atkMult, spaMult) = (atkStat es, atkM em, atkMult)
 getAttackAndMult move SPECIAL (es, em) _ (atkMult, spaMult) = (spaStat es, spaM em, spaMult)
 getAttackAndMult move PHYSICAL (es, em) _ (atkMult, spaMult) = (atkStat es, atkM em, atkMult)
 getAttackAndMult move OTHER (es, em) _ (atkMult, spaMult) = (0, 0, 0)
@@ -32,7 +34,8 @@ getDefenseAndMult :: T.Text -> AttackType -> (EffectiveStats, Multipliers) -> (E
 getDefenseAndMult "psystrike" _ _ (es, em) (defMult, spdMult) = (defStat es, defM em, defMult)
 getDefenseAndMult "psyshock" _ _ (es, em) (defMult, spdMult) = (defStat es, defM em, defMult)
 getDefenseAndMult "secretsword" _ _ (es, em) (defMult, spdMult) = (defStat es, defM em, defMult)
-getDefenseAndMult "naturepower" _ _ (es, em) (defMult, spdMult) = (spdStat es, spdM em, spdMult)
+getDefenseAndMult "naturepower" _ _ (es, em) (defMult, spdMult) = (defStat es, defM em, defMult)
+getDefenseAndMult "naturalgift" _ _ (es, em) (defMult, spdMult) = (defStat es, defM em, defMult)
 getDefenseAndMult "sacredsword" _ _ (es, _) (defMult, spdMult) = (defStat es, 0, defMult)
 getDefenseAndMult "darkestlariat" _ _ (es, _) (defMult, spdMult) = (defStat es, 0, defMult)
 getDefenseAndMult "chipaway" _ _ (es, _) (defMult, spdMult) = (defStat es, 0, defMult)
@@ -42,8 +45,7 @@ getDefenseAndMult _ PHYSICAL _ (es, em) (defMult, spdMult) = (defStat es, defM e
 getDefenseAndMult _ SPECIAL _ (es, em) (defMult, spdMult) = (spdStat es, spdM em, spdMult)
 getDefenseAndMult _ OTHER _ (es, em) (defMult, spdMult) = (defStat es, defM em, defMult)
 
-
-applyWonderRoom :: Environment -> EffectiveStats -> EffectiveStats 
+applyWonderRoom :: Environment -> EffectiveStats -> EffectiveStats
 applyWonderRoom Env {wonderRoom = True} ES {..} = ES hpStat atkStat spdStat spaStat defStat speStat
 applyWonderRoom _ es = es
 
@@ -73,10 +75,10 @@ getMoveMultiplier _ EP {epStatus = Just POISONED} EM {emName = "venoshock"} _ = 
 getMoveMultiplier _ EP {epStatus = Just SLEEP} EM {emName = "wakeupslap"} _ = 2
 getMoveMultiplier attacker defender move env = 1
 
-getTerrainMultiplier :: Environment -> EffectiveMove -> Double
-getTerrainMultiplier Env {activeTerrain = Just GRASSY} EM {emType = tipe} = if tipe == GRASS then 1.3 else 1
-getTerrainMultiplier Env {activeTerrain = Just ELECTRIC_T} EM {emType = tipe} = if tipe == ELECTRIC then 1.3 else 1
-getTerrainMultiplier Env {activeTerrain = Just PSYCHIC_T} EM {emType = tipe} = if tipe == PSYCHIC then 1.3 else 1
+getTerrainMultiplier :: Environment -> [Type] -> Double
+getTerrainMultiplier Env {activeTerrain = Just GRASSY} tipe = if GRASS `elem` tipe then 1.3 else 1
+getTerrainMultiplier Env {activeTerrain = Just ELECTRIC_T} tipe = if ELECTRIC `elem` tipe then 1.3 else 1
+getTerrainMultiplier Env {activeTerrain = Just PSYCHIC_T} tipe = if PSYCHIC `elem` tipe then 1.3 else 1
 getTerrainMultiplier _ _ = 1
 
 -- | AAMM == AttackAbilityMove
@@ -104,14 +106,15 @@ getAbilityMultiplier "steelyspirit" EM {emType = tipe} _ _ _ = if tipe == STEEL 
 getAbilityMultiplier "defeatist" _ EP {epHPPercentage = percentage} _ _ = if percentage < 50 then 0.5 else 1
 getAbilityMultiplier "strongjaw" EM {emBite = True} _ _ _ = 1.5
 getAbilityMultiplier _ EM {emType = tipe} _ EP {epAbility = "thickfat"} _ = if tipe `elem` [ICE, FIRE] then 0.5 else 1
-getAbilityMultiplier "torrent" EM {emType = tipe} EP {epHPPercentage = percentage} _ _ = if tipe == WATER && percentage < 1 / 3 then 1.5 else 1
-getAbilityMultiplier "blaze" EM {emType = tipe} EP {epHPPercentage = percentage} _ _ = if tipe == FIRE && percentage < 1 / 3 then 1.5 else 1
-getAbilityMultiplier "overgrow" EM {emType = tipe} EP {epHPPercentage = percentage} _ _ = if tipe == GRASS && percentage < 1 / 3 then 1.5 else 1
+getAbilityMultiplier "torrent" EM {emType = tipe} EP {epHPPercentage = percentage} _ _ = if tipe == WATER && percentage / 100 < 1 / 3 then 1.5 else 1
+getAbilityMultiplier "blaze" EM {emType = tipe} EP {epHPPercentage = percentage} _ _ = if tipe == FIRE && percentage / 100 < 1 / 3 then 1.5 else 1
+getAbilityMultiplier "overgrow" EM {emType = tipe} EP {epHPPercentage = percentage} _ _ = if tipe == GRASS && percentage / 100 < 1 / 3 then 1.5 else 1
 getAbilityMultiplier "dragonsmaw" EM {emType = tipe} _ _ _ = if tipe == DRAGON then 1.5 else 1
 getAbilityMultiplier "transistor" EM {emType = tipe} _ _ _ = if tipe == ELECTRIC then 1.5 else 1
 getAbilityMultiplier "waterbubble" EM {emType = tipe} _ _ _ = if tipe == WATER then 2 else 1
 getAbilityMultiplier "megalauncer" EM {emPulse = True} _ _ _ = 1.5
 getAbilityMultiplier "stakeout" _ _ _ Env {switchingOut = True} = 2
+getAbilityMultiplier "toughclaws" EM {isContact = True} _ _ _ = 1.3
 getAbilityMultiplier ability move attacker defender environment = 1
 
 getAttackStatMultiplier :: T.Text -> EffectiveMove -> EffectivePokemon -> EffectivePokemon -> Environment -> Double
@@ -504,10 +507,10 @@ enrichTmWithWeather (Just STRONGWIND) bool typing tm@(TM am dm) =
 enrichTmWithWeather _ _ _ tm = tm
 
 enrichTmWithEnv :: Environment -> TypeMatchup -> TypeMatchup
-enrichTmWithEnv Env {gravity = gravity} (TM am dm) = if gravity then TM am (M.insert GROUND Neutral dm) else TM am dm
+enrichTmWithEnv Env {gravity = gravity} (TM am dm) = if gravity then TM am (M.insertWith (\mu cu -> if cu == Immune then Neutral else cu) GROUND Neutral dm) else TM am dm
 
 thousandArrows :: T.Text -> Typing -> Int -> TypeMatchup -> TypeMatchup
-thousandArrows "thousandarrows" defenderTyping tu (TM am dm) = let relation = if tu > 0 || FLYING `notElem` defenderTyping then Neutral else Resisted in TM am (M.insert GROUND relation dm)
+thousandArrows "thousandarrows" defenderTyping tu (TM am dm) = let relation = if tu > 0 || FLYING `notElem` defenderTyping then Neutral else Resisted in TM am (M.insertWith (\r cr -> if cr == Immune then r else cr) GROUND relation dm)
 thousandArrows _ _ _ tm = tm
 
 getItemMultiplier :: T.Text -> EffectiveMove -> Typing -> AttackRelation -> T.Text -> (T.Text, T.Text) -> Double
@@ -642,12 +645,12 @@ getWeatherMult mType HEAVYSUN
 getWeatherMult _ _ = 1
 
 isGrounded :: EffectivePokemon -> Bool
-isGrounded EP {..} = grounded
+isGrounded EP {..} = not flying
   where
     ts = epTyping
     ability = toId epAbility
     item = fromMaybe "" (epItem <&> toId . iName)
-    grounded = FLYING `elem` ts || ability == "levitate" || item == "airballoon" || epRisen
+    flying = FLYING `elem` ts || ability == "levitate" || item == "airballoon" || epRisen
 
 willCrit :: EffectivePokemon -> EffectivePokemon -> Bool
 willCrit EP {epAbility = "merciless"} EP {epStatus = Just x} = True

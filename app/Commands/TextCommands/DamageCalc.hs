@@ -73,9 +73,10 @@ validDbData (mon1, m1Opts) (mon2, m2Opts) (move, moveOpts) i1 i2 m = do
       parsedMon2 = parseMon (toPokemon mon2) (toItem <$> i2) m2Opts effectiveMove
       damageCalcState = DCS env parsedMon1 parsedMon2 effectiveMove
       calc = runCalc damageCalcState
-  sendMessage $ R.CreateMessage (messageChannel m) (T.pack (show calc))
+  sendMessage $ R.CreateMessage (messageChannel m) (T.pack (show (fst calc)))
   -- calcMessage = makeCalcMessage (min, max) damageCalcState
   printIO damageCalcState
+  mapM_ printIO (snd calc)
 
 makeCalcMessage :: (Int, Int) -> DCS -> T.Text
 makeCalcMessage (min, max) DCS {dcsEnv = Env {..}} = undefined
@@ -106,11 +107,11 @@ parseMon Pokemon {..} i opts EM {..} =
     risen = hasOption ["telekinesis", "tele", "tel", "magnetrise", "magnet", "mr", "levitating", "levitate"] opts
     t' = getOption ["type", "t"] opts >>= \t -> let tt = T.splitOn ";" t in let rs = mapMaybe (readMaybe . T.unpack . toId . T.strip) tt in if null rs then Nothing else Just rs
     typing = fromMaybe pTyping t'
-    atkMult = fromMaybe (0 %% 0) ((getOption ["atkm", "atkmultiplier", "attackmultiplier"] opts >>= readMaybeInt . T.unpack) <&> fromIntegral)
-    defMult = fromMaybe (0 %% 0) ((getOption ["defm", "defmultiplier", "defensemultiplier"] opts >>= readMaybeInt . T.unpack) <&> fromIntegral)
-    spaMult = fromMaybe (0 %% 0) ((getOption ["spam", "spamultiplier", "specialattackmultiplier"] opts >>= readMaybeInt . T.unpack) <&> fromIntegral)
-    spdMult = fromMaybe (0 %% 0) ((getOption ["spdm", "spdmultiplier", "specialdefensemultiplier"] opts >>= readMaybeInt . T.unpack) <&> fromIntegral)
-    speMult = fromMaybe (0 %% 0) ((getOption ["spem", "spemultiplier", "speedmultiplier"] opts >>= readMaybeInt . T.unpack) <&> fromIntegral)
+    atkMult = fromMaybe (0 %% 0) ((getOption ["atkm", "atkmultiplier", "attackmultiplier", "attackboost", "atkboost", "atkb"] opts >>= readMaybeInt . T.unpack) <&> fromIntegral)
+    defMult = fromMaybe (0 %% 0) ((getOption ["defm", "defmultiplier", "defensemultiplier", "defboost", "defb", "defenseboost"] opts >>= readMaybeInt . T.unpack) <&> fromIntegral)
+    spaMult = fromMaybe (0 %% 0) ((getOption ["spam", "spamultiplier", "specialattackmultiplier", "specialattackboost", "spab", "spaboost", "specialattackb"] opts >>= readMaybeInt . T.unpack) <&> fromIntegral)
+    spdMult = fromMaybe (0 %% 0) ((getOption ["spdm", "spdmultiplier", "specialdefensemultiplier", "spdb", "spdboost", "specialdefenseboost"] opts >>= readMaybeInt . T.unpack) <&> fromIntegral)
+    speMult = fromMaybe (0 %% 0) ((getOption ["spem", "spemultiplier", "speedmultiplier", "speb", "speboost", "speedboost"] opts >>= readMaybeInt . T.unpack) <&> fromIntegral)
 
     readMaybeInt :: String -> Maybe Int
     readMaybeInt = readMaybe
@@ -140,7 +141,7 @@ parseMon Pokemon {..} i opts EM {..} =
       | otherwise = Just x
 
 toIdItem :: Item -> Item
-toIdItem i@Item {..} = i {iName = toId iName} 
+toIdItem i@Item {..} = i {iName = toId iName}
 
 parseSet :: AttackType -> T.Text -> Maybe (EVs, IVs, Nature)
 parseSet at "hyperoffense" = Just $ getCorrectType at (maxAtkEVs, usualIvs, jolly) (maxSpaEVs, specialIvs, timid)
@@ -198,9 +199,9 @@ trickroomSIvs = IVS 31 0 31 31 31 0
 parseEnv :: M.Map T.Text T.Text -> Environment
 parseEnv m = Env terrain weather s c g mr wr tr ps b electrified tw minimized invulnerable lc hb so pr mpr double
   where
-    terrain = M.lookup "terrain" m >>= \t -> parseTerrain (toId t)
-    weather = M.lookup "weather" m >>= \w -> parseWeather (toId w)
-    s' = M.lookup "screens" m >>= \s -> let ss = T.splitOn ";" s in let rs = mapMaybe (parseScreen . toId . T.strip) ss in if null rs then Nothing else Just rs
+    terrain = getOption ["terrain", "t"] m >>= \t -> parseTerrain (toId t)
+    weather = getOption ["weather", "w"] m >>= \w -> parseWeather (toId w)
+    s' = getOption ["screens", "screen", "scr"] m >>= \s -> let ss = T.splitOn ";" s in let rs = mapMaybe (parseScreen . toId . T.strip) ss in if null rs then Nothing else Just rs
     s = fromMaybe [] s'
     c = hasOption ["crit", "criticalhit", "c", "critical-hit"] m
     g = hasOption ["gravity", "g", "grav"] m
@@ -232,7 +233,11 @@ parseMove move@MoveT {moveBp = bp, moveType = tipe} opts =
   where
     em = toEffectiveMove move
     timesUsed = fromMaybe 0 (getOption ["timesused", "tu", "times"] opts >>= readMaybe . T.unpack)
-    hits = fromMaybe 1 (getOption ["hits", "h"] opts >>= readMaybe . T.unpack)
+    hits = fromMaybe (getDefaultHits (emName em)) (getOption ["hits", "h"] opts >>= readMaybe . T.unpack)
+
+getDefaultHits :: T.Text -> Int
+getDefaultHits "dualwingbeat" = 2
+getDefaultHits _ = 1
 
 errorMessage :: T.Text -> T.Text -> T.Text -> T.Text
 errorMessage "" "" "" = ""
