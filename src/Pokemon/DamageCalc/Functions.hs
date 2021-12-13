@@ -73,6 +73,9 @@ getMoveMultiplier _ EP {epStatus = Just PARALYZED} EM {emName = "smellingsalts"}
 getMoveMultiplier _ EP {epStatus = Just x} EM {emName = "hex"} _ = 2
 getMoveMultiplier _ EP {epStatus = Just POISONED} EM {emName = "venoshock"} _ = 2
 getMoveMultiplier _ EP {epStatus = Just SLEEP} EM {emName = "wakeupslap"} _ = 2
+getMoveMultiplier _ _ EM {emName = "terrainpulse"} Env {activeTerrain = Just x} = 2
+getMoveMultiplier _ _ EM {emName = "weatherball"} Env {activeWeather = Just STRONGWIND } = 1
+getMoveMultiplier _ _ EM {emName = "weatherball"} Env {activeWeather = Just x } = 2
 getMoveMultiplier attacker defender move env = 1
 
 getTerrainMultiplier :: Environment -> [Type] -> Double
@@ -112,7 +115,7 @@ getAbilityMultiplier "overgrow" EM {emType = tipe} EP {epHPPercentage = percenta
 getAbilityMultiplier "dragonsmaw" EM {emType = tipe} _ _ _ = if tipe == DRAGON then 1.5 else 1
 getAbilityMultiplier "transistor" EM {emType = tipe} _ _ _ = if tipe == ELECTRIC then 1.5 else 1
 getAbilityMultiplier "waterbubble" EM {emType = tipe} _ _ _ = if tipe == WATER then 2 else 1
-getAbilityMultiplier "megalauncer" EM {emPulse = True} _ _ _ = 1.5
+getAbilityMultiplier "megalauncher" EM {emPulse = True} _ _ _ = 1.5
 getAbilityMultiplier "stakeout" _ _ _ Env {switchingOut = True} = 2
 getAbilityMultiplier "toughclaws" EM {isContact = True} _ _ _ = 1.3
 getAbilityMultiplier ability move attacker defender environment = 1
@@ -357,6 +360,19 @@ getMoveBaseType p _ "technoblast" Env {magicRoom = isRoom} t =
     else fromMaybe [t] (epItem p >>= iOnDrive >>= (fmap (: []) . readMaybe . T.unpack))
 getMoveBaseType EP {epTyping = typing} _ "revelationdance" _ _ = [head typing]
 getMoveBaseType EP {epAbility = "normalize"} _ _ _ _ = [NORMAL]
+getMoveBaseType _ _ "terrainpulse" Env {activeTerrain = Just x} _ = case x of
+  ELECTRIC_T -> [ELECTRIC]
+  PSYCHIC_T -> [PSYCHIC]
+  MISTY -> [FAIRY]
+  GRASSY -> [GRASS]
+getMoveBaseType _ _ "weatherball" Env {activeWeather = Just weather} _ = case weather of
+  SANDSTORM -> [ROCK]
+  HAIL -> [ICE]
+  RAIN -> [WATER]
+  SUN -> [FIRE]
+  HEAVYRAIN -> [WATER]
+  HEAVYSUN -> [FIRE]
+  STRONGWIND -> [NORMAL]
 getMoveBaseType _ _ _ _ t = [t]
 
 getNaturePowerValues :: Environment -> (Int, Typing)
