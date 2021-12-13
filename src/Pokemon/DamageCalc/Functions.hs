@@ -337,6 +337,7 @@ getDefensiveAbilityMultiplier ab ep em typing cat super = 1
 
 getAttackAbilityMultiplier :: T.Text -> EffectivePokemon -> EffectivePokemon -> EffectiveMove -> Environment -> [Type] -> AttackType -> AttackRelation -> Double
 getAttackAbilityMultiplier "neuroforce" _ _ _ _ _ _ SuperEffective = 1.25
+getAttackAbilityMultiplier "neuroforce" _ _ _ _ _ _ StronglyEffective = 1.25
 getAttackAbilityMultiplier ab attacker defender em env typing cat effectiveness = 1
 
 getPokemonType :: EffectivePokemon -> [Type]
