@@ -314,8 +314,8 @@ itemMultiplier dmg = do
       typeMatchup = getTypeMatchup moveType defenderType
       oMult = getOffenseItemMultiplier (toId . epName $ attacker) move moveType typeMatchup (fromMaybe "" (epItem attacker <&> iName))
       dMult = getDefenseItemMultiplier moveType typeMatchup (fromMaybe "" (epItem attacker <&> iName)) (fromMaybe "" (epItem defender <&> iName)) (toId . epAbility $ attacker, toId . epAbility $ defender)
-  logIf (oMult /= 1) "item" (fromMaybe "" (epItem attacker <&> (show . iName)))
-  logIf (dMult /= 1) "defItem" (fromMaybe "" (epItem defender <&> (show . iName)))
+  logIf (oMult /= 1) "item" (fromMaybe "" (epItem attacker <&> (T.unpack . iName)))
+  logIf (dMult /= 1) "defItem" (fromMaybe "" (epItem defender <&> (T.unpack . iName)))
   multiply2 dmg (if magicRoom env then 1 else oMult * dMult)
 
 multiHitMultiplier :: (Int, Int) -> Calc (Int, Int)
