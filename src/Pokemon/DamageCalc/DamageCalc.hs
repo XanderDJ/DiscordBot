@@ -87,10 +87,12 @@ baseDamage = do
       choiceSpecs = if canUseItem attacker env && hasItem "choicespecs" attacker then 1.5 else 1
       choiceBand = if canUseItem attacker env && hasItem "choiceband" attacker then 1.5 else 1
       burned = if isBurned attacker && epAbility attacker /= "guts" && emName move /= "facade" then 0.5 else 1
+      deepseatooth = if hasItem "deepseatooth" attacker && epName attacker == "clamperl" then 2 else 1
+      deepseascale = if hasItem "deepseascale" defender && epName attacker == "clamperl" then 2 else 1
       atkMult = atkMultiplier * powerMult * burned * choiceBand
-      spaMult = spaMultiplier * batteryMult * choiceSpecs
+      spaMult = spaMultiplier * batteryMult * choiceSpecs * deepseatooth
       defMult = defMultiplier * evioliteMult
-      spdMult = spdMultiplier * assaultvestMult * evioliteMult * sandMult
+      spdMult = spdMultiplier * assaultvestMult * evioliteMult * sandMult * deepseascale
       (atk, statAMult, aMult, atkS) = getAttackAndMult (emName move) moveCategory (attackerStats, attackMultipliers) (defenderStats, defenseMultipliers) (atkMult, spaMult)
       (def, statDMult, dMult, defS) = getDefenseAndMult (emName move) moveCategory (attackerStats, attackMultipliers) (applyWonderRoom env defenderStats, defenseMultipliers) (defMult, spdMult)
       a = fromIntegral atk * (if epAbility attacker == "unaware" || epAbility defender == "unaware" then 1 else getMultiplier statAMult) * aMult
