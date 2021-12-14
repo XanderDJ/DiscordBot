@@ -163,6 +163,10 @@ typeEffectivenessMultiplier dmg = do
       ars = map (getDefenseRelation (defenseM tm)) moveType
       tintedLensMult = if mult < 1 && hasAbility "tintedlens" attacker then 2 else 1
       mult = toMultiplier $ foldl (<>) Neutral ars
+  log ("move type", show moveType)
+  log ("defender type", show defenderType)
+  log ("tm", show tms)
+  log ("ar", show ars)
   multiply2 dmg (mult * tintedLensMult)
 
 screensMultiplier :: (Int, Int) -> Calc (Int, Int)

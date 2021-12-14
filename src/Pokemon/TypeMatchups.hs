@@ -270,7 +270,8 @@ steelDefense =
       (ROCK, Resisted),
       (STEEL, Resisted),
       (FIRE, SuperEffective),
-      (GROUND, SuperEffective)
+      (GROUND, SuperEffective),
+      (FIGHTING, SuperEffective)
     ]
 
 steelMatchup = TM steelAttack steelDefense
