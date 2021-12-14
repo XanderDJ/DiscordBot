@@ -139,6 +139,7 @@ getDefenseStatMultiplier _ _ _ _ _ = 1
 
 getSpecialStatMultiplier :: T.Text -> EffectiveMove -> EffectivePokemon -> EffectivePokemon -> Environment -> Double
 getSpecialStatMultiplier "flareboost" _ EP {epStatus = Just BURN} _ _ = 1.5
+getSpecialStatMultiplier "solarpower" _ _ _ Env {activeWeather = Just weather} = if weather `elem` [SUN, HEAVYSUN] then 1.5 else 1
 getSpecialStatMultiplier _ _ _ _ _ = 1
 
 getSpecialDefenseStatMultiplier :: T.Text -> EffectiveMove -> EffectivePokemon -> EffectivePokemon -> Environment -> Double
