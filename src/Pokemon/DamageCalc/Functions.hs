@@ -712,3 +712,7 @@ canUseBerry berryUser def env = canUseItem berryUser env && epAbility def /= "un
 isMisty :: Environment -> Bool
 isMisty Env {activeTerrain = Just MISTY} = True
 isMisty _ = False
+
+hasWeather :: Weather -> Environment -> Bool
+hasWeather weather Env { activeWeather = Just w} = weather == w
+hasWeather _ _ = False
