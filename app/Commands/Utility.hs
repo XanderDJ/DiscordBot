@@ -13,6 +13,7 @@ import Data.Either
 import DiscordDB.Types (GuildRoleT(GuildRoleT))
 import Database.PostgreSQL.Simple (Connection)
 import PokemonDB.Connection (getDbConnEnv)
+import Text.Pretty.Simple (pPrint)
 
 sendMessage :: R.ChannelRequest Message -> DiscordHandler ()
 sendMessage = void . restCall
@@ -109,4 +110,4 @@ pokemonDb f m = do
     ifElse (isNothing con) (noConnection m) (f (fromJust con) m)
 
 printIO :: Show a => a -> DiscordHandler ()
-printIO a = lift $ print a
+printIO a = lift $ pPrint a

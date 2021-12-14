@@ -43,6 +43,7 @@ dependencies:
 - product-profunctors
 - postgresql-simple
 - utf8-string
+- pretty-simple
 
 library:
   source-dirs: src

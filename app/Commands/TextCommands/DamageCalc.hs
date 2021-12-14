@@ -73,10 +73,12 @@ validDbData (mon1, m1Opts) (mon2, m2Opts) (move, moveOpts) i1 i2 m = do
       parsedMon2 = parseMon (toPokemon mon2) (toItem <$> i2) m2Opts effectiveMove
       damageCalcState = DCS env parsedMon1 parsedMon2 effectiveMove
       calc = runCalc damageCalcState
-  sendMessage $ R.CreateMessage (messageChannel m) (T.pack (show (fst calc)))
+  if not (hasOption ["debug", "d"] moveOpts)
+    then sendMessage $ R.CreateMessage (messageChannel m) (T.pack (show (fst calc)))
+    else sendMessage $ R.CreateMessage (messageChannel m) (T.pack (show (snd calc)))
   -- calcMessage = makeCalcMessage (min, max) damageCalcState
   printIO damageCalcState
-  mapM_ printIO (snd calc)
+  printIO (snd calc)
 
 makeCalcMessage :: (Int, Int) -> DCS -> T.Text
 makeCalcMessage (min, max) DCS {dcsEnv = Env {..}} = undefined
@@ -84,7 +86,7 @@ makeCalcMessage (min, max) DCS {dcsEnv = Env {..}} = undefined
 parseMon :: Pokemon -> Maybe Item -> M.Map T.Text T.Text -> EffectiveMove -> EffectivePokemon
 parseMon Pokemon {..} i opts EM {..} =
   EP
-    { epName = pName,
+    { epName = toId pName,
       epAbility = fromMaybe ((toId . head) abilities) (getOption ["a", "ability"] opts >>= \s -> return (toId s)),
       epTyping = typing,
       epStats = baseStats,
@@ -225,7 +227,7 @@ parseMove :: DBMove -> M.Map T.Text T.Text -> EffectiveMove
 parseMove move@MoveT {moveBp = bp, moveType = tipe} opts =
   em
     { emBp = fromMaybe bp ((opts M.!? "bp") >>= readMaybe . T.unpack),
-      emType = fromMaybe ((read . T.unpack) tipe) (getOption ["type", "t"] opts >>= (readMaybe . T.unpack . toId . T.strip)),
+      emType = fromMaybe ((read . T.unpack) tipe) (getOption ["type"] opts >>= (readMaybe . T.unpack . toId . T.strip)),
       emTimesUsed = timesUsed,
       emHits = hits,
       emStockPile = getOption ["stockpile", "stock", "sp"] opts >>= readMaybe . T.unpack

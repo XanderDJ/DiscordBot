@@ -8,6 +8,7 @@ import qualified Data.Text as T
 import Pokemon.Nature
 import Pokemon.Types
 import Text.Read (readMaybe)
+import Control.Lens (_18')
 
 getType :: String -> Maybe Type
 getType = readMaybe
@@ -757,6 +758,93 @@ movesThatIgnoreAbilities =
 
 abilityIgnoringAbilities :: [T.Text]
 abilityIgnoringAbilities = ["moldbreaker", "teravolt", "turboblaze"]
+
+unknockableItems :: [T.Text]
+unknockableItems = 
+  [
+    "buginiumz",
+    "darkiniumz",
+    "dragoniumz",
+    "electriumz",
+    "fairiumz",
+    "fightiniumz",
+    "firiumz",
+    "flyiniumz",
+    "ghostiumz",
+    "grassiumz",
+    "groundiumz",
+    "iciumz",
+    "normaliumz",
+    "poisoniumz",
+    "psychiumz",
+    "rockiumz",
+    "steeliumz",
+    "wateriumz",
+    "alolaraichiumz",
+    "decidiumz",
+    "eeviumz",
+    "inciniumz",
+    "kommoniumz",
+    "lunaliumz",
+    "lycaniumz",
+    "marshadiumz",
+    "mewniumz",
+    "mimikiumz",
+    "pikaniumz",
+    "pikashuniumz",
+    "primariumz",
+    "snorliumz",
+    "solganiumz",
+    "tapuniumz",
+    "ultranecroziumz",
+    "abomasite",
+    "absolite",
+    "aerodactylite",
+    "aggronite",
+    "alakazite",
+    "altarianite",
+    "ampharosite",
+    "audinite",
+    "banettite",
+    "beedrillite",
+    "blastoisinite",
+    "blazikenite",
+    "cameruptite",
+    "charizarditex",
+    "charizarditey",
+    "diancite",
+    "galladite",
+    "garchompite",
+    "gardevoirite",
+    "gengarite",
+    "glalitite",
+    "gyaradosite",
+    "heracronite",
+    "houndoominite",
+    "kangaskhanite",
+    "latiasite",
+    "latiosite",
+    "lopunnite",
+    "lucarionite",
+    "manectite",
+    "mawilite",
+    "medichamite",
+    "metagrossite",
+    "mewtwonitex",
+    "mewtwonitey",
+    "pidgeotite",
+    "pinsirite",
+    "sablenite",
+    "salamencite",
+    "sceptilite",
+    "scizorite",
+    "sharpedonite",
+    "slowbronite",
+    "steelixite",
+    "swampertite",
+    "tyranitarite",
+    "venusaurite"
+  ]
 
 toId :: T.Text -> T.Text
 toId = T.replace " " "" . T.replace "-" "" . T.toLower

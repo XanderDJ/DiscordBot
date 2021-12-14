@@ -219,7 +219,14 @@ parseWeather "strongwind" = Just STRONGWIND
 parseWeather _ = Nothing
 
 -- | Terrain
-data Terrain = ELECTRIC_T | PSYCHIC_T | MISTY | GRASSY deriving (Show, Eq, Ord)
+data Terrain = ELECTRIC_T | PSYCHIC_T | MISTY | GRASSY deriving (Eq, Ord)
+
+instance Show Terrain where
+  show terrain = case terrain of 
+    ELECTRIC_T -> "Electric Terrain"
+    PSYCHIC_T -> "Psychic Terrain"
+    MISTY -> "Misty Terrain"
+    GRASSY -> "Grassy Terrain"
 
 parseTerrain :: T.Text -> Maybe Terrain
 parseTerrain "electricterrain" = Just ELECTRIC_T

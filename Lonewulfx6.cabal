@@ -4,7 +4,7 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: b06b4a49b8675c65f5ecc4a0f6daeba44526ce146a49bdf64d5886d47a26e57b
+-- hash: 40eec0e40c45d55172642390e3e213247b3b7845f95f7afff91decb17ccc3426
 
 name:           Lonewulfx6
 version:        0.1.0.0
@@ -81,6 +81,7 @@ library
     , parsec
     , parsec3-numbers
     , postgresql-simple
+    , pretty-simple
     , product-profunctors
     , split
     , text
@@ -150,6 +151,7 @@ executable Lonewulfx6-exe
     , parsec
     , parsec3-numbers
     , postgresql-simple
+    , pretty-simple
     , product-profunctors
     , split
     , text
@@ -185,6 +187,7 @@ test-suite Lonewulfx6-test
     , parsec
     , parsec3-numbers
     , postgresql-simple
+    , pretty-simple
     , product-profunctors
     , split
     , text

@@ -82,7 +82,8 @@ instance Monoid AttackRelation where
 type DefenseRelation = AttackRelation
 
 data TypeMatchup = TM
-  { attackM :: AttackMap,
+  { tmType :: [Type],
+    attackM :: AttackMap,
     defenseM :: DefenseMap
   }
   deriving (Eq, Show)
@@ -91,7 +92,7 @@ instance Semigroup TypeMatchup where
   (<>) = combineMatchups
 
 instance Monoid TypeMatchup where
-  mempty = TM mempty mempty
+  mempty = TM [] mempty mempty
 
 fireAttack :: AttackMap
 fireAttack =
@@ -121,7 +122,7 @@ fireDefense =
     ]
 
 fireMatchup :: TypeMatchup
-fireMatchup = TM fireAttack fireDefense
+fireMatchup = TM [FIRE] fireAttack fireDefense
 
 bugAttack :: AttackMap
 bugAttack =
@@ -149,7 +150,7 @@ bugDefense =
       (ROCK, SuperEffective)
     ]
 
-bugMatchup = TM bugAttack bugDefense
+bugMatchup = TM [BUG] bugAttack bugDefense
 
 fightingAttack =
   M.fromList
@@ -176,7 +177,7 @@ figthingDefense =
       (PSYCHIC, SuperEffective)
     ]
 
-fightingMatchup = TM fightingAttack figthingDefense
+fightingMatchup = TM [FIGHTING] fightingAttack figthingDefense
 
 flyingAttack =
   M.fromList
@@ -199,7 +200,7 @@ flyingDefense =
       (ROCK, SuperEffective)
     ]
 
-flyingMatchup = TM flyingAttack flyingDefense
+flyingMatchup = TM [FLYING] flyingAttack flyingDefense
 
 groundAttack =
   M.fromList
@@ -223,7 +224,7 @@ groundDefense =
       (WATER, SuperEffective)
     ]
 
-groundMatchup = TM groundAttack groundDefense
+groundMatchup = TM [GROUND] groundAttack groundDefense
 
 electricAttack =
   M.fromList
@@ -243,7 +244,7 @@ electricDefense =
       (GROUND, SuperEffective)
     ]
 
-electricMatchup = TM electricAttack electricDefense
+electricMatchup = TM [ELECTRIC] electricAttack electricDefense
 
 steelAttack =
   M.fromList
@@ -274,7 +275,7 @@ steelDefense =
       (FIGHTING, SuperEffective)
     ]
 
-steelMatchup = TM steelAttack steelDefense
+steelMatchup = TM [STEEL] steelAttack steelDefense
 
 normalAttack =
   M.fromList
@@ -289,7 +290,7 @@ normalDefense =
       (FIGHTING, SuperEffective)
     ]
 
-normalMatchup = TM normalAttack normalDefense
+normalMatchup = TM [NORMAL] normalAttack normalDefense
 
 iceAttack =
   M.fromList
@@ -312,7 +313,7 @@ iceDefense =
       (STEEL, SuperEffective)
     ]
 
-iceMatchup = TM iceAttack iceDefense
+iceMatchup = TM [ICE] iceAttack iceDefense
 
 poisonAttack =
   M.fromList
@@ -336,7 +337,7 @@ poisonDefense =
       (PSYCHIC, SuperEffective)
     ]
 
-poisonMatchup = TM poisonAttack poisonDefense
+poisonMatchup = TM [POISON] poisonAttack poisonDefense
 
 psychicAttack =
   M.fromList
@@ -356,7 +357,7 @@ psychicDefense =
       (GHOST, SuperEffective)
     ]
 
-psychicMatchup = TM psychicAttack psychicDefense
+psychicMatchup = TM [PSYCHIC] psychicAttack psychicDefense
 
 darkAttack =
   M.fromList
@@ -377,7 +378,7 @@ darkDefense =
       (FIGHTING, SuperEffective)
     ]
 
-darkMatchup = TM darkAttack darkDefense
+darkMatchup = TM [DARK] darkAttack darkDefense
 
 ghostAttack =
   M.fromList
@@ -397,7 +398,7 @@ ghostDefense =
       (GHOST, SuperEffective)
     ]
 
-ghostMatchup = TM ghostAttack ghostDefense
+ghostMatchup = TM [GHOST] ghostAttack ghostDefense
 
 fairyAttack =
   M.fromList
@@ -419,7 +420,7 @@ fairyDefense =
       (STEEL, SuperEffective)
     ]
 
-fairyMatchup = TM fairyAttack fairyDefense
+fairyMatchup = TM [FAIRY] fairyAttack fairyDefense
 
 rockAttack =
   M.fromList
@@ -445,7 +446,7 @@ rockDefense =
       (WATER, SuperEffective)
     ]
 
-rockMatchup = TM rockAttack rockDefense
+rockMatchup = TM [ROCK] rockAttack rockDefense
 
 grassAttack =
   M.fromList
@@ -474,7 +475,7 @@ grassDefense =
       (POISON, SuperEffective)
     ]
 
-grassMatchup = TM grassAttack grassDefense
+grassMatchup = TM [GRASS] grassAttack grassDefense
 
 waterAttack =
   M.fromList
@@ -496,7 +497,7 @@ waterDefense =
       (GRASS, SuperEffective)
     ]
 
-waterMatchup = TM waterAttack waterDefense
+waterMatchup = TM [WATER] waterAttack waterDefense
 
 dragonAttack =
   M.fromList
@@ -516,13 +517,13 @@ dragonDefense =
       (ICE, SuperEffective)
     ]
 
-dragonMatchup = TM dragonAttack dragonDefense
+dragonMatchup = TM [DRAGON] dragonAttack dragonDefense
 
 getMatchup :: Type -> TypeMatchup
 getMatchup = (M.!) matchups
 
 combineMatchups :: TypeMatchup -> TypeMatchup -> TypeMatchup
-combineMatchups (TM am dm) (TM am' dm') = TM (combineAttackMap am am') (combineDefenseMap dm dm')
+combineMatchups (TM t am dm) (TM t' am' dm') = TM (t <> t') (combineAttackMap am am') (combineDefenseMap dm dm')
 
 getCombinedMatchup :: [Type] -> Maybe TypeMatchup
 getCombinedMatchup [] = Nothing
@@ -567,7 +568,7 @@ toMultiplier StronglyResisted = 0.25
 toMultiplier StronglyEffective = 4
 
 removeImmunities :: TypeMatchup -> TypeMatchup
-removeImmunities (TM am dm) = TM am' dm'
+removeImmunities (TM t am dm) = TM t am' dm'
  where
    am' = foldl (flip $ M.update filterImmunity) am (M.keys am)
    dm' = foldl (flip $ M.update filterImmunity) dm (M.keys dm)
