@@ -157,8 +157,8 @@ getMinDmg CalcResult {..} = fst dmg
 getMaxDmg :: CalcResult -> Int
 getMaxDmg CalcResult {..} = snd dmg
 
-getMinPercent :: CalcResult -> Double
-getMinPercent CalcResult {..} = fst hpPercentage
+getMinPercent :: CalcResult -> String
+getMinPercent CalcResult {..} = printPercentage 1 (fst hpPercentage * 100)
 
-getMaxPercent :: CalcResult -> Double
-getMaxPercent CalcResult {..} = snd hpPercentage
+getMaxPercent :: CalcResult -> String
+getMaxPercent CalcResult {..} = printPercentage 1 (snd hpPercentage * 100)

@@ -202,8 +202,9 @@ getSpeed :: EffectivePokemon -> Environment -> Int
 getSpeed ep@EP {..} env = fromIntegral speedStat *// totalMultiplier
   where
     speedMultiplier = getSpeedMultiplier (toId epAbility) ep env
+    choiceScarf = if hasItem "choicescarf" ep then 1.5 else 1
     boostMultiplier = (getMultiplier . speM) epMultiplier
-    totalMultiplier = speedMultiplier * boostMultiplier
+    totalMultiplier = speedMultiplier * boostMultiplier * choiceScarf
     natureEffect = getNatureEffect SPE epNature
     speedStat = calcStat epLevel (spdIv epIvs) (spdEv epEvs) natureEffect (findBaseStat epStats SPE)
 

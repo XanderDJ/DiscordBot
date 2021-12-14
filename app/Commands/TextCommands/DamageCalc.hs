@@ -73,15 +73,59 @@ validDbData (mon1, m1Opts) (mon2, m2Opts) (move, moveOpts) i1 i2 m = do
       parsedMon2 = parseMon (toPokemon mon2) (toItem <$> i2) m2Opts effectiveMove
       damageCalcState = DCS env parsedMon1 parsedMon2 effectiveMove
       calc = runCalc damageCalcState
+      calcMessage = makeCalcMessage (dmg (fst calc)) (getMinPercent (fst calc), getMaxPercent (fst calc)) (snd calc)
   if not (hasOption ["debug", "d"] moveOpts)
-    then sendMessage $ R.CreateMessage (messageChannel m) (T.pack (show (fst calc)))
+    then sendMessage $ R.CreateMessage (messageChannel m) calcMessage
     else sendMessage $ R.CreateMessage (messageChannel m) (T.pack (show (snd calc)))
   -- calcMessage = makeCalcMessage (min, max) damageCalcState
   printIO damageCalcState
   printIO (snd calc)
 
-makeCalcMessage :: (Int, Int) -> DCS -> T.Text
-makeCalcMessage (min, max) DCS {dcsEnv = Env {..}} = undefined
+makeCalcMessage :: (Int, Int) -> (String, String) -> M.Map String String -> T.Text
+makeCalcMessage (minHp, maxHp) (minP, maxP) map =
+  T.pack $
+    getValue "atkM"
+      +|+ getValue "atkEv"
+      ++ getValue "ne"
+      +|+ getValue "atkS"
+      +|+ getValue "item"
+      +|+ getValue "atkAbility"
+      +|+ getValue "status"
+      +|+ getValue "attacker"
+      +|+ getValue "powerspot"
+      +|+ getValue "battery"
+      +|+ getValue "switching"
+      +|+ getValue "move"
+      +|+ "("
+      ++ getValue "bp"
+      ++ " BP)"
+      +|+ "vs."
+      +|+ getValue "hpEv"
+      +|+ "HP /"
+      +|+ getValue "defEv"
+      ++ getValue "defNe"
+      +|+ getValue "defS"
+      +|+ getValue "defItem"
+      +|+ getValue "defAbility"
+      +|+ getValue "defender"
+      +|+ (if null (getValue "weather") then "" else "in" +|+ getValue "weather")
+      +|+ getValue "screens"
+      +|+ getValue "crit"
+      ++ ":"
+      +|+ show minHp
+      ++ "-"
+      ++ show maxHp
+      +|+ "("
+      ++ minP
+      +|+ "-"
+      +|+ maxP
+      ++ ")"
+  where
+    getValue = getTextValue map
+    (+|+) b a = b ++ " " ++ a
+
+getTextValue :: M.Map String String -> String -> String
+getTextValue m k = fromMaybe "" (M.lookup k m)
 
 parseMon :: Pokemon -> Maybe Item -> M.Map T.Text T.Text -> EffectiveMove -> EffectivePokemon
 parseMon Pokemon {..} i opts EM {..} =

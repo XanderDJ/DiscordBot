@@ -6,6 +6,7 @@ import Control.Arrow
 import Control.Monad.Identity (Identity (runIdentity), IdentityT (runIdentityT))
 import Control.Monad.Reader
 import Control.Monad.Writer
+import Data.Char (toLower)
 import Data.Function
 import Data.Functor ((<&>))
 import Data.List.Utility (hasAny)
@@ -20,7 +21,6 @@ import Pokemon.Functions
 import Pokemon.TypeMatchups
 import Pokemon.Types
 import Prelude hiding (log)
-import Data.Char (toLower)
 
 runCalc :: DCS -> (CalcResult, Log)
 runCalc dcs = runCalc' dcs calcDamage
@@ -99,6 +99,7 @@ baseDamage = do
       d = fromIntegral def * (if epAbility attacker == "unaware" || epAbility defender == "unaware" then 1 else getMultiplier statDMult) * dMult
       bp = fromIntegral baseBp * bpMultiplier
       natureEffect = getNatureEffect (getStat (map toLower atkS)) (epNature attacker)
+      defNe = getNatureEffect (getStat (map toLower defS)) (epNature defender)
   log "base bp" (show baseBp)
   log "bp" (show bp)
   log "atkS" atkS
@@ -107,6 +108,9 @@ baseDamage = do
   log "def" (show d)
   log "atkEv" (if atkS == "Atk" then (show . atkEv . epEvs) attacker else (show . spaEv . epEvs) attacker)
   log "defEv" (if defS == "Def" then (show . defEv . epEvs) defender else (show . spdEv . epEvs) attacker)
+  log "attacker" ((T.unpack . epName) attacker)
+  log "defender" ((T.unpack . epName) defender)
+  log "move" ((T.unpack . emName) move)
   log "hpEv" ((show . hpEv . epEvs) defender)
   logIf (terrainMultiplier /= 1) "terrain" (fromMaybe "" (activeTerrain env <&> show))
   logIf (abilityMultiplier > 1) "atkAbility" ((T.unpack . epAbility) attacker)
@@ -114,17 +118,22 @@ baseDamage = do
   logIf (spaMultiplier > 1) "atkAbility" ((T.unpack . epAbility) attacker)
   logIf (defMultiplier > 1) "defAbility" ((T.unpack . epAbility) defender)
   logIf (spdMultiplier > 1) "defAbility" ((T.unpack . epAbility) defender)
-  logIf (powerspot env) "powerspot" "Powerspot boosted"
-  logIf (battery env) "battery" "Battery boosted"
-  logIf (evioliteMult /= 1) "eviolite" "Eviolite"
-  logIf (assaultvestMult /= 1) "assaultvest" "Assault Vest"
+  logIf (powerspot env && moveCategory == PHYSICAL) "powerspot" "Powerspot boosted"
+  logIf (battery env && moveCategory == SPECIAL) "battery" "Battery boosted"
+  logIf ((emName move == "pursuit" || epAbility attacker == "stakeout") && switchingOut env) "switching" "switching boosted"
+  logIf (evioliteMult /= 1) "defItem" "Eviolite"
+  logIf (assaultvestMult /= 1) "defItem" "Assault Vest"
   logIf (sandMult /= 1) "weather" "Sand"
   logIf (choiceSpecs /= 1) "item" "Choice Specs"
   logIf (choiceBand /= 1) "item" "Choice Band"
   logIf (burned /= 1) "status" "burned"
+  logIf (deepseatooth /= 1) "item" "Deep Sea Tooth"
+  logIf (deepseascale /= 1) "defItem" "Deep Sea Scale"
+  log "atkM" (show statAMult)
+  log "defM" (show statDMult)
   log "ne" (toShowdownRep natureEffect)
+  log "defNe" (toShowdownRep defNe)
   return $ floor ((((2 * fromIntegral lvl) / 5 + 2) * bp * (a / d)) / 50 + 2)
-
 
 -- return $ div ((div (2 * lvl) 5 + 2) * bp * div atk def) 50 + 2
 
@@ -162,6 +171,7 @@ criticalHitMultiplier dmg = do
   let defAbility = toId . epAbility $ defender
       isCrit = defAbility /= "battlearmor" && defAbility /= "shellarmor" && (crit env || emWillCrit move || willCrit attacker defender)
       mult = if isCrit then 1.5 else 1
+  logIf (mult /= 1) "crit" "on a critical hit"
   multiply dmg mult
 
 randomMultiplier :: Int -> Calc (Int, Int)
@@ -184,6 +194,9 @@ stabMultiplier dmg = do
         | hasAny mType attackerType = 1.5
         | otherwise = 1
   log "attackertype" (show attackerType)
+  logIf (atkAbility == "protean" && not (hasAny mType attackerType)) "atkAbility" "Protean"
+  logIf (atkAbility == "libero" && not (hasAny mType attackerType)) "atkAbility" "Libero"
+  logIf (atkAbility == "adaptability" && hasAny mType attackerType) "atkAbility" "Adaptability"
   multiply2 dmg mult
 
 typeEffectivenessMultiplier :: (Int, Int) -> Calc (Int, Int)
@@ -237,6 +250,7 @@ screensMultiplier dmg = do
         if toId moveName `notElem` ["psychicfangs", "brickbreak", "gmaxwindrage"] && not (emWillCrit move || crit env || willCrit attacker defender)
           then getScreenMultiplier screen (toId . epAbility $ attacker) categoryMove
           else 1
+  logIf (mult /= 1) "screens" "through Screen"
   multiply2 dmg mult
 
 minimizeMultiplier :: (Int, Int) -> Calc (Int, Int)
@@ -311,8 +325,7 @@ multiHitMultiplier dmg = do
   defender <- getDefendingPokemon
   move <- getMove
   env <- getEnvironment
-  let 
-      hits = emHits move
+  let hits = emHits move
       atkAbility = epAbility attacker
       defAbility = epAbility defender
       hasHalved = (defAbility `elem` ["multiscale", "shadowshield"] && epHPPercentage defender == 100) && (atkAbility /= "neutralizinggas" || atkAbility `notElem` abilityIgnoringAbilities || (toId . emName) move `notElem` movesThatIgnoreAbilities)
@@ -334,18 +347,18 @@ parentalBond dmg = do
   logIf (totalDmg /= dmg) "atkAbility" "Parental Bond"
   log "hasHalved" (show hasHalved)
   return totalDmg
- where
-   getTotalDmg pa hh dmg
-    | pa && hh = dmg + floor (2 * 0.25 * fromIntegral dmg)
-    | pa = dmg + floor (0.25 * fromIntegral dmg)
-    | otherwise = dmg
-  
+  where
+    getTotalDmg pa hh dmg
+      | pa && hh = dmg + floor (2 * 0.25 * fromIntegral dmg)
+      | pa = dmg + floor (0.25 * fromIntegral dmg)
+      | otherwise = dmg
+
 both :: (a -> b) -> (a, a) -> (b, b)
 both f (a1, a2) = (f a1, f a2)
 
 toCalc :: (Int, Int) -> Calc CalcResult
 toCalc hp@(minHp, maxHp) = do
-  log "After parental bond calc" (show hp)  
+  log "After parental bond calc" (show hp)
   defender <- getDefendingPokemon
   let hpS = hpStat (getEffectiveStats defender)
   return $ CalcResult hp (round' (on (/) fromIntegral minHp hpS) 3, round' (on (/) fromIntegral maxHp hpS) 3)

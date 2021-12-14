@@ -201,7 +201,17 @@ instance Read Status where
     _ -> []
 
 -- | Weather
-data Weather = SANDSTORM | HAIL | RAIN | SUN | HEAVYRAIN | HEAVYSUN | STRONGWIND deriving (Show, Eq, Ord)
+data Weather = SANDSTORM | HAIL | RAIN | SUN | HEAVYRAIN | HEAVYSUN | STRONGWIND deriving (Eq, Ord)
+
+instance Show Weather where
+  show w = case w of
+    SANDSTORM -> "Sand"
+    HAIL -> "Hail"
+    RAIN -> "Rain"
+    SUN -> "Sun"
+    HEAVYRAIN -> "Heavy Rain"
+    HEAVYSUN -> "Harsh sun"
+    STRONGWIND -> "Strong Winds"
 
 parseWeather :: T.Text -> Maybe Weather
 parseWeather "sand" = Just SANDSTORM

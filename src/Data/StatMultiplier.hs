@@ -4,7 +4,14 @@ type PositiveBoosts = Int
 
 type NegativeBoosts = Int
 
-data StatMultiplier = SM PositiveBoosts NegativeBoosts deriving (Show, Eq)
+data StatMultiplier = SM PositiveBoosts NegativeBoosts deriving (Eq)
+
+instance Show StatMultiplier where
+  show sm@(SM a b)
+   | sm == 0 = "0"
+   | sm > 0 = "+" ++ show a
+   | otherwise = "-" ++ show b
+
 
 (%%) :: Int -> Int -> StatMultiplier
 (%%) pb nb = if pb > nb then SM (pb - nb) 0 else SM 0 (nb - pb)
