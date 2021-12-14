@@ -158,6 +158,9 @@ criticalHitMultiplier dmg = do
       mult = if isCrit then 1.5 else 1
   multiply dmg mult
 
+randomMultiplier :: Int -> Calc (Int, Int)
+randomMultiplier dmg = log "After crit multiplier" (show dmg) >> pure (fromIntegral dmg *// 0.85, dmg)
+
 stabMultiplier :: (Int, Int) -> Calc (Int, Int)
 stabMultiplier dmg = do
   log "After random multiplier" (show dmg)
@@ -333,9 +336,6 @@ parentalBond dmg = do
   
 both :: (a -> b) -> (a, a) -> (b, b)
 both f (a1, a2) = (f a1, f a2)
-
-randomMultiplier :: Int -> Calc (Int, Int)
-randomMultiplier dmg = log "After crit multiplier" (show dmg) >> pure (fromIntegral dmg *// 0.85, dmg)
 
 toCalc :: (Int, Int) -> Calc CalcResult
 toCalc hp@(minHp, maxHp) = do

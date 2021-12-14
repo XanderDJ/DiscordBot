@@ -126,7 +126,8 @@ getAttackStatMultiplier "hustle" _ _ _ _ = 1.5
 getAttackStatMultiplier "flowergift" _ _ _ Env {activeWeather = Just x} = if x `elem` [SUN, HEAVYSUN] then 1.5 else 1
 getAttackStatMultiplier "gorillatactics" _ _ _ _ = 1.5
 getAttackStatMultiplier "guts" _ EP {epStatus = Just x} _ _ = 1.5
-getAttackStatMultiplier "toxic" _ EP {epStatus = Just POISONED} _ _ = 1.5
+getAttackStatMultiplier "toxicboost" _ EP {epStatus = Just POISONED} _ _ = 1.5
+getAttackStatMultiplier "toxicboost" _ EP {epStatus = Just BADLY_POISONED} _ _ = 1.5
 getAttackStatMultiplier _ _ _ _ _ = 1
 
 getDefenseStatMultiplier :: T.Text -> EffectiveMove -> EffectivePokemon -> EffectivePokemon -> Environment -> Double
