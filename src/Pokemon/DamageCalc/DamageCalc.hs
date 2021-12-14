@@ -128,6 +128,7 @@ weatherMultiplier dmg = do
       defAbility = toId . epAbility $ defender
       defItem = fromMaybe "" (epItem defender <&> iName)
       mult = if atkAbility == "cloudnine" || defAbility == "cloudnine" || defItem == "utilityumbrella" || atkAbility == "airlock" || defAbility == "airlock" then 1 else weatherMult
+  logIf (weatherMult /= 0) "weather" (fromMaybe "" (activeWeather env <&> show))
   multiply dmg mult
 
 criticalHitMultiplier :: Int -> Calc Int
@@ -272,8 +273,9 @@ itemMultiplier dmg = do
   let moveType = getMoveType attacker defender env move
       defenderType = getPokemonType defender
       typeMatchup = getTypeMatchup moveType defenderType
-      mult = getItemMultiplier (toId . epName $ attacker) move moveType typeMatchup (fromMaybe "" (epItem attacker <&> iName)) (fromMaybe "" (epItem defender <&> iName)) (toId . epAbility $ attacker, toId . epAbility $ defender)
-  multiply2 dmg (if magicRoom env then 1 else mult)
+      oMult = getOffenseItemMultiplier (toId . epName $ attacker) move moveType typeMatchup (fromMaybe "" (epItem attacker <&> iName))
+      dMult = getDefenseItemMultiplier moveType typeMatchup (fromMaybe "" (epItem attacker <&> iName)) (fromMaybe "" (epItem defender <&> iName)) (toId . epAbility $ attacker, toId . epAbility $ defender)
+  multiply2 dmg (if magicRoom env then 1 else oMult * dMult)
 
 multiHitMultiplier :: (Int, Int) -> Calc (Int, Int)
 multiHitMultiplier dmg = do

@@ -507,7 +507,7 @@ enrichTmWithAbility atkAbility defAbility moveName tm@(TM t am dm)
   | defAbility `elem` ["motordrive", "voltabsorb", "lightningrod"] = TM t am (M.insert ELECTRIC Immune dm)
   | defAbility == "sapsipper" = TM t am (M.insert GRASS Immune dm)
   | defAbility == "wonderguard" = TM t am wonderguardDm
-  | atkAbility == "scrappy" = if GHOST `elem` t then  TM t am ((M.insert FIGHTING Neutral . M.insert NORMAL Neutral) dm) else tm
+  | atkAbility == "scrappy" = if GHOST `elem` t then TM t am ((M.insert FIGHTING Neutral . M.insert NORMAL Neutral) dm) else tm
   | otherwise = tm
   where
     wonderguardFilter StronglyEffective = Just StronglyEffective
@@ -530,110 +530,113 @@ thousandArrows :: T.Text -> Typing -> Int -> TypeMatchup -> TypeMatchup
 thousandArrows "thousandarrows" defenderTyping tu (TM t am dm) = let relation = if tu > 0 || FLYING `notElem` defenderTyping then Neutral else Resisted in TM t am (M.insertWith (\r cr -> if cr == Immune then r else cr) GROUND relation dm)
 thousandArrows _ _ _ tm = tm
 
-getItemMultiplier :: T.Text -> EffectiveMove -> Typing -> AttackRelation -> T.Text -> T.Text -> (T.Text, T.Text) -> Double
-getItemMultiplier "latios" _ moveType _ "souldew" _ _ = if hasAny moveType [DRAGON, PSYCHIC] then 1.2 else 1
-getItemMultiplier "latias" _ moveType _ "souldew" _ _ = if hasAny moveType [DRAGON, PSYCHIC] then 1.2 else 1
-getItemMultiplier "dialga" _ moveType _ "adamantorb" _ _ = if hasAny moveType [DRAGON, STEEL] then 1.2 else 1
-getItemMultiplier "palkia" _ moveType _ "lustrousorb" _ _ = if hasAny moveType [DRAGON, WATER] then 1.2 else 1
-getItemMultiplier "giratina" _ moveType _ "griseuosorb" _ _ = if hasAny moveType [DRAGON, GHOST] then 1.2 else 1
-getItemMultiplier "giratinaorigin" _ moveType _ _ _ _ = if hasAny moveType [DRAGON, GHOST] then 1.2 else 1
-getItemMultiplier _ em _ _ "metronome" _ _ = min 2 (1 + 0.2 * fromIntegral (emTimesUsed em))
-getItemMultiplier _ _ _ _ "lifeorb" _ _ = 1.3
-getItemMultiplier _ _ _ SuperEffective "expertbelt" _ _ = 1.2
-getItemMultiplier _ _ _ StronglyEffective "expertbelt" _ _ = 1.2
-getItemMultiplier _ _ moveType _ "normalgem" _ _ = getGemMultiplier NORMAL moveType
-getItemMultiplier _ _ moveType _ "pinkbow" _ _ = getBowMultiplier NORMAL moveType
-getItemMultiplier _ _ moveType _ "polkadotbow" _ _ = getBowMultiplier NORMAL moveType
-getItemMultiplier _ _ moveType _ "silkscarf" _ _ = getItemTypeMultiplier NORMAL moveType
-getItemMultiplier _ _ moveType _ "darkgem" _ _ = getGemMultiplier DARK moveType
-getItemMultiplier _ _ moveType _ "dreadplate" _ _ = getPlateMultiplier DARK moveType
-getItemMultiplier _ _ moveType _ "blackglasses" _ _ = getItemTypeMultiplier DARK moveType
-getItemMultiplier _ _ moveType _ "psychicgem" _ _ = getGemMultiplier PSYCHIC moveType
-getItemMultiplier _ _ moveType _ "twistedspoon" _ _ = getItemTypeMultiplier PSYCHIC moveType
-getItemMultiplier _ _ moveType _ "oddincense" _ _ = getItemTypeMultiplier PSYCHIC moveType
-getItemMultiplier _ _ moveType _ "mindplate" _ _ = getPlateMultiplier PSYCHIC moveType
-getItemMultiplier _ _ moveType _ "ghostgem" _ _ = getGemMultiplier GHOST moveType
-getItemMultiplier _ _ moveType _ "spelltag" _ _ = getItemTypeMultiplier GHOST moveType
-getItemMultiplier _ _ moveType _ "spookyplate" _ _ = getPlateMultiplier GHOST moveType
-getItemMultiplier _ _ moveType _ "flyinggem" _ _ = getGemMultiplier FLYING moveType
-getItemMultiplier _ _ moveType _ "sharpbeak" _ _ = getItemTypeMultiplier FLYING moveType
-getItemMultiplier _ _ moveType _ "skyplate" _ _ = getPlateMultiplier FLYING moveType
-getItemMultiplier _ _ moveType _ "fightinggem" _ _ = getGemMultiplier FIGHTING moveType
-getItemMultiplier _ _ moveType _ "blackbelt" _ _ = getItemTypeMultiplier FIGHTING moveType
-getItemMultiplier _ _ moveType _ "fistplate" _ _ = getPlateMultiplier FIGHTING moveType
-getItemMultiplier _ _ moveType _ "icegem" _ _ = getGemMultiplier ICE moveType
-getItemMultiplier _ _ moveType _ "nevermeltice" _ _ = getItemTypeMultiplier ICE moveType
-getItemMultiplier _ _ moveType _ "icicleplate" _ _ = getPlateMultiplier ICE moveType
-getItemMultiplier _ _ moveType _ "steelgem" _ _ = getGemMultiplier STEEL moveType
-getItemMultiplier _ _ moveType _ "metalcoat" _ _ = getItemTypeMultiplier STEEL moveType
-getItemMultiplier _ _ moveType _ "ironplate" _ _ = getPlateMultiplier STEEL moveType
-getItemMultiplier _ _ moveType _ "rockgem" _ _ = getGemMultiplier ROCK moveType
-getItemMultiplier _ _ moveType _ "rockincense" _ _ = getItemTypeMultiplier ROCK moveType
-getItemMultiplier _ _ moveType _ "hardstone" _ _ = getItemTypeMultiplier ROCK moveType
-getItemMultiplier _ _ moveType _ "stoneplate" _ _ = getPlateMultiplier ROCK moveType
-getItemMultiplier _ _ moveType _ "poisongem" _ _ = getGemMultiplier POISON moveType
-getItemMultiplier _ _ moveType _ "poisonbarb" _ _ = getGemMultiplier POISON moveType
-getItemMultiplier _ _ moveType _ "toxicplate" _ _ = getPlateMultiplier POISON moveType
-getItemMultiplier _ _ moveType _ "groundgem" _ _ = getGemMultiplier GROUND moveType
-getItemMultiplier _ _ moveType _ "softsand" _ _ = getItemTypeMultiplier GROUND moveType
-getItemMultiplier _ _ moveType _ "earthplate" _ _ = getPlateMultiplier GROUND moveType
-getItemMultiplier _ _ moveType _ "firegem" _ _ = getGemMultiplier FIRE moveType
-getItemMultiplier _ _ moveType _ "charcoal" _ _ = getItemTypeMultiplier FIRE moveType
-getItemMultiplier _ _ moveType _ "flameplate" _ _ = getItemTypeMultiplier FIRE moveType
-getItemMultiplier _ _ moveType _ "watergem" _ _ = getGemMultiplier WATER moveType
-getItemMultiplier _ _ moveType _ "mysticwater" _ _ = getItemTypeMultiplier WATER moveType
-getItemMultiplier _ _ moveType _ "seaincense" _ _ = getItemTypeMultiplier WATER moveType
-getItemMultiplier _ _ moveType _ "waveincense" _ _ = getItemTypeMultiplier WATER moveType
-getItemMultiplier _ _ moveType _ "splashplate" _ _ = getPlateMultiplier WATER moveType
-getItemMultiplier _ _ moveType _ "grassgem" _ _ = getGemMultiplier GRASS moveType
-getItemMultiplier _ _ moveType _ "miracleseed" _ _ = getItemTypeMultiplier GRASS moveType
-getItemMultiplier _ _ moveType _ "roseincense" _ _ = getItemTypeMultiplier GRASS moveType
-getItemMultiplier _ _ moveType _ "meadowplate" _ _ = getPlateMultiplier GRASS moveType
-getItemMultiplier _ _ moveType _ "electricgem" _ _ = getGemMultiplier ELECTRIC moveType
-getItemMultiplier _ _ moveType _ "magnet" _ _ = getItemTypeMultiplier ELECTRIC moveType
-getItemMultiplier _ _ moveType _ "zapplate" _ _ = getPlateMultiplier ELECTRIC moveType
-getItemMultiplier _ _ moveType _ "fairygem" _ _ = getGemMultiplier FAIRY moveType
-getItemMultiplier _ _ moveType _ "pixieplate" _ _ = getPlateMultiplier FAIRY moveType
-getItemMultiplier _ _ moveType _ "buggem" _ _ = getGemMultiplier BUG moveType
-getItemMultiplier _ _ moveType _ "silverpowder" _ _ = getItemTypeMultiplier BUG moveType
-getItemMultiplier _ _ moveType _ "insectplate" _ _ = getPlateMultiplier BUG moveType
-getItemMultiplier _ _ moveType _ "dragongem" _ _ = getGemMultiplier DRAGON moveType
-getItemMultiplier _ _ moveType _ "dragonfang" _ _ = getItemTypeMultiplier DRAGON moveType
-getItemMultiplier _ _ moveType _ "dracoplate" _ _ = getPlateMultiplier DRAGON moveType
-getItemMultiplier _ _ moveType _ "chilanberry" _ _ = getBerryMultiplier NORMAL moveType
-getItemMultiplier _ _ moveType SuperEffective _ "babiriberry" a = if fst a /= "unnerve" || snd a == "neutralizinggas" then getBerryMultiplier STEEL moveType else 1
-getItemMultiplier _ _ moveType StronglyEffective _ "babiriberry" a = if fst a /= "unnerve" || snd a == "neutralizinggas" then getBerryMultiplier STEEL moveType else 1
-getItemMultiplier _ _ moveType SuperEffective _ "chartiberry" a = if fst a /= "unnerve" || snd a == "neutralizinggas" then getBerryMultiplier ROCK moveType else 1
-getItemMultiplier _ _ moveType StronglyEffective _ "chartiberry" a = if fst a /= "unnerve" || snd a == "neutralizinggas" then getBerryMultiplier ROCK moveType else 1
-getItemMultiplier _ _ moveType SuperEffective _ "chopleberry" a = if fst a /= "unnerve" || snd a == "neutralizinggas" then getBerryMultiplier FIGHTING moveType else 1
-getItemMultiplier _ _ moveType StronglyEffective _ "chopleberry" a = if fst a /= "unnerve" || snd a == "neutralizinggas" then getBerryMultiplier FIGHTING moveType else 1
-getItemMultiplier _ _ moveType SuperEffective _ "cobaberry" a = if fst a /= "unnerve" || snd a == "neutralizinggas" then getBerryMultiplier FLYING moveType else 1
-getItemMultiplier _ _ moveType StronglyEffective _ "cobaberry" a = if fst a /= "unnerve" || snd a == "neutralizinggas" then getBerryMultiplier FLYING moveType else 1
-getItemMultiplier _ _ moveType SuperEffective _ "colburberry" a = if fst a /= "unnerve" || snd a == "neutralizinggas" then getBerryMultiplier DARK moveType else 1
-getItemMultiplier _ _ moveType StronglyEffective _ "colburberry" a = if fst a /= "unnerve" || snd a == "neutralizinggas" then getBerryMultiplier DARK moveType else 1
-getItemMultiplier _ _ moveType SuperEffective _ "habanberry" a = if fst a /= "unnerve" || snd a == "neutralizinggas" then getBerryMultiplier DRAGON moveType else 1
-getItemMultiplier _ _ moveType StronglyEffective _ "habanberry" a = if fst a /= "unnerve" || snd a == "neutralizinggas" then getBerryMultiplier DRAGON moveType else 1
-getItemMultiplier _ _ moveType SuperEffective _ "kasibberry" a = if fst a /= "unnerve" || snd a == "neutralizinggas" then getBerryMultiplier GHOST moveType else 1
-getItemMultiplier _ _ moveType StronglyEffective _ "kasibberry" a = if fst a /= "unnerve" || snd a == "neutralizinggas" then getBerryMultiplier GHOST moveType else 1
-getItemMultiplier _ _ moveType SuperEffective _ "kebiaberry" a = if fst a /= "unnerve" || snd a == "neutralizinggas" then getBerryMultiplier POISON moveType else 1
-getItemMultiplier _ _ moveType StronglyEffective _ "kebiaberry" a = if fst a /= "unnerve" || snd a == "neutralizinggas" then getBerryMultiplier POISON moveType else 1
-getItemMultiplier _ _ moveType SuperEffective _ "occaberry" a = if fst a /= "unnerve" || snd a == "neutralizinggas" then getBerryMultiplier FIRE moveType else 1
-getItemMultiplier _ _ moveType StronglyEffective _ "occaberry" a = if fst a /= "unnerve" || snd a == "neutralizinggas" then getBerryMultiplier FIRE moveType else 1
-getItemMultiplier _ _ moveType SuperEffective _ "passhoberry" a = if fst a /= "unnerve" || snd a == "neutralizinggas" then getBerryMultiplier WATER moveType else 1
-getItemMultiplier _ _ moveType StronglyEffective _ "passhoberry" a = if fst a /= "unnerve" || snd a == "neutralizinggas" then getBerryMultiplier WATER moveType else 1
-getItemMultiplier _ _ moveType SuperEffective _ "payapaberry" a = if fst a /= "unnerve" || snd a == "neutralizinggas" then getBerryMultiplier PSYCHIC moveType else 1
-getItemMultiplier _ _ moveType StronglyEffective _ "payapaberry" a = if fst a /= "unnerve" || snd a == "neutralizinggas" then getBerryMultiplier PSYCHIC moveType else 1
-getItemMultiplier _ _ moveType SuperEffective _ "rindoberry" a = if fst a /= "unnerve" || snd a == "neutralizinggas" then getBerryMultiplier GRASS moveType else 1
-getItemMultiplier _ _ moveType StronglyEffective _ "rindoberry" a = if fst a /= "unnerve" || snd a == "neutralizinggas" then getBerryMultiplier GRASS moveType else 1
-getItemMultiplier _ _ moveType SuperEffective _ "shucaberry" a = if fst a /= "unnerve" || snd a == "neutralizinggas" then getBerryMultiplier GROUND moveType else 1
-getItemMultiplier _ _ moveType StronglyEffective _ "shucaberry" a = if fst a /= "unnerve" || snd a == "neutralizinggas" then getBerryMultiplier GROUND moveType else 1
-getItemMultiplier _ _ moveType SuperEffective _ "tangaberry" a = if fst a /= "unnerve" || snd a == "neutralizinggas" then getBerryMultiplier BUG moveType else 1
-getItemMultiplier _ _ moveType StronglyEffective _ "tangaberry" a = if fst a /= "unnerve" || snd a == "neutralizinggas" then getBerryMultiplier BUG moveType else 1
-getItemMultiplier _ _ moveType SuperEffective _ "wacanberry" a = if fst a /= "unnerve" || snd a == "neutralizinggas" then getBerryMultiplier ELECTRIC moveType else 1
-getItemMultiplier _ _ moveType StronglyEffective _ "wacanberry" a = if fst a /= "unnerve" || snd a == "neutralizinggas" then getBerryMultiplier ELECTRIC moveType else 1
-getItemMultiplier _ _ moveType SuperEffective _ "yacheberry" a = if fst a /= "unnerve" || snd a == "neutralizinggas" then getBerryMultiplier ICE moveType else 1
-getItemMultiplier _ _ moveType StronglyEffective _ "yacheberry" a = if fst a /= "unnerve" || snd a == "neutralizinggas" then getBerryMultiplier ICE moveType else 1
-getItemMultiplier _ _ _ _ _ _ _ = 1
+getOffenseItemMultiplier :: T.Text -> EffectiveMove -> Typing -> AttackRelation -> T.Text -> Double
+getOffenseItemMultiplier "latios" _ moveType _ "souldew" = if hasAny moveType [DRAGON, PSYCHIC] then 1.2 else 1
+getOffenseItemMultiplier "latias" _ moveType _ "souldew" = if hasAny moveType [DRAGON, PSYCHIC] then 1.2 else 1
+getOffenseItemMultiplier "dialga" _ moveType _ "adamantorb" = if hasAny moveType [DRAGON, STEEL] then 1.2 else 1
+getOffenseItemMultiplier "palkia" _ moveType _ "lustrousorb" = if hasAny moveType [DRAGON, WATER] then 1.2 else 1
+getOffenseItemMultiplier "giratina" _ moveType _ "griseuosorb" = if hasAny moveType [DRAGON, GHOST] then 1.2 else 1
+getOffenseItemMultiplier "giratinaorigin" _ moveType _ _ = if hasAny moveType [DRAGON, GHOST] then 1.2 else 1
+getOffenseItemMultiplier _ em _ _ "metronome" = min 2 (1 + 0.2 * fromIntegral (emTimesUsed em))
+getOffenseItemMultiplier _ _ _ _ "lifeorb" = 1.3
+getOffenseItemMultiplier _ _ _ SuperEffective "expertbelt" = 1.2
+getOffenseItemMultiplier _ _ _ StronglyEffective "expertbelt" = 1.2
+getOffenseItemMultiplier _ _ moveType _ "normalgem" = getGemMultiplier NORMAL moveType
+getOffenseItemMultiplier _ _ moveType _ "pinkbow" = getBowMultiplier NORMAL moveType
+getOffenseItemMultiplier _ _ moveType _ "polkadotbow" = getBowMultiplier NORMAL moveType
+getOffenseItemMultiplier _ _ moveType _ "silkscarf" = getItemTypeMultiplier NORMAL moveType
+getOffenseItemMultiplier _ _ moveType _ "darkgem" = getGemMultiplier DARK moveType
+getOffenseItemMultiplier _ _ moveType _ "dreadplate" = getPlateMultiplier DARK moveType
+getOffenseItemMultiplier _ _ moveType _ "blackglasses" = getItemTypeMultiplier DARK moveType
+getOffenseItemMultiplier _ _ moveType _ "psychicgem" = getGemMultiplier PSYCHIC moveType
+getOffenseItemMultiplier _ _ moveType _ "twistedspoon" = getItemTypeMultiplier PSYCHIC moveType
+getOffenseItemMultiplier _ _ moveType _ "oddincense" = getItemTypeMultiplier PSYCHIC moveType
+getOffenseItemMultiplier _ _ moveType _ "mindplate" = getPlateMultiplier PSYCHIC moveType
+getOffenseItemMultiplier _ _ moveType _ "ghostgem" = getGemMultiplier GHOST moveType
+getOffenseItemMultiplier _ _ moveType _ "spelltag" = getItemTypeMultiplier GHOST moveType
+getOffenseItemMultiplier _ _ moveType _ "spookyplate" = getPlateMultiplier GHOST moveType
+getOffenseItemMultiplier _ _ moveType _ "flyinggem" = getGemMultiplier FLYING moveType
+getOffenseItemMultiplier _ _ moveType _ "sharpbeak" = getItemTypeMultiplier FLYING moveType
+getOffenseItemMultiplier _ _ moveType _ "skyplate" = getPlateMultiplier FLYING moveType
+getOffenseItemMultiplier _ _ moveType _ "fightinggem" = getGemMultiplier FIGHTING moveType
+getOffenseItemMultiplier _ _ moveType _ "blackbelt" = getItemTypeMultiplier FIGHTING moveType
+getOffenseItemMultiplier _ _ moveType _ "fistplate" = getPlateMultiplier FIGHTING moveType
+getOffenseItemMultiplier _ _ moveType _ "icegem" = getGemMultiplier ICE moveType
+getOffenseItemMultiplier _ _ moveType _ "nevermeltice" = getItemTypeMultiplier ICE moveType
+getOffenseItemMultiplier _ _ moveType _ "icicleplate" = getPlateMultiplier ICE moveType
+getOffenseItemMultiplier _ _ moveType _ "steelgem" = getGemMultiplier STEEL moveType
+getOffenseItemMultiplier _ _ moveType _ "metalcoat" = getItemTypeMultiplier STEEL moveType
+getOffenseItemMultiplier _ _ moveType _ "ironplate" = getPlateMultiplier STEEL moveType
+getOffenseItemMultiplier _ _ moveType _ "rockgem" = getGemMultiplier ROCK moveType
+getOffenseItemMultiplier _ _ moveType _ "rockincense" = getItemTypeMultiplier ROCK moveType
+getOffenseItemMultiplier _ _ moveType _ "hardstone" = getItemTypeMultiplier ROCK moveType
+getOffenseItemMultiplier _ _ moveType _ "stoneplate" = getPlateMultiplier ROCK moveType
+getOffenseItemMultiplier _ _ moveType _ "poisongem" = getGemMultiplier POISON moveType
+getOffenseItemMultiplier _ _ moveType _ "poisonbarb" = getGemMultiplier POISON moveType
+getOffenseItemMultiplier _ _ moveType _ "toxicplate" = getPlateMultiplier POISON moveType
+getOffenseItemMultiplier _ _ moveType _ "groundgem" = getGemMultiplier GROUND moveType
+getOffenseItemMultiplier _ _ moveType _ "softsand" = getItemTypeMultiplier GROUND moveType
+getOffenseItemMultiplier _ _ moveType _ "earthplate" = getPlateMultiplier GROUND moveType
+getOffenseItemMultiplier _ _ moveType _ "firegem" = getGemMultiplier FIRE moveType
+getOffenseItemMultiplier _ _ moveType _ "charcoal" = getItemTypeMultiplier FIRE moveType
+getOffenseItemMultiplier _ _ moveType _ "flameplate" = getItemTypeMultiplier FIRE moveType
+getOffenseItemMultiplier _ _ moveType _ "watergem" = getGemMultiplier WATER moveType
+getOffenseItemMultiplier _ _ moveType _ "mysticwater" = getItemTypeMultiplier WATER moveType
+getOffenseItemMultiplier _ _ moveType _ "seaincense" = getItemTypeMultiplier WATER moveType
+getOffenseItemMultiplier _ _ moveType _ "waveincense" = getItemTypeMultiplier WATER moveType
+getOffenseItemMultiplier _ _ moveType _ "splashplate" = getPlateMultiplier WATER moveType
+getOffenseItemMultiplier _ _ moveType _ "grassgem" = getGemMultiplier GRASS moveType
+getOffenseItemMultiplier _ _ moveType _ "miracleseed" = getItemTypeMultiplier GRASS moveType
+getOffenseItemMultiplier _ _ moveType _ "roseincense" = getItemTypeMultiplier GRASS moveType
+getOffenseItemMultiplier _ _ moveType _ "meadowplate" = getPlateMultiplier GRASS moveType
+getOffenseItemMultiplier _ _ moveType _ "electricgem" = getGemMultiplier ELECTRIC moveType
+getOffenseItemMultiplier _ _ moveType _ "magnet" = getItemTypeMultiplier ELECTRIC moveType
+getOffenseItemMultiplier _ _ moveType _ "zapplate" = getPlateMultiplier ELECTRIC moveType
+getOffenseItemMultiplier _ _ moveType _ "fairygem" = getGemMultiplier FAIRY moveType
+getOffenseItemMultiplier _ _ moveType _ "pixieplate" = getPlateMultiplier FAIRY moveType
+getOffenseItemMultiplier _ _ moveType _ "buggem" = getGemMultiplier BUG moveType
+getOffenseItemMultiplier _ _ moveType _ "silverpowder" = getItemTypeMultiplier BUG moveType
+getOffenseItemMultiplier _ _ moveType _ "insectplate" = getPlateMultiplier BUG moveType
+getOffenseItemMultiplier _ _ moveType _ "dragongem" = getGemMultiplier DRAGON moveType
+getOffenseItemMultiplier _ _ moveType _ "dragonfang" = getItemTypeMultiplier DRAGON moveType
+getOffenseItemMultiplier _ _ moveType _ "dracoplate" = getPlateMultiplier DRAGON moveType
+getOffenseItemMultiplier _ _ moveType _ "chilanberry" = getBerryMultiplier NORMAL moveType
+getOffenseItemMultiplier _ _ _ _ _ = 1
+
+getDefenseItemMultiplier :: Typing -> AttackRelation -> T.Text -> T.Text -> (T.Text, T.Text) -> Double
+getDefenseItemMultiplier moveType SuperEffective _ "babiriberry" a = if fst a /= "unnerve" || snd a == "neutralizinggas" then getBerryMultiplier STEEL moveType else 1
+getDefenseItemMultiplier moveType StronglyEffective _ "babiriberry" a = if fst a /= "unnerve" || snd a == "neutralizinggas" then getBerryMultiplier STEEL moveType else 1
+getDefenseItemMultiplier moveType SuperEffective _ "chartiberry" a = if fst a /= "unnerve" || snd a == "neutralizinggas" then getBerryMultiplier ROCK moveType else 1
+getDefenseItemMultiplier moveType StronglyEffective _ "chartiberry" a = if fst a /= "unnerve" || snd a == "neutralizinggas" then getBerryMultiplier ROCK moveType else 1
+getDefenseItemMultiplier moveType SuperEffective _ "chopleberry" a = if fst a /= "unnerve" || snd a == "neutralizinggas" then getBerryMultiplier FIGHTING moveType else 1
+getDefenseItemMultiplier moveType StronglyEffective _ "chopleberry" a = if fst a /= "unnerve" || snd a == "neutralizinggas" then getBerryMultiplier FIGHTING moveType else 1
+getDefenseItemMultiplier moveType SuperEffective _ "cobaberry" a = if fst a /= "unnerve" || snd a == "neutralizinggas" then getBerryMultiplier FLYING moveType else 1
+getDefenseItemMultiplier moveType StronglyEffective _ "cobaberry" a = if fst a /= "unnerve" || snd a == "neutralizinggas" then getBerryMultiplier FLYING moveType else 1
+getDefenseItemMultiplier moveType SuperEffective _ "colburberry" a = if fst a /= "unnerve" || snd a == "neutralizinggas" then getBerryMultiplier DARK moveType else 1
+getDefenseItemMultiplier moveType StronglyEffective _ "colburberry" a = if fst a /= "unnerve" || snd a == "neutralizinggas" then getBerryMultiplier DARK moveType else 1
+getDefenseItemMultiplier moveType SuperEffective _ "habanberry" a = if fst a /= "unnerve" || snd a == "neutralizinggas" then getBerryMultiplier DRAGON moveType else 1
+getDefenseItemMultiplier moveType StronglyEffective _ "habanberry" a = if fst a /= "unnerve" || snd a == "neutralizinggas" then getBerryMultiplier DRAGON moveType else 1
+getDefenseItemMultiplier moveType SuperEffective _ "kasibberry" a = if fst a /= "unnerve" || snd a == "neutralizinggas" then getBerryMultiplier GHOST moveType else 1
+getDefenseItemMultiplier moveType StronglyEffective _ "kasibberry" a = if fst a /= "unnerve" || snd a == "neutralizinggas" then getBerryMultiplier GHOST moveType else 1
+getDefenseItemMultiplier moveType SuperEffective _ "kebiaberry" a = if fst a /= "unnerve" || snd a == "neutralizinggas" then getBerryMultiplier POISON moveType else 1
+getDefenseItemMultiplier moveType StronglyEffective _ "kebiaberry" a = if fst a /= "unnerve" || snd a == "neutralizinggas" then getBerryMultiplier POISON moveType else 1
+getDefenseItemMultiplier moveType SuperEffective _ "occaberry" a = if fst a /= "unnerve" || snd a == "neutralizinggas" then getBerryMultiplier FIRE moveType else 1
+getDefenseItemMultiplier moveType StronglyEffective _ "occaberry" a = if fst a /= "unnerve" || snd a == "neutralizinggas" then getBerryMultiplier FIRE moveType else 1
+getDefenseItemMultiplier moveType SuperEffective _ "passhoberry" a = if fst a /= "unnerve" || snd a == "neutralizinggas" then getBerryMultiplier WATER moveType else 1
+getDefenseItemMultiplier moveType StronglyEffective _ "passhoberry" a = if fst a /= "unnerve" || snd a == "neutralizinggas" then getBerryMultiplier WATER moveType else 1
+getDefenseItemMultiplier moveType SuperEffective _ "payapaberry" a = if fst a /= "unnerve" || snd a == "neutralizinggas" then getBerryMultiplier PSYCHIC moveType else 1
+getDefenseItemMultiplier moveType StronglyEffective _ "payapaberry" a = if fst a /= "unnerve" || snd a == "neutralizinggas" then getBerryMultiplier PSYCHIC moveType else 1
+getDefenseItemMultiplier moveType SuperEffective _ "rindoberry" a = if fst a /= "unnerve" || snd a == "neutralizinggas" then getBerryMultiplier GRASS moveType else 1
+getDefenseItemMultiplier moveType StronglyEffective _ "rindoberry" a = if fst a /= "unnerve" || snd a == "neutralizinggas" then getBerryMultiplier GRASS moveType else 1
+getDefenseItemMultiplier moveType SuperEffective _ "shucaberry" a = if fst a /= "unnerve" || snd a == "neutralizinggas" then getBerryMultiplier GROUND moveType else 1
+getDefenseItemMultiplier moveType StronglyEffective _ "shucaberry" a = if fst a /= "unnerve" || snd a == "neutralizinggas" then getBerryMultiplier GROUND moveType else 1
+getDefenseItemMultiplier moveType SuperEffective _ "tangaberry" a = if fst a /= "unnerve" || snd a == "neutralizinggas" then getBerryMultiplier BUG moveType else 1
+getDefenseItemMultiplier moveType StronglyEffective _ "tangaberry" a = if fst a /= "unnerve" || snd a == "neutralizinggas" then getBerryMultiplier BUG moveType else 1
+getDefenseItemMultiplier moveType SuperEffective _ "wacanberry" a = if fst a /= "unnerve" || snd a == "neutralizinggas" then getBerryMultiplier ELECTRIC moveType else 1
+getDefenseItemMultiplier moveType StronglyEffective _ "wacanberry" a = if fst a /= "unnerve" || snd a == "neutralizinggas" then getBerryMultiplier ELECTRIC moveType else 1
+getDefenseItemMultiplier moveType SuperEffective _ "yacheberry" a = if fst a /= "unnerve" || snd a == "neutralizinggas" then getBerryMultiplier ICE moveType else 1
+getDefenseItemMultiplier moveType StronglyEffective _ "yacheberry" a = if fst a /= "unnerve" || snd a == "neutralizinggas" then getBerryMultiplier ICE moveType else 1
+getDefenseItemMultiplier _ _ _ _ _ = 1
 
 getGeneralTypeMultiplier :: (Foldable t, Eq a, Num p) => p -> a -> t a -> p
 getGeneralTypeMultiplier mult tipe moveType = if tipe `elem` moveType then mult else 1
