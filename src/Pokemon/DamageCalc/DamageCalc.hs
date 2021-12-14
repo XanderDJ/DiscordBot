@@ -323,6 +323,7 @@ parentalBond dmg = do
       hasHalved = (defAbility `elem` ["multiscale", "shadowshield"] && epHPPercentage defender == 100) && (atkAbility /= "neutralizinggas" || atkAbility `notElem` abilityIgnoringAbilities || (toId . emName) move `notElem` movesThatIgnoreAbilities)
       totalDmg = both (getTotalDmg parentalBondActive hasHalved) dmg
   logIf (totalDmg /= dmg) "atkAbility" "Parental Bond"
+  log "hasHalved" (show hasHalved)
   return totalDmg
  where
    getTotalDmg pa hh dmg
@@ -338,6 +339,7 @@ randomMultiplier dmg = log "After crit multiplier" (show dmg) >> pure (fromInteg
 
 toCalc :: (Int, Int) -> Calc CalcResult
 toCalc hp@(minHp, maxHp) = do
+  log "After parental bond calc" (show hp)  
   defender <- getDefendingPokemon
   let hpS = hpStat (getEffectiveStats defender)
   return $ CalcResult hp (round' (on (/) fromIntegral minHp hpS) 3, round' (on (/) fromIntegral maxHp hpS) 3)
