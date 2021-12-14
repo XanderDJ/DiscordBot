@@ -129,8 +129,8 @@ baseDamage = do
   logIf (burned /= 1) "status" "burned"
   logIf (deepseatooth /= 1) "item" "Deep Sea Tooth"
   logIf (deepseascale /= 1) "defItem" "Deep Sea Scale"
-  log "atkM" (show statAMult)
-  log "defM" (show statDMult)
+  log "atkM" (if show statAMult == "0" then "" else show statAMult)
+  log "defM" (if show statDMult == "0" then "" else show statDMult)
   log "ne" (toShowdownRep natureEffect)
   log "defNe" (toShowdownRep defNe)
   return $ floor ((((2 * fromIntegral lvl) / 5 + 2) * bp * (a / d)) / 50 + 2)

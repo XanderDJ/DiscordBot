@@ -62,6 +62,9 @@ hasOption ks m = any (`elem` ks) (M.keys m)
 toId :: T.Text -> T.Text
 toId = T.replace " " "" . T.replace "-" "" . T.toLower
 
+cleanUp :: T.Text -> T.Text
+cleanUp t = T.intercalate " " (T.splitOn " " t)
+
 makeGuildRole :: Snowflake -> Snowflake -> GuildRoleF
 makeGuildRole gId rId = GuildRoleT (fromIntegral gId) (fromIntegral rId)
 

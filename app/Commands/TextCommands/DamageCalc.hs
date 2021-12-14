@@ -83,7 +83,7 @@ validDbData (mon1, m1Opts) (mon2, m2Opts) (move, moveOpts) i1 i2 m = do
 
 makeCalcMessage :: (Int, Int) -> (String, String) -> M.Map String String -> T.Text
 makeCalcMessage (minHp, maxHp) (minP, maxP) map =
-  T.pack $
+  (T.pack . unwords . words) $
     getValue "atkM"
       +|+ getValue "atkEv"
       ++ getValue "ne"
