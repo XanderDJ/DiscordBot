@@ -91,23 +91,23 @@ createNatureEmbed (Nature name pos neg) =
     }
 
 createAbilityEmbed :: Ability -> CreateEmbed
-createAbilityEmbed (Ability name (Just desc)) =
+createAbilityEmbed (Ability _ name (Just desc)) =
   def
     { createEmbedTitle = name,
       createEmbedColor = sideColor,
       createEmbedDescription = desc
     }
-createAbilityEmbed (Ability name Nothing) = def {createEmbedTitle = name, createEmbedDescription = "No description for this ability yet!"}
+createAbilityEmbed (Ability _ name Nothing) = def {createEmbedTitle = name, createEmbedDescription = "No description for this ability yet!"}
 
 createItemEmbed :: Item -> CreateEmbed
-createItemEmbed (Item name (Just desc) _ flingBp _ _ _) =
+createItemEmbed (Item _ name (Just desc) _ flingBp _ _ _) =
   def
     { createEmbedTitle = L.foldl append name [" (flingBP=", pack . show $ flingBp, ")"],
       createEmbedThumbnail = (Just . CreateEmbedImageUrl . getItemUrl) name,
       createEmbedColor = sideColor,
       createEmbedDescription = desc
     }
-createItemEmbed (Item name Nothing _ flingBp _ _ _) = def {createEmbedTitle = L.foldl append name [" (flingBP=", pack . show $ flingBp, ")"], createEmbedDescription = "No description for this item yet!"}
+createItemEmbed (Item _ name Nothing _ flingBp _ _ _) = def {createEmbedTitle = L.foldl append name [" (flingBP=", pack . show $ flingBp, ")"], createEmbedDescription = "No description for this item yet!"}
 
 getItemUrl :: Text -> Text
 getItemUrl name = L.foldl append "https://www.serebii.net/itemdex/sprites/pgl/" [toId name,".png"]

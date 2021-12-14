@@ -50,30 +50,30 @@ applyWonderRoom Env {wonderRoom = True} ES {..} = ES hpStat atkStat spdStat spaS
 applyWonderRoom _ es = es
 
 getMultipliers :: EffectivePokemon -> Multipliers -> Multipliers
-getMultipliers EP {epAbility = "unaware"} sm = Multipliers 0 0 0 0 0
+getMultipliers EP {epAbilityId = "unaware"} sm = Multipliers 0 0 0 0 0
 getMultipliers _ sm = sm
 
 getMoveMultiplier :: EffectivePokemon -> EffectivePokemon -> EffectiveMove -> Environment -> Double
-getMoveMultiplier attacker defender em@EM {emName = "fishiousrend"} env = let moveOrder = getMoveOrder attacker defender em env in if moveOrder == FIRST then 2 else 1
-getMoveMultiplier attacker defender em@EM {emName = "boltbeak"} env = let moveOrder = getMoveOrder attacker defender em env in if moveOrder == FIRST then 2 else 1
-getMoveMultiplier _ _ em@EM {emName = "avalanche"} env = if hitBefore env then 2 else 1
-getMoveMultiplier _ _ em@EM {emName = "assurance"} env = if hitBefore env then 2 else 1
-getMoveMultiplier _ EP {epHPPercentage = rem} EM {emName = "brine"} env = if rem < 50 then 2 else 1
-getMoveMultiplier _ _ EM {emName = "pursuit"} Env {switchingOut = True} = 2
-getMoveMultiplier EP {epItem = Nothing} _ EM {emName = "acrobatics"} _ = 2
-getMoveMultiplier EP {epStatsLowered = True} _ EM {emName = "lashout"} _ = 2
-getMoveMultiplier _ _ EM {emName = "mistyexplosion"} Env {activeTerrain = Just MISTY} = 1.5
-getMoveMultiplier _ _ EM {emName = "risingvoltage"} Env {activeTerrain = Just ELECTRIC_T} = 2
-getMoveMultiplier _ _ EM {emName = "expandingforce"} Env {activeTerrain = Just PSYCHIC_T} = 2
-getMoveMultiplier _ EP {epStatus = Just PARALYZED} EM {emName = "smellingsalts"} _ = 2
-getMoveMultiplier _ EP {epStatus = Just x} EM {emName = "hex"} _ = 2
-getMoveMultiplier _ EP {epStatus = Just POISONED} EM {emName = "venoshock"} _ = 2
-getMoveMultiplier _ EP {epStatus = Just SLEEP} EM {emName = "wakeupslap"} _ = 2
-getMoveMultiplier _ _ EM {emName = "terrainpulse"} Env {activeTerrain = Just x} = 2
-getMoveMultiplier _ _ EM {emName = "weatherball"} Env {activeWeather = Just STRONGWIND} = 1
-getMoveMultiplier _ _ EM {emName = "weatherball"} Env {activeWeather = Just x} = 2
-getMoveMultiplier _ EP {epItem = Just x} EM {emName = "knockoff"} _ = if iName x `notElem` unknockableItems then 1.5 else 1
-getMoveMultiplier EP {epStatus = Just x} _ EM {emName = "facade"} _ = 2
+getMoveMultiplier attacker defender em@EM {emId = "fishiousrend"} env = let moveOrder = getMoveOrder attacker defender em env in if moveOrder == FIRST then 2 else 1
+getMoveMultiplier attacker defender em@EM {emId = "boltbeak"} env = let moveOrder = getMoveOrder attacker defender em env in if moveOrder == FIRST then 2 else 1
+getMoveMultiplier _ _ em@EM {emId = "avalanche"} env = if hitBefore env then 2 else 1
+getMoveMultiplier _ _ em@EM {emId = "assurance"} env = if hitBefore env then 2 else 1
+getMoveMultiplier _ EP {epHPPercentage = rem} EM {emId = "brine"} env = if rem < 50 then 2 else 1
+getMoveMultiplier _ _ EM {emId = "pursuit"} Env {switchingOut = True} = 2
+getMoveMultiplier EP {epItem = Nothing} _ EM {emId = "acrobatics"} _ = 2
+getMoveMultiplier EP {epStatsLowered = True} _ EM {emId = "lashout"} _ = 2
+getMoveMultiplier _ _ EM {emId = "mistyexplosion"} Env {activeTerrain = Just MISTY} = 1.5
+getMoveMultiplier _ _ EM {emId = "risingvoltage"} Env {activeTerrain = Just ELECTRIC_T} = 2
+getMoveMultiplier _ _ EM {emId = "expandingforce"} Env {activeTerrain = Just PSYCHIC_T} = 2
+getMoveMultiplier _ EP {epStatus = Just PARALYZED} EM {emId = "smellingsalts"} _ = 2
+getMoveMultiplier _ EP {epStatus = Just x} EM {emId = "hex"} _ = 2
+getMoveMultiplier _ EP {epStatus = Just POISONED} EM {emId = "venoshock"} _ = 2
+getMoveMultiplier _ EP {epStatus = Just SLEEP} EM {emId = "wakeupslap"} _ = 2
+getMoveMultiplier _ _ EM {emId = "terrainpulse"} Env {activeTerrain = Just x} = 2
+getMoveMultiplier _ _ EM {emId = "weatherball"} Env {activeWeather = Just STRONGWIND} = 1
+getMoveMultiplier _ _ EM {emId = "weatherball"} Env {activeWeather = Just x} = 2
+getMoveMultiplier _ EP {epItem = Just x} EM {emId = "knockoff"} _ = if iId x `notElem` unknockableItems then 1.5 else 1
+getMoveMultiplier EP {epStatus = Just x} _ EM {emId = "facade"} _ = 2
 getMoveMultiplier attacker defender move env = 1
 
 getTerrainMultiplier :: Environment -> [Type] -> Double
@@ -85,16 +85,16 @@ getTerrainMultiplier _ _ = 1
 
 -- | AAMM == AttackAbilityMove
 getAbilityMultiplier :: T.Text -> EffectiveMove -> EffectivePokemon -> EffectivePokemon -> Environment -> Double
-getAbilityMultiplier _ _ _ EP {epAbility = "neutralizinggas"} _ = 1
-getAbilityMultiplier "aerilate" EM {emName = moveName, emType = mType} _ _ _ = if moveName `notElem` ["naturalgift", "naturepower"] && NORMAL == mType then 1.2 else 1
-getAbilityMultiplier "galvanize" EM {emName = moveName, emType = mType} _ _ _ = if moveName `notElem` ["naturalgift", "naturepower"] && NORMAL == mType then 1.2 else 1
-getAbilityMultiplier "pixilate" EM {emName = moveName, emType = mType} _ _ _ = if moveName `notElem` ["naturalgift", "naturepower"] && NORMAL == mType then 1.2 else 1
-getAbilityMultiplier "refrigerate" EM {emName = moveName, emType = mType} _ _ _ = if moveName `notElem` ["naturalgift", "naturepower"] && NORMAL == mType then 1.2 else 1
+getAbilityMultiplier _ _ _ EP {epAbilityId = "neutralizinggas"} _ = 1
+getAbilityMultiplier "aerilate" EM {emId = moveName, emType = mType} _ _ _ = if moveName `notElem` ["naturalgift", "naturepower"] && NORMAL == mType then 1.2 else 1
+getAbilityMultiplier "galvanize" EM {emId = moveName, emType = mType} _ _ _ = if moveName `notElem` ["naturalgift", "naturepower"] && NORMAL == mType then 1.2 else 1
+getAbilityMultiplier "pixilate" EM {emId = moveName, emType = mType} _ _ _ = if moveName `notElem` ["naturalgift", "naturepower"] && NORMAL == mType then 1.2 else 1
+getAbilityMultiplier "refrigerate" EM {emId = moveName, emType = mType} _ _ _ = if moveName `notElem` ["naturalgift", "naturepower"] && NORMAL == mType then 1.2 else 1
 getAbilityMultiplier "sheerforce" EM {emHasSecondary = True} _ _ _ = 1.3
 getAbilityMultiplier "technician" EM {emBp = bp} _ _ _ = if bp <= 60 then 1.5 else 1
 getAbilityMultiplier "analytic" em attacker defender env =
   let order = getMoveOrder attacker defender em env
-      moveName = emName em
+      moveName = emId em
    in if order == LAST && moveName `notElem` ["futuresight", "doomdesire"] then 1.3 else 1
 getAbilityMultiplier "fairyaura" EM {emType = tipe} _ _ _ = if FAIRY == tipe then 1.33 else 1
 getAbilityMultiplier "darkaura" EM {emType = tipe} _ _ _ = if DARK == tipe then 1.33 else 1
@@ -107,7 +107,7 @@ getAbilityMultiplier "steelworker" EM {emType = tipe} _ _ _ = if tipe == STEEL t
 getAbilityMultiplier "steelyspirit" EM {emType = tipe} _ _ _ = if tipe == STEEL then 1.5 else 1
 getAbilityMultiplier "defeatist" _ EP {epHPPercentage = percentage} _ _ = if percentage < 50 then 0.5 else 1
 getAbilityMultiplier "strongjaw" EM {emBite = True} _ _ _ = 1.5
-getAbilityMultiplier _ EM {emType = tipe} _ EP {epAbility = "thickfat"} _ = if tipe `elem` [ICE, FIRE] then 0.5 else 1
+getAbilityMultiplier _ EM {emType = tipe} _ EP {epAbilityId = "thickfat"} _ = if tipe `elem` [ICE, FIRE] then 0.5 else 1
 getAbilityMultiplier "torrent" EM {emType = tipe} EP {epHPPercentage = percentage} _ _ = if tipe == WATER && percentage / 100 < 1 / 3 then 1.5 else 1
 getAbilityMultiplier "blaze" EM {emType = tipe} EP {epHPPercentage = percentage} _ _ = if tipe == FIRE && percentage / 100 < 1 / 3 then 1.5 else 1
 getAbilityMultiplier "overgrow" EM {emType = tipe} EP {epHPPercentage = percentage} _ _ = if tipe == GRASS && percentage / 100 < 1 / 3 then 1.5 else 1
@@ -159,13 +159,13 @@ getMoveOrder attacker defender move env
     prio = getMovePriority attacker defender move env
 
 getEMCategory :: EffectivePokemon -> EffectiveMove -> EffectiveStats -> Multipliers -> EffectiveStats -> Multipliers -> AttackType
-getEMCategory EP {epLevel = level} EM {emName = "shellsidearm"} atkStats atkMults defStats defMults =
+getEMCategory EP {epLevel = level} EM {emId = "shellsidearm"} atkStats atkMults defStats defMults =
   let attackStat = getTotalStat (atkStat atkStats) (atkM atkMults)
       specialAttackStat = getTotalStat (spaStat atkStats) (spaM atkMults)
       defenseStat = getTotalStat (defStat defStats) (defM defMults)
       specialDefenseStat = getTotalStat (spdStat defStats) (spdM defMults)
    in getShellSideArmCat level attackStat specialAttackStat defenseStat specialDefenseStat
-getEMCategory _ EM {emName = "photongeyser"} atkStats atkMults _ _ =
+getEMCategory _ EM {emId = "photongeyser"} atkStats atkMults _ _ =
   if getTotalStat (atkStat atkStats) (atkM atkMults) > getTotalStat (spaStat atkStats) (spaM atkMults)
     then PHYSICAL
     else SPECIAL
@@ -186,8 +186,8 @@ getMovePriority attacker defender move env = prio
     moveType = getMoveType attacker defender env move
     prio
       | FLYING `elem` moveType && epHPPercentage attacker == 100 = 1 + emPriority move
-      | (toId . epAbility) attacker == "stall" = -6
-      | (toId . epAbility) attacker == "triage" && emDrain move = 3
+      | epAbilityId attacker == "stall" = -6
+      | epAbilityId attacker == "triage" && emDrain move = 3
       | otherwise = emPriority move
 
 getSpeedAttacker :: EffectivePokemon -> Environment -> Int
@@ -201,7 +201,7 @@ getSpeedDefender = getSpeed
 getSpeed :: EffectivePokemon -> Environment -> Int
 getSpeed ep@EP {..} env = fromIntegral speedStat *// totalMultiplier
   where
-    speedMultiplier = getSpeedMultiplier (toId epAbility) ep env
+    speedMultiplier = getSpeedMultiplier epAbilityId ep env
     choiceScarf = if hasItem "choicescarf" ep then 1.5 else 1
     boostMultiplier = (getMultiplier . speM) epMultiplier
     totalMultiplier = speedMultiplier * boostMultiplier * choiceScarf
@@ -220,7 +220,7 @@ getSpeedMultiplier "surgesurfer" _ Env {activeTerrain = Just ELECTRIC_T} = 2
 getSpeedMultiplier ability mon env = 1
 
 getBp :: EffectiveMove -> EffectivePokemon -> EffectivePokemon -> Environment -> Int
-getBp m = getBp' (toId . emName $ m) m
+getBp m = getBp' (toId . emId $ m) m
 
 getBp' :: T.Text -> EffectiveMove -> EffectivePokemon -> EffectivePokemon -> Environment -> Int
 getBp' "heavyslam" _ atk def _ = getWeightRatioPower atk def
@@ -290,7 +290,7 @@ getWeightPower weight
   | otherwise = 20
 
 getWeight :: EffectivePokemon -> Int
-getWeight EP {epWeight = baseWeight, epAbility = ability}
+getWeight EP {epWeight = baseWeight, epAbilityId = ability}
   | toId ability == "heavymetal" = 2 * baseWeight
   | toId ability == "lightmetal" = fromIntegral baseWeight *// 0.5
   | otherwise = baseWeight
@@ -331,7 +331,7 @@ getDefensiveAbilityMultiplier "punkrock" _ EM {emSound = isSound} _ _ _ = if isS
 getDefensiveAbilityMultiplier "soundproof" _ EM {emSound = isSound} _ _ _ = if isSound then 0 else 1
 getDefensiveAbilityMultiplier "waterbubble" _ _ typing _ _ = if FIRE `elem` typing then 0.5 else 1
 getDefensiveAbilityMultiplier "aurabreak" _ _ typing _ _ = if hasAny [FAIRY, DARK] typing then 3 / 4 else 1
-getDefensiveAbilityMultiplier "damp" _ EM {emName = name} _ _ _ = if toId name `elem` ["selfdestruct", "explosion", "mindblown", "mistyexplosion"] then 0 else 1
+getDefensiveAbilityMultiplier "damp" _ EM {emId = name} _ _ _ = if toId name `elem` ["selfdestruct", "explosion", "mindblown", "mistyexplosion"] then 0 else 1
 getDefensiveAbilityMultiplier "dazzling" _ EM {emPriority = prio} _ _ _ = if prio > 0 then 0 else 1
 getDefensiveAbilityMultiplier "dryskin" _ _ typing _ _ = if FIRE `elem` typing then 1.25 else 1
 getDefensiveAbilityMultiplier "queenlymajesty" _ EM {emPriority = prio} _ _ _ = if prio > 0 then 0 else 1
@@ -343,26 +343,26 @@ getAttackAbilityMultiplier "neuroforce" _ _ _ _ _ _ StronglyEffective = 1.25
 getAttackAbilityMultiplier ab attacker defender em env typing cat effectiveness = 1
 
 getPokemonType :: EffectivePokemon -> [Type]
-getPokemonType ep@EP {epName = "silvally"} = fromMaybe (epTyping ep) (epItem ep >>= iOnMemory >>= (fmap (: []) . readMaybe . T.unpack))
-getPokemonType p@EP {epName = "arceus"} = fromMaybe (epTyping p) (epItem p >>= iOnPlate >>= (fmap (: []) . readMaybe . T.unpack))
+getPokemonType ep@EP {epId = "silvally"} = fromMaybe (epTyping ep) (epItem ep >>= iOnMemory >>= (fmap (: []) . readMaybe . T.unpack))
+getPokemonType p@EP {epId = "arceus"} = fromMaybe (epTyping p) (epItem p >>= iOnPlate >>= (fmap (: []) . readMaybe . T.unpack))
 getPokemonType ep = epTyping ep
 
 getMoveBaseType :: EffectivePokemon -> EffectivePokemon -> T.Text -> Environment -> Type -> [Type]
 getMoveBaseType _ _ "flyingpress" _ t = [t, FLYING]
 getMoveBaseType p _ "multiattack" Env {magicRoom = isRoom} t =
-  if not $ "silvally" `T.isInfixOf` (toId . epName) p || (toId . epAbility) p == "klutz" || isRoom
+  if not $ "silvally" `T.isInfixOf` epId p || epAbilityId p == "klutz" || isRoom
     then [t]
     else fromMaybe [t] (epItem p >>= iOnMemory >>= (fmap (: []) . readMaybe . T.unpack))
 getMoveBaseType p _ "judgment" Env {magicRoom = isRoom} t =
-  if not $ "arceus" `T.isInfixOf` (toId . epName) p || (toId . epAbility) p == "klutz" || isRoom
+  if not $ "arceus" `T.isInfixOf` epId p || epAbilityId p == "klutz" || isRoom
     then [t]
     else fromMaybe [t] (epItem p >>= iOnPlate >>= (fmap (: []) . readMaybe . T.unpack))
 getMoveBaseType p _ "technoblast" Env {magicRoom = isRoom} t =
-  if not $ "genesect" `T.isInfixOf` (toId . epName) p || (toId . epAbility) p == "klutz" || isRoom
+  if not $ "genesect" `T.isInfixOf` epId   p || epAbilityId p == "klutz" || isRoom
     then [t]
     else fromMaybe [t] (epItem p >>= iOnDrive >>= (fmap (: []) . readMaybe . T.unpack))
 getMoveBaseType EP {epTyping = typing} _ "revelationdance" _ _ = [head typing]
-getMoveBaseType EP {epAbility = "normalize"} _ _ _ _ = [NORMAL]
+getMoveBaseType EP {epAbilityId = "normalize"} _ _ _ _ = [NORMAL]
 getMoveBaseType _ _ "terrainpulse" Env {activeTerrain = Just x} _ = case x of
   ELECTRIC_T -> [ELECTRIC]
   PSYCHIC_T -> [PSYCHIC]
@@ -391,14 +391,14 @@ getNaturePowerValues Env {activeTerrain = terrain} =
     )
 
 getNaturalGiftValues :: EffectivePokemon -> EffectivePokemon -> Environment -> (Int, Typing)
-getNaturalGiftValues EP {epItem = item, epAbility = ability} EP {epAbility = a'} Env {magicRoom = isRoom} =
+getNaturalGiftValues EP {epItem = item, epAbilityId = ability} EP {epAbilityId = a'} Env {magicRoom = isRoom} =
   fromMaybe
     (0, [NORMAL])
     ( item
         >>= \i ->
           if (not . iBerry) i || toId ability == "klutz" || isRoom || toId a' == "unnerve"
             then Just (0, [NORMAL])
-            else case toId . iName $ i of
+            else case iId i of
               "cheriberry" -> Just (80, [FIRE])
               "chestoberry" -> Just (80, [WATER])
               "pechaberry" -> Just (80, [ELECTRIC])
@@ -477,16 +477,16 @@ ateAbility "galvanize" [NORMAL] = [ELECTRIC]
 ateAbility _ t = t
 
 liquidVoice :: EffectivePokemon -> EffectiveMove -> [Type] -> [Type]
-liquidVoice EP {epAbility = ability} EM {emSound = sound} ts = if toId ability == "liquidvoice" && sound then [WATER] else ts
+liquidVoice EP {epAbilityId = ability} EM {emSound = sound} ts = if ability == "liquidvoice" && sound then [WATER] else ts
 
 electrify :: Environment -> [Type] -> [Type]
 electrify Env {electrified = electrified} ts = if electrified && head ts == NORMAL then [ELECTRIC] else ts
 
 getMoveType :: EffectivePokemon -> EffectivePokemon -> Environment -> EffectiveMove -> [Type]
-getMoveType attacker defender env move = (getMoveBaseType attacker defender moveName env >>> ateAbility attackerAbility >>> liquidVoice attacker move >>> getNatureType ((toId . emName) move) attacker defender env >>> electrify env) (emType move)
+getMoveType attacker defender env move = (getMoveBaseType attacker defender moveName env >>> ateAbility attackerAbility >>> liquidVoice attacker move >>> getNatureType ((toId . emId) move) attacker defender env >>> electrify env) (emType move)
   where
-    moveName = emName move
-    attackerAbility = epAbility attacker
+    moveName = emId move
+    attackerAbility = epAbilityId attacker
 
 getNatureType :: T.Text -> EffectivePokemon -> EffectivePokemon -> Environment -> [Type] -> [Type]
 getNatureType "naturalgift" atk def env _ = snd (getNaturalGiftValues atk def env)
@@ -687,12 +687,12 @@ isGrounded :: EffectivePokemon -> Bool
 isGrounded EP {..} = not flying
   where
     ts = epTyping
-    ability = toId epAbility
-    item = fromMaybe "" (epItem <&> toId . iName)
+    ability = epAbilityId
+    item = fromMaybe "" (epItem <&> toId . iId)
     flying = FLYING `elem` ts || ability == "levitate" || item == "airballoon" || epRisen
 
 willCrit :: EffectivePokemon -> EffectivePokemon -> Bool
-willCrit EP {epAbility = "merciless"} EP {epStatus = Just x} = True
+willCrit EP {epAbilityId = "merciless"} EP {epStatus = Just x} = True
 willCrit _ _ = False
 
 isBurned :: EffectivePokemon -> Bool
@@ -700,16 +700,16 @@ isBurned EP {epStatus = Just BURN} = True
 isBurned _ = False
 
 hasItem :: T.Text -> EffectivePokemon -> Bool
-hasItem name EP {epItem = Just x} = iName x == name
+hasItem name EP {epItem = Just x} = iId x == name
 hasItem _ _ = False
 
 canUseItem :: EffectivePokemon -> Environment -> Bool
 canUseItem _ Env {magicRoom = True} = False
-canUseItem EP {epAbility = "klutz"} _ = False
+canUseItem EP {epAbilityId = "klutz"} _ = False
 canUseItem _ _ = True
 
 canUseBerry :: EffectivePokemon -> EffectivePokemon -> Environment -> Bool
-canUseBerry berryUser def env = canUseItem berryUser env && epAbility def /= "unnerve"
+canUseBerry berryUser def env = canUseItem berryUser env && epAbilityId def /= "unnerve"
 
 isMisty :: Environment -> Bool
 isMisty Env {activeTerrain = Just MISTY} = True

@@ -21,15 +21,20 @@ type Name = Text
 type Description = Text
 
 -- | Ability contains the name of the ability and it's description
-data Ability = Ability Name (Maybe Description)
+data Ability = Ability {
+  aId :: T.Text,
+  aName :: T.Text,
+  aDesc :: Maybe T.Text
+}
 
 instance Show Ability where
-  show (Ability name (Just description)) = show name ++ ": " ++ show description
-  show (Ability name _) = show name ++ ": no description yet in the api."
+  show (Ability _ name (Just description)) = show name ++ ": " ++ show description
+  show (Ability _ name _) = show name ++ ": no description yet in the api."
 
 -- | Item contains the name of an item and it's description
 data Item = Item
-  { iName :: Name,
+  { iId :: T.Text,
+    iName :: Name,
     iDesc :: Maybe Description,
     iBerry :: Bool,
     iFlingBp :: Int,
@@ -40,8 +45,8 @@ data Item = Item
   deriving (Eq)
 
 instance Show Item where
-  show (Item name (Just description) _ bp _ _ _) = show name ++ "(flingBP=" ++ show bp ++ "): " ++ show description
-  show (Item name _ _ bp _ _ _) = show name ++ ": no description yet in the api."
+  show (Item _ name (Just description) _ bp _ _ _) = show name ++ "(flingBP=" ++ show bp ++ "): " ++ show description
+  show (Item _ name _ _ bp _ _ _) = show name ++ ": no description yet in the api."
 
 -- | Data type representing a move, dClass is either physical or special, bp can be battle power, accuracy is only applicable to moves that have accuracy
 data Move = Move

@@ -66,7 +66,7 @@ baseDamage = do
   let lvl = epLevel attacker
       baseBp = getBp move attacker defender env
       terrainMultiplier = if isGrounded attacker || (isMisty env && isGrounded defender) then getTerrainMultiplier env moveType else 1
-      abilityMultiplier = getAbilityMultiplier (epAbility attacker) move attacker defender env
+      abilityMultiplier = getAbilityMultiplier (epAbilityId attacker) move attacker defender env
       moveMultiplier = getMoveMultiplier attacker defender move env
       bpMultiplier = moveMultiplier * abilityMultiplier * terrainMultiplier
       moveCategory = getEMCategory attacker move attackerStats (epMultiplier attacker) defenderStats (epMultiplier defender)
@@ -75,10 +75,10 @@ baseDamage = do
       defenderStats = getEffectiveStats defender
       attackMultipliers = getMultipliers defender (epMultiplier attacker)
       defenseMultipliers = getMultipliers attacker (epMultiplier defender)
-      atkMultiplier = getAttackStatMultiplier (epAbility attacker) move attacker defender env
-      spaMultiplier = getSpecialStatMultiplier (epAbility attacker) move attacker defender env
-      defMultiplier = getDefenseStatMultiplier (epAbility defender) move attacker defender env
-      spdMultiplier = getSpecialDefenseStatMultiplier (epAbility defender) move attacker defender env
+      atkMultiplier = getAttackStatMultiplier (epAbilityId attacker) move attacker defender env
+      spaMultiplier = getSpecialStatMultiplier (epAbilityId attacker) move attacker defender env
+      defMultiplier = getDefenseStatMultiplier (epAbilityId defender) move attacker defender env
+      spdMultiplier = getSpecialDefenseStatMultiplier (epAbilityId defender) move attacker defender env
       evioliteMult = if canUseItem defender env && hasItem "eviolite" defender && epNfe defender then 1.5 else 1
       assaultvestMult = if canUseItem defender env && hasItem "assaultvest" defender then 1.5 else 1
       sandMult = if hasWeather SANDSTORM env && ROCK `elem` getPokemonType defender then 1.5 else 1
@@ -86,17 +86,17 @@ baseDamage = do
       powerMult = if powerspot env then 1.3 else 1
       choiceSpecs = if canUseItem attacker env && hasItem "choicespecs" attacker then 1.5 else 1
       choiceBand = if canUseItem attacker env && hasItem "choiceband" attacker then 1.5 else 1
-      burned = if isBurned attacker && epAbility attacker /= "guts" && emName move /= "facade" then 0.5 else 1
-      deepseatooth = if hasItem "deepseatooth" attacker && epName attacker == "clamperl" then 2 else 1
-      deepseascale = if hasItem "deepseascale" defender && epName attacker == "clamperl" then 2 else 1
+      burned = if isBurned attacker && epAbilityId attacker /= "guts" && emId move /= "facade" then 0.5 else 1
+      deepseatooth = if hasItem "deepseatooth" attacker && epId attacker == "clamperl" then 2 else 1
+      deepseascale = if hasItem "deepseascale" defender && epId attacker == "clamperl" then 2 else 1
       atkMult = atkMultiplier * powerMult * burned * choiceBand
       spaMult = spaMultiplier * batteryMult * choiceSpecs * deepseatooth
       defMult = defMultiplier * evioliteMult
       spdMult = spdMultiplier * assaultvestMult * evioliteMult * sandMult * deepseascale
-      (atk, statAMult, aMult, atkS) = getAttackAndMult (emName move) moveCategory (attackerStats, attackMultipliers) (defenderStats, defenseMultipliers) (atkMult, spaMult)
-      (def, statDMult, dMult, defS) = getDefenseAndMult (emName move) moveCategory (attackerStats, attackMultipliers) (applyWonderRoom env defenderStats, defenseMultipliers) (defMult, spdMult)
-      a = fromIntegral atk * (if epAbility attacker == "unaware" || epAbility defender == "unaware" then 1 else getMultiplier statAMult) * aMult
-      d = fromIntegral def * (if epAbility attacker == "unaware" || epAbility defender == "unaware" then 1 else getMultiplier statDMult) * dMult
+      (atk, statAMult, aMult, atkS) = getAttackAndMult (emId move) moveCategory (attackerStats, attackMultipliers) (defenderStats, defenseMultipliers) (atkMult, spaMult)
+      (def, statDMult, dMult, defS) = getDefenseAndMult (emId move) moveCategory (attackerStats, attackMultipliers) (applyWonderRoom env defenderStats, defenseMultipliers) (defMult, spdMult)
+      a = fromIntegral atk * (if epAbilityId attacker == "unaware" || epAbilityId defender == "unaware" then 1 else getMultiplier statAMult) * aMult
+      d = fromIntegral def * (if epAbilityId attacker == "unaware" || epAbilityId defender == "unaware" then 1 else getMultiplier statDMult) * dMult
       bp = fromIntegral baseBp * bpMultiplier
       natureEffect = getNatureEffect (getStat (map toLower atkS)) (epNature attacker)
       defNe = getNatureEffect (getStat (map toLower defS)) (epNature defender)
@@ -120,7 +120,7 @@ baseDamage = do
   logIf (spdMultiplier > 1) "defAbility" ((T.unpack . epAbility) defender)
   logIf (powerspot env && moveCategory == PHYSICAL) "powerspot" "Powerspot boosted"
   logIf (battery env && moveCategory == SPECIAL) "battery" "Battery boosted"
-  logIf ((emName move == "pursuit" || epAbility attacker == "stakeout") && switchingOut env) "switching" "switching boosted"
+  logIf ((emId move == "pursuit" || epAbilityId attacker == "stakeout") && switchingOut env) "switching" "switching boosted"
   logIf (evioliteMult /= 1) "defItem" "Eviolite"
   logIf (assaultvestMult /= 1) "defItem" "Assault Vest"
   logIf (sandMult /= 1) "weather" "Sand"
@@ -142,7 +142,7 @@ targetsMultiplier dmg = do
   log "base damage" (show dmg)
   env <- getEnvironment
   move <- getMove
-  let mult = if isDoubleBattle env && (toId . emName) move `elem` multiTargetMoves then 0.75 else 1
+  let mult = if isDoubleBattle env && emId move `elem` multiTargetMoves then 0.75 else 1
   multiply dmg mult
 
 weatherMultiplier :: Int -> Calc Int
@@ -154,9 +154,9 @@ weatherMultiplier dmg = do
   move <- getMove
   let moveType = getMoveType attacker defender env move
       weatherMult = fromMaybe 1 (activeWeather env <&> getWeatherMult moveType)
-      atkAbility = toId . epAbility $ attacker
-      defAbility = toId . epAbility $ defender
-      defItem = fromMaybe "" (epItem defender <&> iName)
+      atkAbility = epAbilityId attacker
+      defAbility = epAbilityId defender
+      defItem = fromMaybe "" (epItem defender <&> iId)
       mult = if atkAbility == "cloudnine" || defAbility == "cloudnine" || defItem == "utilityumbrella" || atkAbility == "airlock" || defAbility == "airlock" then 1 else weatherMult
   logIf (weatherMult /= 1) "weather" (fromMaybe "" (activeWeather env <&> show))
   multiply dmg mult
@@ -168,7 +168,7 @@ criticalHitMultiplier dmg = do
   attacker <- getAttackingPokemon
   defender <- getDefendingPokemon
   move <- getMove
-  let defAbility = toId . epAbility $ defender
+  let defAbility = epAbilityId defender
       isCrit = defAbility /= "battlearmor" && defAbility /= "shellarmor" && (crit env || emWillCrit move || willCrit attacker defender)
       mult = if isCrit then 1.5 else 1
   logIf (mult /= 1) "crit" "on a critical hit"
@@ -184,7 +184,7 @@ stabMultiplier dmg = do
   attacker <- getAttackingPokemon
   defender <- getDefendingPokemon
   env <- getEnvironment
-  let atkAbility = toId . epAbility $ attacker
+  let atkAbility = epAbilityId attacker
       mType = getMoveType attacker defender env move
       attackerType = getPokemonType attacker
       mult
@@ -207,16 +207,16 @@ typeEffectivenessMultiplier dmg = do
   defender <- getDefendingPokemon
   env <- getEnvironment
   let moveType = getMoveType attacker defender env move
-      atkAbility = toId . epAbility $ attacker
-      defAbility = toId . epAbility $ defender
+      atkAbility = epAbilityId attacker
+      defAbility = epAbilityId defender
       defenderType = getPokemonType defender
-      defenderItem = fromMaybe "" (epItem defender <&> iName)
-      moveName = toId . emName $ move
+      defenderItem = fromMaybe "" (epItem defender <&> iId)
+      moveName = emId $ move
       tms = map getMatchup defenderType
       weatherBool = atkAbility `elem` ["cloudnine", "airlock"] || defAbility `elem` ["cloudnine", "airlock"]
       tms' =
         map
-          ( enrichTmWithAbility (toId . epAbility $ attacker) (toId . epAbility $ defender) (toId . emName $ move)
+          ( enrichTmWithAbility (epAbilityId attacker) (epAbilityId defender) (emId $ move)
               >>> updateTmWithItem defenderItem (magicRoom env)
               >>> enrichTmWithWeather (activeWeather env) weatherBool (getPokemonType defender)
               >>> enrichTmWithEnv env
@@ -245,10 +245,10 @@ screensMultiplier dmg = do
       attackMultipliers = getMultipliers defender (epMultiplier attacker)
       defenseMultipliers = getMultipliers attacker (epMultiplier defender)
       categoryMove = getEMCategory attacker move attackerStats attackMultipliers defenderStats defenseMultipliers
-      moveName = emName move
+      moveName = emId move
       mult =
         if toId moveName `notElem` ["psychicfangs", "brickbreak", "gmaxwindrage"] && not (emWillCrit move || crit env || willCrit attacker defender)
-          then getScreenMultiplier screen (toId . epAbility $ attacker) categoryMove
+          then getScreenMultiplier screen (epAbilityId attacker) categoryMove
           else 1
   logIf (mult /= 1) "screens" "through Screen"
   multiply2 dmg mult
@@ -260,7 +260,7 @@ minimizeMultiplier dmg = do
   move <- getMove
   let moves = ["bodyslam", "dragonrush", "flyingpress", "heatcrash", "heavyslam", "maliciousmoonsault", "steamroller", "stomp"]
       mult =
-        if (toId . emName) move `elem` moves && isMinimized env
+        if emId move `elem` moves && isMinimized env
           then 2
           else 1
   multiply2 dmg mult
@@ -273,8 +273,8 @@ invulnerableMultiplier dmg = do
   move <- getMove
   let moves = ["earthquake", "magnitude", "gust", "twister", "thunder", "skyuppercut", "smackdown"]
       mult
-        | (toId . emName) move `elem` moves && isInvulnerable env = 2
-        | (toId . epAbility) attacker == "noguard" = 1
+        | emId move `elem` moves && isInvulnerable env = 2
+        | epAbilityId attacker == "noguard" = 1
         | isInvulnerable env = 0
         | otherwise = 1
   multiply2 dmg mult
@@ -288,18 +288,18 @@ abilityMultiplier dmg = do
   env <- getEnvironment
   let moveType = getMoveType attacker defender env move
       defenderType = getPokemonType defender
-      atkAbility = toId . epAbility $ attacker
-      defAbility = toId . epAbility $ defender
+      atkAbility = epAbilityId attacker
+      defAbility = epAbilityId defender
       ar = getTypeMatchup moveType defenderType
       moveCategory = emCategory move
       movePrio = getMovePriority attacker defender move env
       atkMult = if defAbility == "neutralizinggas" then 1 else getAttackAbilityMultiplier atkAbility attacker defender move env moveType moveCategory ar
       defMult =
-        if (atkAbility == "neutralizinggas" || defAbility /= "prismarmor") && (atkAbility `elem` abilityIgnoringAbilities || (toId . emName) move `elem` movesThatIgnoreAbilities)
+        if (atkAbility == "neutralizinggas" || defAbility /= "prismarmor") && (atkAbility `elem` abilityIgnoringAbilities || emId move `elem` movesThatIgnoreAbilities)
           then 1
           else getDefensiveAbilityMultiplier defAbility defender move {emPriority = movePrio} moveType moveCategory ar
-  logIf (atkMult /= 1) "atkAbility" (T.unpack atkAbility)
-  logIf (defMult /= 1) "defAbility" (T.unpack defAbility)
+  logIf (atkMult /= 1) "atkAbility" (T.unpack (epAbility attacker))
+  logIf (defMult /= 1) "defAbility" (T.unpack (epAbility defender))
   multiply2 dmg (atkMult * defMult)
 
 itemMultiplier :: (Int, Int) -> Calc (Int, Int)
@@ -312,8 +312,8 @@ itemMultiplier dmg = do
   let moveType = getMoveType attacker defender env move
       defenderType = getPokemonType defender
       typeMatchup = getTypeMatchup moveType defenderType
-      oMult = getOffenseItemMultiplier (toId . epName $ attacker) move moveType typeMatchup (fromMaybe "" (epItem attacker <&> iName))
-      dMult = getDefenseItemMultiplier moveType typeMatchup (fromMaybe "" (epItem attacker <&> iName)) (fromMaybe "" (epItem defender <&> iName)) (toId . epAbility $ attacker, toId . epAbility $ defender)
+      oMult = getOffenseItemMultiplier (epId attacker) move moveType typeMatchup (fromMaybe "" (epItem attacker <&> iId))
+      dMult = getDefenseItemMultiplier moveType typeMatchup (fromMaybe "" (epItem attacker <&> iId)) (fromMaybe "" (epItem defender <&> iId)) (epAbilityId attacker, epAbilityId defender)
   logIf (oMult /= 1) "item" (fromMaybe "" (epItem attacker <&> (T.unpack . iName)))
   logIf (dMult /= 1) "defItem" (fromMaybe "" (epItem defender <&> (T.unpack . iName)))
   multiply2 dmg (if magicRoom env then 1 else oMult * dMult)
@@ -326,9 +326,9 @@ multiHitMultiplier dmg = do
   move <- getMove
   env <- getEnvironment
   let hits = emHits move
-      atkAbility = epAbility attacker
-      defAbility = epAbility defender
-      hasHalved = (defAbility `elem` ["multiscale", "shadowshield"] && epHPPercentage defender == 100) && (atkAbility /= "neutralizinggas" || atkAbility `notElem` abilityIgnoringAbilities || (toId . emName) move `notElem` movesThatIgnoreAbilities)
+      atkAbility = epAbilityId attacker
+      defAbility = epAbilityId defender
+      hasHalved = (defAbility `elem` ["multiscale", "shadowshield"] && epHPPercentage defender == 100) && (atkAbility /= "neutralizinggas" || atkAbility `notElem` abilityIgnoringAbilities || emId move `notElem` movesThatIgnoreAbilities)
       totalDmg = both (\dmg -> if hasHalved then dmg + 2 * (hits - 1) * dmg else hits * dmg) dmg
   return totalDmg
 
@@ -339,10 +339,10 @@ parentalBond dmg = do
   move <- getMove
   env <- getEnvironment
   let hits = emHits move
-      parentalBondActive = hasAbility "parentalbond" attacker && hits == 1 && emName move `notElem` multiTargetMoves
-      defAbility = epAbility defender
-      atkAbility = epAbility attacker
-      hasHalved = (defAbility `elem` ["multiscale", "shadowshield"] && epHPPercentage defender == 100) && (atkAbility /= "neutralizinggas" || atkAbility `notElem` abilityIgnoringAbilities || (toId . emName) move `notElem` movesThatIgnoreAbilities)
+      parentalBondActive = hasAbility "parentalbond" attacker && hits == 1 && emId move `notElem` multiTargetMoves
+      defAbility = epAbilityId defender
+      atkAbility = epAbilityId attacker
+      hasHalved = (defAbility `elem` ["multiscale", "shadowshield"] && epHPPercentage defender == 100) && (atkAbility /= "neutralizinggas" || atkAbility `notElem` abilityIgnoringAbilities || emId move `notElem` movesThatIgnoreAbilities)
       totalDmg = both (getTotalDmg parentalBondActive hasHalved) dmg
   logIf (totalDmg /= dmg) "atkAbility" "Parental Bond"
   log "hasHalved" (show hasHalved)
@@ -397,4 +397,4 @@ multiply2 :: (Int, Int) -> Double -> Calc (Int, Int)
 multiply2 (min, max) mult = return (fromIntegral min *// mult, fromIntegral max *// mult)
 
 hasAbility :: T.Text -> EffectivePokemon -> Bool
-hasAbility a ep = epAbility ep == a
+hasAbility a ep = epAbilityId ep == a

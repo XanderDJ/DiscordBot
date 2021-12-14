@@ -44,17 +44,21 @@ validMessage (mt1, mt, mt2) con m = do
       move = toId move'
       item1 = toId <$> getOption ["i", "item", "it"] m1Opts
       item2 = toId <$> getOption ["i", "item", "it"] m2Opts
+      ability1 = toId <$> getOption ["a", "ability"] m1Opts
+      ability2 = toId <$> getOption ["a", "ability"] m2Opts
   m1 <- lift $ getCompletePokemon con mon1
   m2 <- lift $ getCompletePokemon con mon2
   mv <- lift $ getMove con move
-  i1 <- if isJust item1 then do Just <$> lift (getItem con (fromJust item1)) else return Nothing
-  i2 <- if isJust item2 then do Just <$> lift (getItem con (fromJust item2)) else return Nothing
+  i1 <- if isJust item1 then Just <$> lift (getItem con (fromJust item1)) else return Nothing
+  i2 <- if isJust item2 then Just <$> lift (getItem con (fromJust item2)) else return Nothing
+  a1 <- if isJust ability1 then Just <$> lift (getAbility con (fromJust ability1)) else return Nothing
+  a2 <- if isJust ability2 then Just <$> lift (getAbility con (fromJust ability2)) else return Nothing
   let pokemonErrMsg = T.intercalate ", " (pokemonErr [m1, m2])
       moveErrMsg = if length mv /= 1 then move else ""
       itemErrMsg = T.intercalate ", " (itemErr [(item1, i1), (item2, i2)])
       errorMsg = errorMessage pokemonErrMsg moveErrMsg itemErrMsg
   lift $ close con
-  ifElse (T.null errorMsg) (validDbData (extractRight m1, m1Opts) (extractRight m2, m2Opts) (head mv, moveOpts) (head <$> i1) (head <$> i2) m) (reportError errorMsg m)
+  ifElse (T.null errorMsg) (validDbData (extractRight m1, m1Opts) (extractRight m2, m2Opts) (head mv, moveOpts) (head <$> i1) (head <$> i2) (a1 >>= headMaybe) (a2 >>= headMaybe) m) (reportError errorMsg m)
   where
     pokemonErr [] = []
     pokemonErr ((Left id) : ms) = id : pokemonErr ms
@@ -65,12 +69,16 @@ validMessage (mt1, mt, mt2) con m = do
     itemErr _ = error "Unreachable situation"
     cleanMon = toId . T.strip . T.replace "ldc" "" . T.replace "ldamagecalc" ""
 
-validDbData :: (DBCompletePokemon, M.Map T.Text T.Text) -> (DBCompletePokemon, M.Map T.Text T.Text) -> (DBMove, M.Map T.Text T.Text) -> Maybe DBItem -> Maybe DBItem -> Message -> DiscordHandler ()
-validDbData (mon1, m1Opts) (mon2, m2Opts) (move, moveOpts) i1 i2 m = do
+headMaybe :: [DBAbility] -> Maybe DBAbility
+headMaybe [] = Nothing
+headMaybe (x:xs) = Just x
+
+validDbData :: (DBCompletePokemon, M.Map T.Text T.Text) -> (DBCompletePokemon, M.Map T.Text T.Text) -> (DBMove, M.Map T.Text T.Text) -> Maybe DBItem -> Maybe DBItem -> Maybe DBAbility -> Maybe DBAbility -> Message -> DiscordHandler ()
+validDbData (mon1, m1Opts) (mon2, m2Opts) (move, moveOpts) i1 i2 a1 a2 m = do
   let env = parseEnv moveOpts
       effectiveMove = parseMove move moveOpts
-      parsedMon1 = parseMon (toPokemon mon1) (toItem <$> i1) m1Opts effectiveMove
-      parsedMon2 = parseMon (toPokemon mon2) (toItem <$> i2) m2Opts effectiveMove
+      parsedMon1 = parseMon (toPokemon mon1) (toItem <$> i1) (toAbility <$> a1) m1Opts effectiveMove
+      parsedMon2 = parseMon (toPokemon mon2) (toItem <$> i2) (toAbility <$> a2) m2Opts effectiveMove
       damageCalcState = DCS env parsedMon1 parsedMon2 effectiveMove
       calc = runCalc damageCalcState
       calcMessage = makeCalcMessage (dmg (fst calc)) (getMinPercent (fst calc), getMaxPercent (fst calc)) (snd calc)
@@ -127,15 +135,17 @@ makeCalcMessage (minHp, maxHp) (minP, maxP) map =
 getTextValue :: M.Map String String -> String -> String
 getTextValue m k = fromMaybe "" (M.lookup k m)
 
-parseMon :: Pokemon -> Maybe Item -> M.Map T.Text T.Text -> EffectiveMove -> EffectivePokemon
-parseMon Pokemon {..} i opts EM {..} =
+parseMon :: Pokemon -> Maybe Item -> Maybe Ability -> M.Map T.Text T.Text -> EffectiveMove -> EffectivePokemon
+parseMon Pokemon {..} i a opts EM {..} =
   EP
-    { epName = toId pName,
-      epAbility = fromMaybe ((toId . head) abilities) (getOption ["a", "ability"] opts >>= \s -> return (toId s)),
+    { epId = toId pName,
+      epName = pName,
+      epAbility = fromMaybe (head abilities) (a <&> aName),
+      epAbilityId = fromMaybe ((toId . head) abilities) (a <&> aId),
       epTyping = typing,
       epStats = baseStats,
       epLevel = let level = getOption ["l", "level"] opts in fromMaybe 100 (level >>= \l -> readMaybe (T.unpack l)),
-      epItem = toIdItem <$> i,
+      epItem = i,
       epNature = fromMaybe (maybe (getDefaultNature emCategory) third set) nature,
       epEvs = maybe (EVS hpev atkev defev spaev spdev speev) first set,
       epIvs = maybe (IVS hpiv atkiv defiv spaiv spdiv speiv) second set,
@@ -185,9 +195,6 @@ parseMon Pokemon {..} i opts EM {..} =
       | x < 0 = Just 0
       | x > 100 = Just 100
       | otherwise = Just x
-
-toIdItem :: Item -> Item
-toIdItem i@Item {..} = i {iName = toId iName}
 
 parseSet :: AttackType -> T.Text -> Maybe (EVs, IVs, Nature)
 parseSet at "hyperoffense" = Just $ getCorrectType at (maxAtkEVs, usualIvs, jolly) (maxSpaEVs, specialIvs, timid)

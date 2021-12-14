@@ -34,7 +34,7 @@ import Network.HTTP.Client
   )
 import Network.HTTP.Client.TLS (tlsManagerSettings)
 import Network.HTTP.Types.Status (status404)
-import Pokemon.Functions (getStat)
+import Pokemon.Functions (getStat, toId)
 import Pokemon.Nature (getNature)
 import Pokemon.Types (Ability (..), AttackType (..), BaseStat (..), DTType (..), Item (..), Move (Move), Pokemon (Pokemon, pMoves))
 
@@ -215,7 +215,7 @@ instance FromJSON Ability where
     effects <- jsn .: "effect_entries"
     let effects' = filter (\(EffectEntry lang _) -> lang == "en") effects
         effect' = if (not . null) effects then (Just . eDescription . head) effects' else Nothing
-    return $ Ability name effect'
+    return $ Ability (toId name) name effect'
 
 instance FromJSON Item where
   parseJSON (Object jsn) = do
@@ -224,7 +224,7 @@ instance FromJSON Item where
     bp <- jsn .: "fling_power"
     let effects' = filter (\(EffectEntry lang _) -> lang == "en") effects
         effect' = if (not . null) effects then (Just . eDescription . head) effects' else Nothing
-    return $ Item name effect' False bp Nothing Nothing Nothing
+    return $ Item (toId name) name effect' False bp Nothing Nothing Nothing
 
 instance FromJSON Move where
   parseJSON (Object jsn) = do

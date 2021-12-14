@@ -30,7 +30,8 @@ data Multipliers = Multipliers
   deriving (Eq, Show)
 
 data EffectiveMove = EM
-  { emName :: T.Text,
+  { emId :: T.Text,
+    emName :: T.Text,
     emBp :: Int,
     emPriority :: Int,
     emCategory :: AttackType,
@@ -65,8 +66,10 @@ data EffectiveMove = EM
   deriving (Eq, Show)
 
 data EffectivePokemon = EP
-  { epName :: T.Text,
+  { epId :: T.Text,
+    epName :: T.Text,
     epAbility :: T.Text,
+    epAbilityId :: T.Text,
     epTyping :: [Type],
     epStats :: BaseStats,
     epLevel :: Int,

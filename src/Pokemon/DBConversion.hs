@@ -85,10 +85,10 @@ getFlags dbMove = getList
     getList ((b, a):es) = if b then a : getList es else getList es
 
 toAbility :: DBAbility -> Ability
-toAbility dbAbility = Ability (abilityName dbAbility) (Just (abilityDesc dbAbility))
+toAbility dbAbility = Ability (abilityId dbAbility) (abilityName dbAbility) (Just (abilityDesc dbAbility))
 
 toItem :: DBItem -> Item
-toItem dbItem = Item (itemName dbItem) (Just (itemDesc dbItem)) (isBerry dbItem) (flingBp dbItem) (onPlate dbItem) (onDrive dbItem) (onMemory dbItem)
+toItem dbItem = Item (itemId dbItem) (itemName dbItem) (Just (itemDesc dbItem)) (isBerry dbItem) (flingBp dbItem) (onPlate dbItem) (onDrive dbItem) (onMemory dbItem)
 
 toDTType :: DBData -> DTType
 toDTType (DTI item) = DtItem (toItem item)
@@ -97,7 +97,7 @@ toDTType (DTM move) = DtMove (toMove move)
 toDTType (DTP pokemon) = DtPokemon (toPokemon pokemon)
 
 toEffectiveMove :: DBMove -> EffectiveMove
-toEffectiveMove MoveT {..} = EM (toId moveName) moveBp movePriority(toDamageClass moveCategory) ((read . T.unpack . T.toLower)  moveType) hasSecondary moveDrain moveDrainPercentage moveRecoil moveRecoilPercentage moveContact (isJust moveSecondaryChance) moveUTO moveUDAO moveINO moveIPD moveIO moveID moveII moveIsMax moveBullet movePulse movePunch moveBite movePowder moveSound moveDance moveWillCrit 0 1 Nothing
+toEffectiveMove MoveT {..} = EM (toId moveName) moveName moveBp movePriority(toDamageClass moveCategory) ((read . T.unpack . T.toLower)  moveType) hasSecondary moveDrain moveDrainPercentage moveRecoil moveRecoilPercentage moveContact (isJust moveSecondaryChance) moveUTO moveUDAO moveINO moveIPD moveIO moveID moveII moveIsMax moveBullet movePulse movePunch moveBite movePowder moveSound moveDance moveWillCrit 0 1 Nothing
  where
    hasSecondary = isJust moveSecondaryChance
    toDamageClass "Status" = OTHER
