@@ -53,6 +53,11 @@ getNatureEffect s (Nature _ pos neg)
   | s == neg = NNegative
   | otherwise = NNeutral
 
+toShowdownRep :: NatureEffect -> String
+toShowdownRep NPositive = "+"
+toShowdownRep NNegative = "-"
+toShowdownRep NNeutral  = ""
+
 -- | Get the base stat of a pokemon using a string as a name
 getBaseStat :: String -> Pokemon -> BaseStat
 getBaseStat name pok = findBaseStat basestats stat

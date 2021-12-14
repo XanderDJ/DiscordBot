@@ -20,6 +20,7 @@ import Pokemon.Functions
 import Pokemon.TypeMatchups
 import Pokemon.Types
 import Prelude hiding (log)
+import Data.Char (toLower)
 
 runCalc :: DCS -> (CalcResult, Log)
 runCalc dcs = runCalc' dcs calcDamage
@@ -95,6 +96,7 @@ baseDamage = do
       a = fromIntegral atk * (if epAbility attacker == "unaware" || epAbility defender == "unaware" then 1 else getMultiplier statAMult) * aMult
       d = fromIntegral def * (if epAbility attacker == "unaware" || epAbility defender == "unaware" then 1 else getMultiplier statDMult) * dMult
       bp = fromIntegral baseBp * bpMultiplier
+      natureEffect = getNatureEffect (getStat (map toLower atkS)) (epNature attacker)
   log "base bp" (show baseBp)
   log "bp" (show bp)
   log "atkS" atkS
@@ -118,7 +120,9 @@ baseDamage = do
   logIf (choiceSpecs /= 1) "item" "Choice Specs"
   logIf (choiceBand /= 1) "item" "Choice Band"
   logIf (burned /= 1) "status" "burned"
+  log "ne" (toShowdownRep natureEffect)
   return $ floor ((((2 * fromIntegral lvl) / 5 + 2) * bp * (a / d)) / 50 + 2)
+
 
 -- return $ div ((div (2 * lvl) 5 + 2) * bp * div atk def) 50 + 2
 

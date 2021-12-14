@@ -159,6 +159,8 @@ parseSet at "utility" = Just $ getCorrectType at (utilityEVs, usualIvs, jolly) (
 parseSet at "util" = Just $ getCorrectType at (utilityEVs, usualIvs, jolly) (utilityEVs, specialIvs, timid)
 parseSet at "trickroom" = Just $ getCorrectType at (maxAtkEVs, trickroomIvs, adamant) (maxSpaEVs, trickroomSIvs, modest)
 parseSet at "tr" = Just $ getCorrectType at (maxAtkEVs, trickroomIvs, adamant) (maxSpaEVs, trickroomSIvs, modest)
+parseSet at "maxatk" = Just $ getCorrectType at (maxAtkEVs, usualIvs, adamant) (maxSpaEVs, specialIvs, modest)
+parseSet at "maxspa" = Just $ getCorrectType at (maxAtkEVs, usualIvs, adamant) (maxSpaEVs, specialIvs, modest)
 parseSet _ _ = Nothing
 
 getCorrectType PHYSICAL t _ = t
