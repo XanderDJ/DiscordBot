@@ -111,10 +111,11 @@ makeCalcMessage (minHp, maxHp) (minP, maxP) map =
       +|+ ( if (not . null . getValue) "drain"
               then
                 let drainPercentage = (readDouble . getValue) "drain"
+                    hasBigRoot = not . null . getValue $ "bigroot" 
                     totalHp = (readInt . getValue) "hpAttacker"
                     totalHpDefender = (readInt . getValue) "hpDefender"
-                    maxHpRecovered =  drainPercentage * fromIntegral (if maxHp > totalHpDefender then totalHpDefender else maxHp) * 100 / fromIntegral totalHp
-                    minHpRecovered = drainPercentage * fromIntegral (if minHp > totalHpDefender then totalHpDefender else minHp) * 100 / fromIntegral totalHp
+                    maxHpRecovered =  drainPercentage * if hasBigRoot then 1.3 else 1 * fromIntegral (if maxHp > totalHpDefender then totalHpDefender else maxHp) * 100 / fromIntegral totalHp
+                    minHpRecovered = drainPercentage * if hasBigRoot then 1.3 else 1 * fromIntegral (if minHp > totalHpDefender then totalHpDefender else minHp) * 100 / fromIntegral totalHp
                  in "(" ++ printPercentage 2 minHpRecovered +|+ "-" +|+ printPercentage 2 maxHpRecovered +|+ "Hp Recovered)"
               else ""
           )

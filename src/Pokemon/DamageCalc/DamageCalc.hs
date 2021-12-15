@@ -114,6 +114,7 @@ baseDamage = do
   log "hpEv" ((show . hpEv . epEvs) defender)
   log "hpAttacker" (show (hpStat attackerStats))
   log "hpDefender" (show (hpStat defenderStats))
+  logIf (hasItem "bigroot" attacker) "bigroot" "Big Root"
   logIf (terrainMultiplier /= 1) "terrain" (fromMaybe "" (activeTerrain env <&> show))
   logIf (abilityMultiplier > 1) "atkAbility" ((T.unpack . epAbility) attacker)
   logIf (atkMultiplier > 1) "atkAbility" ((T.unpack . epAbility) attacker)
