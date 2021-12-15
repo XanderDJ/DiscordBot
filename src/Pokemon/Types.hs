@@ -264,6 +264,7 @@ parseScreen "lightscreen" = Just LIGHT_SCREEN
 parseScreen "light" = Just LIGHT_SCREEN
 parseScreen "auroraveil" = Just AURORA_VEIL
 parseScreen "aurora" = Just AURORA_VEIL
+parseScreen "veil" = Just AURORA_VEIL
 parseScreen _ = Nothing
 
 -- | Hazards
