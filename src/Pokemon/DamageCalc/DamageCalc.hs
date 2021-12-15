@@ -112,6 +112,8 @@ baseDamage = do
   log "defender" ((T.unpack . epName) defender)
   log "move" ((T.unpack . emName) move)
   log "hpEv" ((show . hpEv . epEvs) defender)
+  log "hpAttacker" (show (hpStat attackerStats))
+  log "hpDefender" (show (hpStat defenderStats))
   logIf (terrainMultiplier /= 1) "terrain" (fromMaybe "" (activeTerrain env <&> show))
   logIf (abilityMultiplier > 1) "atkAbility" ((T.unpack . epAbility) attacker)
   logIf (atkMultiplier > 1) "atkAbility" ((T.unpack . epAbility) attacker)
@@ -124,11 +126,14 @@ baseDamage = do
   logIf (evioliteMult /= 1) "defItem" "Eviolite"
   logIf (assaultvestMult /= 1) "defItem" "Assault Vest"
   logIf (sandMult /= 1) "weather" "Sand"
+  logIf (terrainMultiplier /= 1) "terrain" (fromMaybe "" (activeTerrain env <&> show))
   logIf (choiceSpecs /= 1) "item" "Choice Specs"
   logIf (choiceBand /= 1) "item" "Choice Band"
   logIf (burned /= 1) "status" "burned"
   logIf (deepseatooth /= 1) "item" "Deep Sea Tooth"
   logIf (deepseascale /= 1) "defItem" "Deep Sea Scale"
+  logIf (emDrain move && epAbilityId defender /= "liquidooze") "drain" (fromMaybe "0" (emDrainPercentage move <&> show))
+  logIf (emRecoil move && epAbilityId attacker `notElem` recoilBlockingAbilities) "recoil" (fromMaybe "0" (emRecoilPercentage move <&> show))
   log "atkM" (if show statAMult == "0" then "" else show statAMult)
   log "defM" (if show statDMult == "0" then "" else show statDMult)
   log "ne" (toShowdownRep natureEffect)

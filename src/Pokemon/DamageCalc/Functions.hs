@@ -76,7 +76,7 @@ getMoveMultiplier _ EP {epItem = Just x} EM {emId = "knockoff"} _ = if iId x `no
 getMoveMultiplier EP {epStatus = Just x} _ EM {emId = "facade"} _ = 2
 getMoveMultiplier attacker defender move env = 1
 
-getTerrainMultiplier :: Environment -> [Type] -> Double
+getTerrainMultiplier :: Environment ->  [Type] -> Double
 getTerrainMultiplier Env {activeTerrain = Just GRASSY} tipe = if GRASS `elem` tipe then 1.3 else 1
 getTerrainMultiplier Env {activeTerrain = Just ELECTRIC_T} tipe = if ELECTRIC `elem` tipe then 1.3 else 1
 getTerrainMultiplier Env {activeTerrain = Just PSYCHIC_T} tipe = if PSYCHIC `elem` tipe then 1.3 else 1

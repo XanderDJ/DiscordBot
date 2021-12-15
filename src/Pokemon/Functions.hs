@@ -851,6 +851,16 @@ unknockableItems =
     "venusaurite"
   ]
 
+
+
+recoilBlockingAbilities :: [T.Text]
+recoilBlockingAbilities = 
+  [
+    "rockhead",
+    "magicguard"
+  ]
+
+
 toId :: T.Text -> T.Text
 toId = T.replace " " "" . T.replace "-" "" . T.toLower
 

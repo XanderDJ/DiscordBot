@@ -71,7 +71,7 @@ validMessage (mt1, mt, mt2) con m = do
 
 headMaybe :: [DBAbility] -> Maybe DBAbility
 headMaybe [] = Nothing
-headMaybe (x:xs) = Just x
+headMaybe (x : xs) = Just x
 
 validDbData :: (DBCompletePokemon, M.Map T.Text T.Text) -> (DBCompletePokemon, M.Map T.Text T.Text) -> (DBMove, M.Map T.Text T.Text) -> Maybe DBItem -> Maybe DBItem -> Maybe DBAbility -> Maybe DBAbility -> Message -> DiscordHandler ()
 validDbData (mon1, m1Opts) (mon2, m2Opts) (move, moveOpts) i1 i2 a1 a2 m = do
@@ -89,6 +89,7 @@ validDbData (mon1, m1Opts) (mon2, m2Opts) (move, moveOpts) i1 i2 a1 a2 m = do
   printIO damageCalcState
   printIO (snd calc)
 
+-- Anyone watching? where should I put hp recovered from drain and recoil taken from recoil moves?
 makeCalcMessage :: (Int, Int) -> (String, String) -> M.Map String String -> T.Text
 makeCalcMessage (minHp, maxHp) (minP, maxP) map =
   (T.pack . unwords . words) $
@@ -107,6 +108,26 @@ makeCalcMessage (minHp, maxHp) (minP, maxP) map =
       +|+ "("
       ++ getValue "bp"
       ++ " BP)"
+      +|+ ( if (not . null . getValue) "drain"
+              then
+                let drainPercentage = (readDouble . getValue) "drain"
+                    totalHp = (readInt . getValue) "hpAttacker"
+                    totalHpDefender = (readInt . getValue) "hpDefender"
+                    maxHpRecovered =  drainPercentage * fromIntegral (if maxHp > totalHpDefender then totalHpDefender else maxHp) * 100 / fromIntegral totalHp
+                    minHpRecovered = drainPercentage * fromIntegral (if minHp > totalHpDefender then totalHpDefender else minHp) * 100 / fromIntegral totalHp
+                 in "(" ++ printPercentage 2 minHpRecovered +|+ "-" +|+ printPercentage 2 maxHpRecovered +|+ "Hp Recovered)"
+              else ""
+          )
+      +|+ ( if (not . null . getValue) "recoil"
+              then
+                let recoilPercentage = (readDouble . getValue) "recoil" -- "0.33" for flare blitz
+                    totalHp = (readInt . getValue) "hpAttacker"
+                    totalHpDefender = (readInt . getValue) "hpDefender"
+                    maxHpRecovered =  recoilPercentage * fromIntegral (if maxHp > totalHpDefender then totalHpDefender else maxHp) * 100 / fromIntegral totalHp 
+                    minHpRecovered = recoilPercentage * fromIntegral (if minHp > totalHpDefender then totalHpDefender else minHp) * 100 / fromIntegral totalHp
+                 in "(" ++ printPercentage 2 minHpRecovered +|+ "-" +|+ printPercentage 2 maxHpRecovered +|+ "Recoil)"
+              else ""
+          )
       +|+ "vs."
       +|+ getValue "hpEv"
       +|+ "HP /"
@@ -117,6 +138,7 @@ makeCalcMessage (minHp, maxHp) (minP, maxP) map =
       +|+ getValue "defAbility"
       +|+ getValue "defender"
       +|+ (if null (getValue "weather") then "" else "in" +|+ getValue "weather")
+      +|+ (if null (getValue "terrain") then "" else "in" +|+ getValue "terrain")
       +|+ getValue "screens"
       +|+ getValue "crit"
       ++ ":"
@@ -131,6 +153,10 @@ makeCalcMessage (minHp, maxHp) (minP, maxP) map =
   where
     getValue = getTextValue map
     (+|+) b a = b ++ " " ++ a
+    readDouble :: String -> Double
+    readDouble = read
+    readInt :: String -> Int
+    readInt = read
 
 getTextValue :: M.Map String String -> String -> String
 getTextValue m k = fromMaybe "" (M.lookup k m)
