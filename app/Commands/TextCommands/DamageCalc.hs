@@ -288,7 +288,7 @@ parseMove move@MoveT {moveBp = bp, moveType = tipe} opts =
   where
     em = toEffectiveMove move
     timesUsed = fromMaybe 0 (getOption ["timesused", "tu", "times"] opts >>= readMaybe . T.unpack)
-    hits = fromMaybe (getDefaultHits (emName em)) (getOption ["hits", "h"] opts >>= readMaybe . T.unpack)
+    hits = fromMaybe (getDefaultHits (emId em)) (getOption ["hits", "h"] opts >>= readMaybe . T.unpack)
 
 getDefaultHits :: T.Text -> Int
 getDefaultHits "dualwingbeat" = 2
