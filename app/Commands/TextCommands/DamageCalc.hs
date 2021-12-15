@@ -114,8 +114,8 @@ makeCalcMessage (minHp, maxHp) (minP, maxP) map =
                     hasBigRoot = not . null . getValue $ "bigroot" 
                     totalHp = (readInt . getValue) "hpAttacker"
                     totalHpDefender = (readInt . getValue) "hpDefender"
-                    maxHpRecovered =  drainPercentage * if hasBigRoot then 1.3 else 1 * fromIntegral (if maxHp > totalHpDefender then totalHpDefender else maxHp) * 100 / fromIntegral totalHp
-                    minHpRecovered = drainPercentage * if hasBigRoot then 1.3 else 1 * fromIntegral (if minHp > totalHpDefender then totalHpDefender else minHp) * 100 / fromIntegral totalHp
+                    maxHpRecovered =  drainPercentage * (if hasBigRoot then 1.3 else 1) * fromIntegral (if maxHp > totalHpDefender then totalHpDefender else maxHp) * 100 / fromIntegral totalHp
+                    minHpRecovered = drainPercentage * (if hasBigRoot then 1.3 else 1) * fromIntegral (if minHp > totalHpDefender then totalHpDefender else minHp) * 100 / fromIntegral totalHp
                  in "(" ++ printPercentage 2 minHpRecovered +|+ "-" +|+ printPercentage 2 maxHpRecovered +|+ "Hp Recovered)"
               else ""
           )
@@ -124,9 +124,9 @@ makeCalcMessage (minHp, maxHp) (minP, maxP) map =
                 let recoilPercentage = (readDouble . getValue) "recoil" -- "0.33" for flare blitz
                     totalHp = (readInt . getValue) "hpAttacker"
                     totalHpDefender = (readInt . getValue) "hpDefender"
-                    maxHpRecovered =  recoilPercentage * fromIntegral (if maxHp > totalHpDefender then totalHpDefender else maxHp) * 100 / fromIntegral totalHp 
-                    minHpRecovered = recoilPercentage * fromIntegral (if minHp > totalHpDefender then totalHpDefender else minHp) * 100 / fromIntegral totalHp
-                 in "(" ++ printPercentage 2 minHpRecovered +|+ "-" +|+ printPercentage 2 maxHpRecovered +|+ "Recoil)"
+                    maxHpRecoil =  recoilPercentage * fromIntegral (if maxHp > totalHpDefender then totalHpDefender else maxHp) * 100 / fromIntegral totalHp 
+                    minHpRecoil = recoilPercentage * fromIntegral (if minHp > totalHpDefender then totalHpDefender else minHp) * 100 / fromIntegral totalHp
+                 in "(" ++ printPercentage 2 minHpRecoil +|+ "-" +|+ printPercentage 2 maxHpRecoil +|+ "Recoil)"
               else ""
           )
       +|+ "vs."
