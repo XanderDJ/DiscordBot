@@ -206,7 +206,7 @@ getSpeed ep@EP {..} env = fromIntegral speedStat *// totalMultiplier
     boostMultiplier = (getMultiplier . speM) epMultiplier
     totalMultiplier = speedMultiplier * boostMultiplier * choiceScarf
     natureEffect = getNatureEffect SPE epNature
-    speedStat = calcStat epLevel (spdIv epIvs) (spdEv epEvs) natureEffect (findBaseStat epStats SPE)
+    speedStat = calcStat epLevel (speIv epIvs) (speEv epEvs) natureEffect (findBaseStat epStats SPE)
 
 getSpeedMultiplier :: T.Text -> EffectivePokemon -> Environment -> Double
 getSpeedMultiplier "quickfeet" EP {epStatus = Just x} _ = 1.5
