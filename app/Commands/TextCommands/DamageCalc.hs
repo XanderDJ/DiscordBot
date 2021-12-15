@@ -292,6 +292,7 @@ parseMove move@MoveT {moveBp = bp, moveType = tipe} opts =
 
 getDefaultHits :: T.Text -> Int
 getDefaultHits "dualwingbeat" = 2
+getDefaultHits "doubleironbash" = 2
 getDefaultHits _ = 1
 
 errorMessage :: T.Text -> T.Text -> T.Text -> T.Text
