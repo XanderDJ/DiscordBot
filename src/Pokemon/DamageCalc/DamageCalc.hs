@@ -107,7 +107,7 @@ baseDamage = do
   log "atk" (show a)
   log "def" (show d)
   log "atkEv" (if atkS == "Atk" then (show . atkEv . epEvs) attacker else (show . spaEv . epEvs) attacker)
-  log "defEv" (if defS == "Def" then (show . defEv . epEvs) defender else (show . spdEv . epEvs) attacker)
+  log "defEv" (if defS == "Def" then (show . defEv . epEvs) defender else (show . spdEv . epEvs) defender)
   log "attacker" ((T.unpack . epName) attacker)
   log "defender" ((T.unpack . epName) defender)
   log "move" ((T.unpack . emName) move)
