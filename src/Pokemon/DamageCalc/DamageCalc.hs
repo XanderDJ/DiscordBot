@@ -134,7 +134,7 @@ baseDamage = do
   logIf (deepseatooth /= 1) "item" "Deep Sea Tooth"
   logIf (deepseascale /= 1) "defItem" "Deep Sea Scale"
   logIf (emDrain move && epAbilityId defender /= "liquidooze") "drain" (fromMaybe "0" (emDrainPercentage move <&> show))
-  logIf (emRecoil move && epAbilityId attacker `notElem` recoilBlockingAbilities) "recoil" (fromMaybe "0" (emRecoilPercentage move <&> show))
+  logIf (emRecoil move && epAbilityId attacker `notElem` recoilBlockingAbilities && fromMaybe False (emRecoilPercentage move <&> (/=) 0)) "recoil" (fromMaybe "0" (emRecoilPercentage move <&> show))
   log "atkM" (if show statAMult == "0" then "" else show statAMult)
   log "defM" (if show statDMult == "0" then "" else show statDMult)
   log "ne" (toShowdownRep natureEffect)
