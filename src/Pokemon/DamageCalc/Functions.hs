@@ -76,7 +76,7 @@ getMoveMultiplier _ EP {epItem = Just x} EM {emId = "knockoff"} _ = if iId x `no
 getMoveMultiplier EP {epStatus = Just x} _ EM {emId = "facade"} _ = 2
 getMoveMultiplier attacker defender move env = 1
 
-getTerrainMultiplier :: Environment ->  [Type] -> Double
+getTerrainMultiplier :: Environment -> [Type] -> Double
 getTerrainMultiplier Env {activeTerrain = Just GRASSY} tipe = if GRASS `elem` tipe then 1.3 else 1
 getTerrainMultiplier Env {activeTerrain = Just ELECTRIC_T} tipe = if ELECTRIC `elem` tipe then 1.3 else 1
 getTerrainMultiplier Env {activeTerrain = Just PSYCHIC_T} tipe = if PSYCHIC `elem` tipe then 1.3 else 1
@@ -118,6 +118,13 @@ getAbilityMultiplier "megalauncher" EM {emPulse = True} _ _ _ = 1.5
 getAbilityMultiplier "stakeout" _ _ _ Env {switchingOut = True} = 2
 getAbilityMultiplier "toughclaws" EM {isContact = True} _ _ _ = 1.3
 getAbilityMultiplier ability move attacker defender environment = 1
+
+getRivalryMultiplier :: EffectivePokemon -> EffectivePokemon -> Double
+getRivalryMultiplier EP {epGender = attackerGender, epAbilityId = "rivalry"} EP {epGender = defenderGender}
+  | (attackerGender == MALE && defenderGender == MALE) || (attackerGender == FEMALE && defenderGender == FEMALE) = 1.25
+  | (attackerGender == MALE && defenderGender == FEMALE) || (attackerGender == FEMALE && defenderGender == MALE) = 0.75
+  | otherwise = 1
+getRivalryMultiplier _ _ = 1
 
 getAttackStatMultiplier :: T.Text -> EffectiveMove -> EffectivePokemon -> EffectivePokemon -> Environment -> Double
 getAttackStatMultiplier "hugepower" _ _ _ _ = 2
@@ -358,7 +365,7 @@ getMoveBaseType p _ "judgment" Env {magicRoom = isRoom} t =
     then [t]
     else fromMaybe [t] (epItem p >>= iOnPlate >>= (fmap (: []) . readMaybe . T.unpack))
 getMoveBaseType p _ "technoblast" Env {magicRoom = isRoom} t =
-  if not $ "genesect" `T.isInfixOf` epId   p || epAbilityId p == "klutz" || isRoom
+  if not $ "genesect" `T.isInfixOf` epId p || epAbilityId p == "klutz" || isRoom
     then [t]
     else fromMaybe [t] (epItem p >>= iOnDrive >>= (fmap (: []) . readMaybe . T.unpack))
 getMoveBaseType EP {epTyping = typing} _ "revelationdance" _ _ = [head typing]
@@ -716,5 +723,5 @@ isMisty Env {activeTerrain = Just MISTY} = True
 isMisty _ = False
 
 hasWeather :: Weather -> Environment -> Bool
-hasWeather weather Env { activeWeather = Just w} = weather == w
+hasWeather weather Env {activeWeather = Just w} = weather == w
 hasWeather _ _ = False

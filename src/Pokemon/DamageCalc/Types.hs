@@ -73,6 +73,7 @@ data EffectivePokemon = EP
     epTyping :: [Type],
     epStats :: BaseStats,
     epLevel :: Int,
+    epGender :: Gender,
     epItem :: Maybe Item,
     epNature :: Nature,
     epEvs :: EVs,

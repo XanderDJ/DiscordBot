@@ -68,7 +68,8 @@ baseDamage = do
       terrainMultiplier = if isGrounded attacker || (isMisty env && isGrounded defender) then getTerrainMultiplier env moveType else 1
       abilityMultiplier = getAbilityMultiplier (epAbilityId attacker) move attacker defender env
       moveMultiplier = getMoveMultiplier attacker defender move env
-      bpMultiplier = moveMultiplier * abilityMultiplier * terrainMultiplier
+      rivalryMultiplier = getRivalryMultiplier attacker defender
+      bpMultiplier = moveMultiplier * abilityMultiplier * terrainMultiplier * rivalryMultiplier
       moveCategory = getEMCategory attacker move attackerStats (epMultiplier attacker) defenderStats (epMultiplier defender)
       moveType = getMoveType attacker defender env move
       attackerStats = getEffectiveStats attacker
@@ -135,11 +136,15 @@ baseDamage = do
   logIf (deepseascale /= 1) "defItem" "Deep Sea Scale"
   logIf (emDrain move && epAbilityId defender /= "liquidooze") "drain" (fromMaybe "0" (emDrainPercentage move <&> show))
   logIf (emRecoil move && epAbilityId attacker `notElem` recoilBlockingAbilities && fromMaybe False (emRecoilPercentage move <&> (/=) 0)) "recoil" (fromMaybe "0" (emRecoilPercentage move <&> show))
+  logIf (rivalryMultiplier /= 1) "atkAbility" ((T.unpack . epAbility) attacker)
+  logIf (rivalryMultiplier /= 1) "atkGender" ((show . epGender) attacker)
+  logIf (rivalryMultiplier /= 1) "defGender" ((show . epGender) defender)
   log "atkM" (if show statAMult == "0" then "" else show statAMult)
   log "defM" (if show statDMult == "0" then "" else show statDMult)
   log "ne" (toShowdownRep natureEffect)
   log "defNe" (toShowdownRep defNe)
   return $ floor ((((2 * fromIntegral lvl) / 5 + 2) * bp * (a / d)) / 50 + 2)
+
 
 -- return $ div ((div (2 * lvl) 5 + 2) * bp * div atk def) 50 + 2
 

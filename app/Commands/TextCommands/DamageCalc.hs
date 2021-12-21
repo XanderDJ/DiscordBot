@@ -85,7 +85,6 @@ validDbData (mon1, m1Opts) (mon2, m2Opts) (move, moveOpts) i1 i2 a1 a2 m = do
   if not (hasOption ["debug", "d"] moveOpts)
     then sendMessage $ R.CreateMessage (messageChannel m) calcMessage
     else sendMessage $ R.CreateMessage (messageChannel m) (T.pack (show (snd calc)))
-  printIO calcMessage
 
 -- Anyone watching? where should I put hp recovered from drain and recoil taken from recoil moves?
 makeCalcMessage :: (Int, Int) -> (String, String) -> M.Map String String -> T.Text
@@ -98,7 +97,7 @@ makeCalcMessage (minHp, maxHp) (minP, maxP) map =
       +|+ getValue "item"
       +|+ getValue "atkAbility"
       +|+ getValue "status"
-      +|+ getValue "attacker"
+      +|+ getValue "attacker" ++ getValue "atkGender"
       +|+ getValue "powerspot"
       +|+ getValue "battery"
       +|+ getValue "switching"
@@ -114,7 +113,7 @@ makeCalcMessage (minHp, maxHp) (minP, maxP) map =
       +|+ getValue "defS"
       +|+ getValue "defItem"
       +|+ getValue "defAbility"
-      +|+ getValue "defender"
+      +|+ getValue "defender" ++ getValue "defGender"
       +|+ (if null (getValue "weather") then "" else "in" +|+ getValue "weather")
       +|+ (if null (getValue "terrain") then "" else "in" +|+ getValue "terrain")
       +|+ getValue "screens"
@@ -170,6 +169,7 @@ parseMon Pokemon {..} i a opts EM {..} =
       epTyping = typing,
       epStats = baseStats,
       epLevel = let level = getOption ["l", "level"] opts in fromMaybe 100 (level >>= \l -> readMaybe (T.unpack l)),
+      epGender = fromMaybe NEUTRAL (getOption ["gender", "g","sex"] opts >>= parseGender),
       epItem = i,
       epNature = fromMaybe (maybe (getDefaultNature emCategory) third set) nature,
       epEvs = maybe (EVS hpev atkev defev spaev spdev speev) first set,

@@ -104,6 +104,20 @@ type BaseStats = [BaseStat]
 -- | List of Pokemon types
 type Typing = [Type]
 
+data Gender = MALE | FEMALE | NEUTRAL deriving (Eq, Ord)
+
+instance Show Gender where
+  show MALE = "♂"
+  show FEMALE = "♀"
+  show NEUTRAL = ""
+
+parseGender :: T.Text -> Maybe Gender
+parseGender "m" = Just MALE
+parseGender "f" = Just FEMALE
+parseGender "male" = Just MALE
+parseGender "female" = Just FEMALE
+parseGender _ = Nothing
+
 -- | Pokemon types
 data Type
   = NORMAL
