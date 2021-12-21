@@ -128,8 +128,8 @@ moveTitle Move {..} = pack (unpack mName ++ " (Prio=" ++ show mPrio ++ ")")
 getStatsText :: Move -> Text
 getStatsText move = intercalate "\n" [typeText, dmgClassText, bpText, accuracyText, ppText]
   where
-    bpText = if isNothing (mBp move) then "**bp**: 0" else append "**bp:** " (pack . show . fromJust . mBp $ move)
-    accuracyText = if isNothing (mAccuracy move) then "**accuracy**: never misses" else append "**accuracy:** " (pack . show . fromJust . mAccuracy $ move)
+    bpText = if isNothing (mBp move) then "**BP**: 0" else append "**BP: ** " (pack . show . fromJust . mBp $ move)
+    accuracyText = if isNothing (mAccuracy move) then "**Accuracy**: never misses" else append "**accuracy:** " (pack . show . fromJust . mAccuracy $ move)
     ppText = pack . ("**PP: **" ++) .  show . (*// (8/5)) . fromIntegral . mPP $ move
     typeText = pack . show . mTipe $ move
     dmgClassText = pack . show . mDClass $ move
