@@ -118,7 +118,7 @@ maxSpeedWithScarf :: Pokemon -> Int
 maxSpeedWithScarf = (*// 1.5) . fromIntegral . maxSpeed
 
 getMoveCategory :: Move -> MoveCategory
-getMoveCategory (Move name tipe dClass bp' _ accuracy _ _)
+getMoveCategory (Move name tipe dClass bp' _ accuracy _ _ _)
   | toName name `elem` hazards = HAZARD
   | toName name `elem` utility = UTILITY
   | toName name `elem` recovery = RECOVERY

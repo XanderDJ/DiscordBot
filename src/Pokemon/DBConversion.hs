@@ -43,6 +43,7 @@ toMove dbMove =
       mBp = (toMbp . moveBp) dbMove,
       mAccuracy = moveAccuracy dbMove,
       mPrio = movePriority dbMove,
+      mPP = movePP dbMove,
       mDescription = Just $ moveDesc dbMove,
       mFlags = getFlags dbMove
     }

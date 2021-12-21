@@ -4,7 +4,7 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 40eec0e40c45d55172642390e3e213247b3b7845f95f7afff91decb17ccc3426
+-- hash: 5e5f8bc1866aa3604be5a3524d4870ab01c1c0ff0b3b774068c6a85c8304e5b1
 
 name:           Lonewulfx6
 version:        0.1.0.0
@@ -45,7 +45,6 @@ library
       Pokemon.Excel
       Pokemon.Functions
       Pokemon.Nature
-      Pokemon.PokeApi
       Pokemon.Replays.API
       Pokemon.Replays.Parsers
       Pokemon.Replays.Types

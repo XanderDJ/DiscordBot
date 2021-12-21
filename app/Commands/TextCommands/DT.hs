@@ -17,7 +17,7 @@ import Discord
 import qualified Discord.Requests as R
 import Discord.Types
 import Pokemon.DBConversion
-import Pokemon.Functions (notGen8, pikachuUSUMForms)
+import Pokemon.Functions (notGen8, pikachuUSUMForms, (*//))
 import Pokemon.Nature
 import Pokemon.Types
 import PokemonDB.Connection (getDbConnEnv)
@@ -126,10 +126,11 @@ moveTitle :: Move -> Text
 moveTitle Move {..} = pack (unpack mName ++ " (Prio=" ++ show mPrio ++ ")")
 
 getStatsText :: Move -> Text
-getStatsText move = intercalate "\n" [typeText, dmgClassText, bpText, accuracyText]
+getStatsText move = intercalate "\n" [typeText, dmgClassText, bpText, accuracyText, ppText]
   where
     bpText = if isNothing (mBp move) then "**bp**: 0" else append "**bp:** " (pack . show . fromJust . mBp $ move)
     accuracyText = if isNothing (mAccuracy move) then "**accuracy**: never misses" else append "**accuracy:** " (pack . show . fromJust . mAccuracy $ move)
+    ppText = pack . ("**PP: **" ++) .  show . (*// (8/5)) . fromIntegral . mPP $ move
     typeText = pack . show . mTipe $ move
     dmgClassText = pack . show . mDClass $ move
 

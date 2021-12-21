@@ -21,11 +21,11 @@ type Name = Text
 type Description = Text
 
 -- | Ability contains the name of the ability and it's description
-data Ability = Ability {
-  aId :: T.Text,
-  aName :: T.Text,
-  aDesc :: Maybe T.Text
-}
+data Ability = Ability
+  { aId :: T.Text,
+    aName :: T.Text,
+    aDesc :: Maybe T.Text
+  }
 
 instance Show Ability where
   show (Ability _ name (Just description)) = show name ++ ": " ++ show description
@@ -56,16 +56,17 @@ data Move = Move
     mBp :: Maybe Int,
     mPrio :: Int,
     mAccuracy :: Maybe Int,
+    mPP :: Int,
     mDescription :: Maybe Description,
     mFlags :: [Text]
   }
   deriving (Show, Eq)
 
 instance Ord Move where
-  (Move _ _ _ (Just b) _ _ _ _) <= (Move _ _ _ (Just b') _ _ _ _) = b <= b'
-  (Move _ _ _ (Just b) _ _ _ _) <= (Move _ _ _ Nothing _ _ _ _) = False
-  (Move _ _ _ Nothing _ _ _ _) <= (Move _ _ _ (Just b') _ _ _ _) = True
-  (Move _ _ _ Nothing _ _ _ _) <= (Move _ _ _ Nothing _ _ _ _) = True
+  (Move _ _ _ (Just b) _ _ _ _ _) <= (Move _ _ _ (Just b') _ _ _ _ _) = b <= b'
+  (Move _ _ _ (Just b) _ _ _ _ _) <= (Move _ _ _ Nothing _ _ _ _ _) = False
+  (Move _ _ _ Nothing _ _ _ _ _) <= (Move _ _ _ (Just b') _ _ _ _ _) = True
+  (Move _ _ _ Nothing _ _ _ _ _) <= (Move _ _ _ Nothing _ _ _ _ _) = True
 
 -- | Attack type
 data AttackType = PHYSICAL | SPECIAL | OTHER deriving (Eq, Ord, Show)
@@ -251,7 +252,7 @@ parseWeather _ = Nothing
 data Terrain = ELECTRIC_T | PSYCHIC_T | MISTY | GRASSY deriving (Eq, Ord)
 
 instance Show Terrain where
-  show terrain = case terrain of 
+  show terrain = case terrain of
     ELECTRIC_T -> "Electric Terrain"
     PSYCHIC_T -> "Psychic Terrain"
     MISTY -> "Misty Terrain"
