@@ -63,8 +63,8 @@ getMoveMultiplier _ _ EM {emId = "pursuit"} Env {switchingOut = True} = 2
 getMoveMultiplier EP {epItem = Nothing} _ EM {emId = "acrobatics"} _ = 2
 getMoveMultiplier EP {epStatsLowered = True} _ EM {emId = "lashout"} _ = 2
 getMoveMultiplier _ _ EM {emId = "mistyexplosion"} Env {activeTerrain = Just MISTY} = 1.5
-getMoveMultiplier _ _ EM {emId = "risingvoltage"} Env {activeTerrain = Just ELECTRIC_T} = 2
-getMoveMultiplier _ _ EM {emId = "expandingforce"} Env {activeTerrain = Just PSYCHIC_T} = 2
+getMoveMultiplier _ defender EM {emId = "risingvoltage"} Env {activeTerrain = Just ELECTRIC_T} = if isGrounded defender then 2 else 1
+getMoveMultiplier attacker _ EM {emId = "expandingforce"} Env {activeTerrain = Just PSYCHIC_T} = if isGrounded attacker then 1.5 else 1
 getMoveMultiplier _ EP {epStatus = Just PARALYZED} EM {emId = "smellingsalts"} _ = 2
 getMoveMultiplier _ EP {epStatus = Just x} EM {emId = "hex"} _ = 2
 getMoveMultiplier _ EP {epStatus = Just POISONED} EM {emId = "venoshock"} _ = 2
