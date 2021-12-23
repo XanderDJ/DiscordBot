@@ -6,7 +6,7 @@ import qualified Discord.Requests as R
 import Commands.Types (Command(Com), CommandFunction (TextCommand))
 import Commands.Parsers (parseOptions, parseIntCommand)
 import Text.Parsec
-import Commands.Utility (ifElse, extractRight, reportError, getOption, sendMessage, pingUserText)
+import Commands.Utility (ifElse, extractRight, reportError, getOption, sendMessage, pingUserText, printIO, printDouble)
 import Data.Either
 import Data.Maybe
 import Text.Read (readMaybe)
@@ -22,7 +22,8 @@ valueConversionCommand :: Message -> DiscordHandler ()
 valueConversionCommand m = do
     let (msg, opts) = parseOptions (messageText m)
         value = parse (parseIntCommand "lvc") "" msg
-    ifElse (isRight value || isNothing (extractRight value)) (usageValueConversion m) (validData ((fromJust . extractRight) value) opts m)
+    printIO value
+    ifElse (isLeft value || isNothing (extractRight value)) (usageValueConversion m) (validData ((fromJust . extractRight) value) opts m)
 
 usageValueConversion = reportError "lvc <value> [--(ob,oldbudget) budget| 80000] [--(opa|oldamount|oldplayeramount) amount of players | 5] [--(b,budget) newBudget | 95000] [--(npa|newplayeramount|newamount) new amount of players | 8]"
 
@@ -34,4 +35,4 @@ validData oldVal opts m = do
         newAmount = fromMaybe 8 (getOption ["npa", "newplayeramount", "newamount"] opts >>= (readMaybe . T.unpack))
         ratio = (newBudget / newAmount) / (oldBudget / oldAmount) :: Double
         newVal = fromIntegral oldVal * ratio  
-    sendMessage $ R.CreateMessage (messageChannel m) (T.append (pingUserText m) (L.foldl T.append "" [", the given value would be equal to ", T.pack (printPercentage 2 newVal), " units"]))
+    sendMessage $ R.CreateMessage (messageChannel m) (T.append (pingUserText m) (L.foldl T.append "" [", the given value would be equal to ", T.pack (printDouble 2 newVal), " units"]))

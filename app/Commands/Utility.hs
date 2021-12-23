@@ -14,6 +14,7 @@ import DiscordDB.Types (GuildRoleT(GuildRoleT))
 import Database.PostgreSQL.Simple (Connection)
 import PokemonDB.Connection (getDbConnEnv)
 import Text.Pretty.Simple (pPrint)
+import Text.Printf (printf, PrintfArg)
 
 sendMessage :: R.ChannelRequest Message -> DiscordHandler ()
 sendMessage = void . restCall
@@ -70,6 +71,9 @@ makeGuildRole gId rId = GuildRoleT (fromIntegral gId) (fromIntegral rId)
 
 rightToMaybe :: Either a b -> Maybe b
 rightToMaybe = either (const Nothing) Just
+
+printDouble :: (PrintfArg a, Floating a) => Int -> a -> String
+printDouble = printf "%0.*f"
 
 checkAllowed :: Message -> DiscordHandler Bool
 checkAllowed m = do
