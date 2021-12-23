@@ -7,7 +7,8 @@ module Commands.TextCommands (
     module Commands.TextCommands.ChanceCalculation,
     module Commands.TextCommands.Bomko,
     module Commands.TextCommands.RemoveDefaultRole,
-    module Commands.TextCommands.AddDefaultRole
+    module Commands.TextCommands.AddDefaultRole,
+    module Commands.TextCommands.ValueConversion
 ) where
 
 import Commands.TextCommands.DT
@@ -19,3 +20,4 @@ import Commands.TextCommands.ChanceCalculation
 import Commands.TextCommands.AddDefaultRole
 import Commands.TextCommands.RemoveDefaultRole
 import Commands.TextCommands.Bomko
+import Commands.TextCommands.ValueConversion
