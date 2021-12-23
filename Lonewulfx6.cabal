@@ -4,7 +4,7 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 5e5f8bc1866aa3604be5a3524d4870ab01c1c0ff0b3b774068c6a85c8304e5b1
+-- hash: ea008d257ac5c5ebb67c531597ec4c7df63f39e3c067cbaf27a5ab7b64c7a087
 
 name:           Lonewulfx6
 version:        0.1.0.0
@@ -123,6 +123,7 @@ executable Lonewulfx6-exe
       Commands.TextCommands.RemoveDefaultRole
       Commands.TextCommands.SpeedCommands
       Commands.TextCommands.SpeedSheet
+      Commands.TextCommands.ValueConversion
       Commands.Types
       Commands.Utility
       SplitSubstr
