@@ -1,7 +1,8 @@
+{-# LANGUAGE RecordWildCards #-}
 module Commands.Auction.Undo (undoCommand) where
 
 import Commands.Auction.Types
-  ( Auction (_aParticipants),
+  ( Auction (_aParticipants, _aPreviousBids, A),
     Auctions,
     Item (I),
     Participant (_pBudget, _pTeam),
@@ -24,7 +25,7 @@ import Commands.Types
   ( Command (..),
     CommandFunction (AuctionCommand),
   )
-import Commands.Utility (extractRight, ifElse, pingUserText)
+import Commands.Utility (extractRight, ifElse, pingUserText, reportError)
 import Control.Concurrent.MVar (MVar, putMVar)
 import Control.Monad (void)
 import Control.Monad.Trans (MonadTrans (lift))
@@ -36,38 +37,28 @@ import Discord.Types (Message (messageChannel, messageText))
 import Text.Parsec (parse)
 
 undoCommand :: Command
-undoCommand = Com "lundo <username>#<identifier> - removes the last won auction from this user" (AuctionCommand undo')
+undoCommand = Com "lundo - removes the last won auction from this user" (AuctionCommand undo')
 
 undo' :: MVar Auctions -> Message -> DiscordHandler ()
 undo' mvar m = auctionActive mvar m (isAuctioneer startUndo)
 
 startUndo :: MVar Auctions -> Message -> Auctions -> Auction -> DiscordHandler ()
 startUndo mvar m as a = do
-  let u = parse undoP "parsing undo message" (messageText m)
-  ifElse (isLeft u || (not . isValidUser . extractRight $ u)) (storeAuctions mvar as >> undoCommandHelp m) (canUndo mvar m as a (extractRight u))
+  ifElse (null (_aPreviousBids a)) (storeAuctions mvar as >> reportError "No bids to undo!" m) (undo mvar m as a)
 
-canUndo :: MVar Auctions -> Message -> Auctions -> Auction -> User -> DiscordHandler ()
-canUndo mvar m as a u = ifElse (containsUser u (_aParticipants a)) (canUndo2 mvar m as a u) (storeAuctions mvar as >> userNotParticipating m u)
-
-canUndo2 :: MVar Auctions -> Message -> Auctions -> Auction -> User -> DiscordHandler ()
-canUndo2 mvar m as a u = do
-  let part = getParticipant u (_aParticipants a)
-  ifElse (Prelude.null (_pTeam part)) (storeAuctions mvar as >> nothingToUndo m u) (undo mvar m as a part)
-
-undo :: MVar Auctions -> Message -> Auctions -> Auction -> Participant -> DiscordHandler ()
-undo mvar m as a p = do
-  let (item : items) = _pTeam p
+undo :: MVar Auctions -> Message -> Auctions -> Auction -> DiscordHandler ()
+undo mvar m as a@A {..} = do
+  let pb@(user, i) = head _aPreviousBids
+      p = getParticipant user _aParticipants
+      (item : items) = _pTeam p
       (I name (Just price)) = item
       (Just budget) = _pBudget p
       budget' = price + budget
       team' = items
       p' = p {_pBudget = Just budget', _pTeam = team'}
-      ps = _aParticipants a
+      ps = _aParticipants
       ps' = updateParticipants p' ps
-      a' = a {_aParticipants = ps'}
+      a' = a {_aParticipants = ps', _aPreviousBids = tail _aPreviousBids}
       as' = updateAuction a' as
   lift $ putMVar mvar as'
   void . restCall $ R.CreateMessage (messageChannel m) (append (pingUserText m) (pack $ ", the previous bid has been undone: " ++ unpack name ++ " can now be nominated again!"))
-
-undoCommandHelp :: Message -> DiscordHandler ()
-undoCommandHelp m = void . restCall $ R.CreateMessage (messageChannel m) (append (pingUserText m) ", correct usage: undo (name)#(identifier)")

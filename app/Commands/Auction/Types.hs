@@ -2,7 +2,7 @@ module Commands.Auction.Types where
 
 import Data.List
 import Data.Maybe
-import Data.Text
+import Data.Text ( Text, unpack )
 
 data User = U {_uName :: Text, _uIdentifier :: Maybe Int} deriving (Eq)
 
@@ -20,14 +20,15 @@ data Auction = A
     _aAmountTeam :: Maybe Int,
     _aCurrentBid :: Maybe (User, Item),
     _aAuctioneer :: User,
-    _aParticipants :: [Participant]
+    _aParticipants :: [Participant],
+    _aPreviousBids :: [(User, Item)]
   }
 
 instance Show Auction where
   show a = auction ++ participants
     where
       auction = "Auction " ++ unpack (_aName a) ++ " has ended, below all the participants and their team!\n\n"
-      participants = Data.List.intercalate "\n\n" (Data.List.map show (_aParticipants a))
+      participants = Data.List.intercalate "\n\n" (map show (_aParticipants a))
 
 data Participant = P
   { _pId :: User,
@@ -36,7 +37,7 @@ data Participant = P
   }
 
 instance Show Participant where
-  show p = captain ++ "\n" ++ budget ++ "\n" ++ team
+  show p = captain ++ "\n" ++ budget ++ "\n\n" ++ team
     where
       captain = show (_pId p) ++ ":"
       budget = "Remaining Budget: " ++ (show . fromJust . _pBudget) p

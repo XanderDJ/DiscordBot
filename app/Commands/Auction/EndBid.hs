@@ -1,7 +1,8 @@
+{-# LANGUAGE RecordWildCards #-}
 module Commands.Auction.EndBid (endBidCommand) where
 
 import Commands.Auction.Types
-  ( Auction (_aCurrentBid, _aParticipants),
+  ( Auction (_aCurrentBid, _aParticipants, A, _aPreviousBids),
     Auctions,
     Item (_iName, _iPrice),
     Participant (_pBudget, _pTeam),
@@ -41,11 +42,11 @@ canEndBid mvar m as a = do
   ifElse (isNothing $ _aCurrentBid a) (storeAuctions mvar as >> noNominationActive m) (isAuctioneer endBid mvar m as a)
 
 endBid :: MVar Auctions -> Message -> Auctions -> Auction -> DiscordHandler ()
-endBid mvar m as a = do
-  let Just (user, item) = _aCurrentBid a
-      part = getParticipant user (_aParticipants a)
+endBid mvar m as a@A {..} = do
+  let Just (user, item) = _aCurrentBid
+      part = getParticipant user _aParticipants
       part' = part {_pTeam = item : _pTeam part, _pBudget = Just $ (fromJust . _pBudget) part - (fromJust . _iPrice) item}
-      a' = a {_aParticipants = updateParticipants part' (_aParticipants a), _aCurrentBid = Nothing}
+      a' = a {_aParticipants = updateParticipants part' _aParticipants, _aCurrentBid = Nothing, _aPreviousBids = (user, item) : _aPreviousBids}
       as' = updateAuction a' as
   lift $ putMVar mvar as'
   void . restCall $

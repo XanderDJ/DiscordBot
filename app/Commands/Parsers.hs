@@ -71,7 +71,7 @@ parseId = toId . pack  <$> (spaces *> many (noneOf ","))
 -- Message example = !auction lpl 5000
 
 registerAuctionP :: AuctionID -> User -> Parser Auction
-registerAuctionP aId auctioneer = A aId . pack <$> (string "lhostauction" *> spaces *> many alphaNum) <*> parseMaybeInt <*> parseMaybeInt <*> parseMaybeInt <*> pure Nothing <*> pure auctioneer <*> pure []
+registerAuctionP aId auctioneer = A aId . pack <$> (string "lhostauction" *> spaces *> many alphaNum) <*> parseMaybeInt <*> parseMaybeInt <*> parseMaybeInt <*> pure Nothing <*> pure auctioneer <*> pure [] <*> pure []
 
 -- example: rp mogo#5432 80000
 registerParticipantP :: Parser Participant

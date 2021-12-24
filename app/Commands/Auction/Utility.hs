@@ -48,8 +48,8 @@ auctionNotFound m = void $ restCall (R.CreateMessage (messageChannel m) (append 
 notAuctioneer :: Message -> DiscordHandler ()
 notAuctioneer m = void . restCall $ R.CreateMessage (messageChannel m) (append (pingUserText m) ", you're not the auctioneer of this auction!")
 
-containsParticipant :: Participant -> [Participant] -> Bool
-containsParticipant p = Data.List.foldr (\p' -> (||) (_pId p == _pId p')) False
+containsParticipant :: [Participant] -> Participant -> Bool
+containsParticipant ps p = Data.List.foldr (\p' -> (||) (_pId p == _pId p')) False ps
 
 containsUser :: Commands.Auction.Types.User -> [Participant] -> Bool
 containsUser u = Data.List.foldr (\p' -> (||) (u == _pId p')) False
@@ -102,3 +102,5 @@ getMaxBudget user auction = maxBudget
 isValidUser :: Commands.Auction.Types.User -> Bool
 isValidUser (U _ (Just _)) = True
 isValidUser _ = False
+
+
