@@ -31,8 +31,8 @@ validData :: Int -> M.Map T.Text T.Text -> Message -> DiscordHandler ()
 validData oldVal opts m = do
     let oldBudget = fromMaybe 80000 (getOption ["oldbudget", "ob"] opts >>= (readMaybe . T.unpack))
         oldAmount = fromMaybe 5 (getOption ["oldplayeramount", "oldamount", "opa"] opts >>= (readMaybe . T.unpack))
-        newBudget = fromMaybe 95000 (getOption ["b", "budget"] opts >>= (readMaybe . T.unpack))
-        newAmount = fromMaybe 8 (getOption ["npa", "newplayeramount", "newamount"] opts >>= (readMaybe . T.unpack))
+        newBudget = fromMaybe 110000 (getOption ["b", "budget"] opts >>= (readMaybe . T.unpack))
+        newAmount = fromMaybe 9 (getOption ["npa", "newplayeramount", "newamount"] opts >>= (readMaybe . T.unpack))
         ratio = (newBudget / newAmount) / (oldBudget / oldAmount) :: Double
         newVal = fromIntegral oldVal * ratio  
     sendMessage $ R.CreateMessage (messageChannel m) (T.append (pingUserText m) (L.foldl T.append "" [", the given value would be equal to ", T.pack (printDouble 2 newVal), " units"]))
