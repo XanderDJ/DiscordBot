@@ -130,7 +130,9 @@ parseCalcStat = do
   try (string "cs") <|> string "calcstat"
   spaces
   stat <- string "hp" <|> string "atk" <|> string "def" <|> try (string "spatk") <|> try (string "spdef") <|> string "spd"
+  spaces
   char ':'
+  spaces
   bs <- read <$> many digit
   spaces
   natureEffect <- try (string "positive") <|> string "pos" <|> try (string "neutral") <|> try (string "neu") <|> try (string "negative") <|> string "neg"
@@ -141,8 +143,10 @@ parseMaxCalcStat = do
   char 'l'
   try (string "ms") <|> string "maxstat"
   spaces
-  stat <- string "hp" <|> string "atk" <|> string "def" <|> try (string "spatk") <|> try (string "spdef") <|> string "spd"
+  stat <- string "hp" <|> string "atk" <|> string "def" <|> try (string "spa") <|> try (string "spd") <|> string "spe"
+  spaces
   char ':'
+  spaces
   bs <- read <$> many digit
   return $ CS (BaseStat (getStat stat) bs) NPositive
 

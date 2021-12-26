@@ -25,10 +25,10 @@ import Pokemon.Functions (calcStat, (*//))
 import Text.Parsec (parse)
 
 csCom :: Command
-csCom = Com "l(cs|calcstat) ((hp|atk|def|spatk|spdef|spd):basestat) (positive|neutral|negative|pos|neu|neg) [--level lvl, 100] [--iv iv, 31] [--ev ev, 252] [--(boost|multiplier) -1 0 1, 0]" (TextCommand calcStatHandler)
+csCom = Com "l(cs|calcstat) ((hp|atk|def|spa|spd|spe):basestat) (positive|neutral|negative|pos|neu|neg) [--level lvl, 100] [--iv iv, 31] [--ev ev, 252] [--(boost|multiplier) -1 0 1, 0]" (TextCommand calcStatHandler)
 
 msCom :: Command
-msCom = Com "l(ms|maxstat) (hp|atk|def|spatk|spdef|spd:basestat) [--(boost|multiplier) -1 0 1, 0]" (TextCommand calcMaxStatHandler)
+msCom = Com "l(ms|maxstat) (hp|atk|def|spa|spd|spe:basestat) [--(boost|multiplier) -1 0 1, 0]" (TextCommand calcMaxStatHandler)
 
 -- DISCORD HANDLERS
 
@@ -66,7 +66,7 @@ calcStatHandler' m (CS bs ne) lvl iv ev multiplier = do
 -- ERROR MESSAGES
 
 calcStatUsage :: Message -> DiscordHandler ()
-calcStatUsage m = sendMessage $ R.CreateMessage (messageChannel m) (append (pingUserText m) ", correct usage: l(cs|calcstat) ((hp|atk|def|spatk|spdef|spd):basestat) (positive|neutral|negative|pos|neu|neg) [--level lvl, 100] [--iv iv, 31] [--ev ev, 252] [--(boost|multiplier) -1 0 1, 0]")
+calcStatUsage m = sendMessage $ R.CreateMessage (messageChannel m) (append (pingUserText m) ", correct usage: l(cs|calcstat) ((hp|atk|def|spa|spd|spe):basestat) (positive|neutral|negative|pos|neu|neg) [--level lvl, 100] [--iv iv, 31] [--ev ev, 252] [--(boost|multiplier) -1 0 1, 0]")
 
 maxStatUsage :: Message -> DiscordHandler ()
-maxStatUsage m = sendMessage $ R.CreateMessage (messageChannel m) (append (pingUserText m) ", correct usage: l(ms|maxstat) ((hp|atk|def|spatk|spdef|spd):basestat) [--(boost|multiplier) -1 0 1, 0]")
+maxStatUsage m = sendMessage $ R.CreateMessage (messageChannel m) (append (pingUserText m) ", correct usage: l(ms|maxstat) ((hp|atk|def|spa|spd|spe):basestat) [--(boost|multiplier) -1 0 1, 0]")
