@@ -1,7 +1,7 @@
 module Commands.Auction.EndAuction (endAuctionCommand) where
 
 import Commands.Auction.Types
-  ( Auction (_aCurrentBid, _aID),
+  ( Auction (_aCurrentBid, _aID, _aParticipants),
     Auctions,
   )
 import Commands.Auction.Utility
@@ -14,7 +14,7 @@ import Commands.Types
   ( Command (..),
     CommandFunction (AuctionCommand),
   )
-import Commands.Utility (ifElse)
+import Commands.Utility (ifElse, sendMessage)
 import Control.Concurrent.MVar (MVar, putMVar)
 import Control.Monad (void)
 import Control.Monad.Trans (MonadTrans (lift))
@@ -40,5 +40,11 @@ canEndAuction mvar m as a = do
 endAuction :: MVar Auctions -> Message -> Auctions -> Auction -> DiscordHandler ()
 endAuction mvar m as a = do
   let as' = Prelude.filter (\a' -> _aID a /= _aID a') as
+      teams = _aParticipants a
   lift $ putMVar mvar as'
-  void . restCall $ R.CreateMessage (messageChannel m) (append "RESULTS:\n" ((pack . show) a))
+  sendMessage $ R.CreateMessage (messageChannel m) "RESULTS:"
+  sendTeams teams m
+
+sendTeams [] _ = pure ()
+sendTeams (t:ts) m = sendMessage (R.CreateMessage (messageChannel m) ((pack . show) t)) >> sendTeams ts m
+
