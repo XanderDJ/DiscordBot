@@ -304,7 +304,7 @@ getWeight EP {epWeight = baseWeight, epAbilityId = ability}
 
 getRatioPower :: Int -> Int
 getRatioPower ratio
-  | ratio > 5 = 120
+  | ratio >= 5 = 120
   | ratio == 4 = 100
   | ratio == 3 = 80
   | ratio == 2 = 60
