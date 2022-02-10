@@ -1,6 +1,7 @@
 module Commands.Parsers where
 
 import Commands.Auction (Auction (A), AuctionID, Participant (P), User (U))
+import Commands.Utility (toId)
 import Data.Char (isPunctuation, toLower)
 import Data.Functor
 import Data.List (isPrefixOf)
@@ -9,13 +10,13 @@ import Data.Maybe
 import Data.StatMultiplier
 import Data.Text (Text, dropWhileEnd, pack, replace, unpack)
 import qualified Data.Text as T
-import Pokemon.Functions (parseNatureEffect, getStat)
+import Pokemon.Functions (getStat, parseNatureEffect)
 import Pokemon.Types (BaseStat (BaseStat), Level, NatureEffect (NPositive))
-import Text.Parsec
-import Text.Parsec.Text (Parser)
-import Text.Parsec.Number ( fractional, int ) 
-import Commands.Utility (toId)
 import SplitSubstr
+import Text.Parsec
+import Text.Parsec.Number (fractional, int)
+import Text.Parsec.Text (Parser)
+import Text.Read (readMaybe)
 
 parseSep :: Parser Text
 parseSep = T.singleton <$> char ','
@@ -32,16 +33,8 @@ parseMaybeInt = do
 parseMaybeIntScientific :: Parser (Maybe Int)
 parseMaybeIntScientific = do
   spaces
-  base <- many digit
-  char '.'
-  ground <- many digit
-  let fixedGround = unpack . dropWhileEnd ('0' ==) . pack $ ground
-  if null fixedGround || null base
-    then return Nothing
-    else do
-      let x = read base * 1000
-          y = read fixedGround * 100
-      return $ Just (x + y)
+  fr <- fractional
+  return $ Just (round (1000 * fr))
 
 parseIntCommand :: String -> Parser (Maybe Int)
 parseIntCommand s = string s *> spaces *> (try parseMaybeIntScientific <|> parseMaybeInt)
@@ -66,7 +59,7 @@ parseCommand :: Parser Text
 parseCommand = pack <$> (char 'l' *> many letter)
 
 parseId :: Parser Text
-parseId = toId . pack  <$> (spaces *> many (noneOf ","))
+parseId = toId . pack <$> (spaces *> many (noneOf ","))
 
 -- Message example = !auction lpl 5000
 
@@ -189,7 +182,6 @@ parseCC = do
 
 parseDN :: Parser Text
 parseDN = pack <$> (string "ldn" *> spaces *> many alphaNum)
-
 
 parseLC :: Parser (Text, [Text])
 parseLC = do

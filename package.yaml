@@ -44,6 +44,10 @@ dependencies:
 - postgresql-simple
 - utf8-string
 - pretty-simple
+- hspec
+- hspec-contrib
+- QuickCheck
+- HUnit
 
 library:
   source-dirs: src
@@ -73,3 +77,5 @@ tests:
     - -with-rtsopts=-N
     dependencies:
     - Lonewulfx6
+    default-extensions:
+    - OverloadedStrings

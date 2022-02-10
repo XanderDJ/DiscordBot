@@ -30,10 +30,10 @@ import Control.Monad
 import Control.Monad.Trans
 import Commands.Manage.Role
 
-main = auctionBot
+main = bot
 
-auctionBot :: IO ()
-auctionBot = do
+bot :: IO ()
+bot = do
   [token] <- getArgs
   mVar <- newEmptyMVar
   putMVar mVar []

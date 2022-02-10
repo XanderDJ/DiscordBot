@@ -4,7 +4,7 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: ea008d257ac5c5ebb67c531597ec4c7df63f39e3c067cbaf27a5ab7b64c7a087
+-- hash: cc7b39b7c7ef5636416054961cf74d8b245524d06b461ff4110cfc6476b5b73a
 
 name:           Lonewulfx6
 version:        0.1.0.0
@@ -30,69 +30,6 @@ library
       ChanceCalculator
       ChanceCalculator.ChanceCalculator
       ChanceCalculator.ChanceList
-      Data.List.Utility
-      Data.StatMultiplier
-      DiscordDB.Connection
-      DiscordDB.Queries
-      DiscordDB.Tables
-      DiscordDB.Types
-      Excel
-      Pokemon.DamageCalc
-      Pokemon.DamageCalc.DamageCalc
-      Pokemon.DamageCalc.Functions
-      Pokemon.DamageCalc.Types
-      Pokemon.DBConversion
-      Pokemon.Excel
-      Pokemon.Functions
-      Pokemon.Nature
-      Pokemon.Replays.API
-      Pokemon.Replays.Parsers
-      Pokemon.Replays.Types
-      Pokemon.Stats.Functions
-      Pokemon.Stats.Stats
-      Pokemon.Stats.Types
-      Pokemon.TypeMatchups
-      Pokemon.Types
-      PokemonDB.Connection
-      PokemonDB.Queries
-      PokemonDB.Tables
-      PokemonDB.Types
-  other-modules:
-      Paths_Lonewulfx6
-  hs-source-dirs:
-      src
-  default-extensions:
-      OverloadedStrings
-  build-depends:
-      aeson
-    , async
-    , base >=4.7 && <5
-    , bytestring
-    , containers
-    , data-default
-    , discord-haskell
-    , http-client
-    , http-client-tls
-    , http-types
-    , lens
-    , mtl
-    , opaleye
-    , parsec
-    , parsec3-numbers
-    , postgresql-simple
-    , pretty-simple
-    , product-profunctors
-    , split
-    , text
-    , time
-    , unliftio
-    , utf8-string
-    , xlsx
-  default-language: Haskell2010
-
-executable Lonewulfx6-exe
-  main-is: Main.hs
-  other-modules:
       CommandMap
       Commands.Auction
       Commands.Auction.Bid
@@ -126,15 +63,43 @@ executable Lonewulfx6-exe
       Commands.TextCommands.ValueConversion
       Commands.Types
       Commands.Utility
+      Data.List.Utility
+      Data.StatMultiplier
+      DiscordDB.Connection
+      DiscordDB.Queries
+      DiscordDB.Tables
+      DiscordDB.Types
+      Excel
+      Pokemon.DamageCalc
+      Pokemon.DamageCalc.DamageCalc
+      Pokemon.DamageCalc.Functions
+      Pokemon.DamageCalc.Types
+      Pokemon.DBConversion
+      Pokemon.Excel
+      Pokemon.Functions
+      Pokemon.Nature
+      Pokemon.Replays.API
+      Pokemon.Replays.Parsers
+      Pokemon.Replays.Types
+      Pokemon.Stats.Functions
+      Pokemon.Stats.Stats
+      Pokemon.Stats.Types
+      Pokemon.TypeMatchups
+      Pokemon.Types
+      PokemonDB.Connection
+      PokemonDB.Queries
+      PokemonDB.Tables
+      PokemonDB.Types
       SplitSubstr
+  other-modules:
       Paths_Lonewulfx6
   hs-source-dirs:
-      app
+      src
   default-extensions:
       OverloadedStrings
-  ghc-options: -threaded -rtsopts -with-rtsopts=-N
   build-depends:
-      Lonewulfx6
+      HUnit
+    , QuickCheck
     , aeson
     , async
     , base >=4.7 && <5
@@ -142,6 +107,49 @@ executable Lonewulfx6-exe
     , containers
     , data-default
     , discord-haskell
+    , hspec
+    , hspec-contrib
+    , http-client
+    , http-client-tls
+    , http-types
+    , lens
+    , mtl
+    , opaleye
+    , parsec
+    , parsec3-numbers
+    , postgresql-simple
+    , pretty-simple
+    , product-profunctors
+    , split
+    , text
+    , time
+    , unliftio
+    , utf8-string
+    , xlsx
+  default-language: Haskell2010
+
+executable Lonewulfx6-exe
+  main-is: Main.hs
+  other-modules:
+      Paths_Lonewulfx6
+  hs-source-dirs:
+      app
+  default-extensions:
+      OverloadedStrings
+  ghc-options: -threaded -rtsopts -with-rtsopts=-N
+  build-depends:
+      HUnit
+    , Lonewulfx6
+    , QuickCheck
+    , aeson
+    , async
+    , base >=4.7 && <5
+    , bytestring
+    , containers
+    , data-default
+    , discord-haskell
+    , hspec
+    , hspec-contrib
     , http-client
     , http-client-tls
     , http-types
@@ -165,12 +173,17 @@ test-suite Lonewulfx6-test
   type: exitcode-stdio-1.0
   main-is: Spec.hs
   other-modules:
+      Commands.ParsersSpec
       Paths_Lonewulfx6
   hs-source-dirs:
       test
+  default-extensions:
+      OverloadedStrings
   ghc-options: -threaded -rtsopts -with-rtsopts=-N
   build-depends:
-      Lonewulfx6
+      HUnit
+    , Lonewulfx6
+    , QuickCheck
     , aeson
     , async
     , base >=4.7 && <5
@@ -178,6 +191,8 @@ test-suite Lonewulfx6-test
     , containers
     , data-default
     , discord-haskell
+    , hspec
+    , hspec-contrib
     , http-client
     , http-client-tls
     , http-types
