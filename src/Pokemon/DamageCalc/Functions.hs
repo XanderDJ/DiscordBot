@@ -236,9 +236,9 @@ getBp' "lowkick" _ _ def _ = getWeightPower (getWeight def)
 getBp' "grassknot" _ _ def _ = getWeightPower (getWeight def)
 getBp' "skydrop" EM {emBp = bp} _ def _ = if getWeight def >= 200 then 0 else bp
 getBp' "gyroball" _ atk def env =
-  let attackerSpeed = getSpeedAttacker atk env
-      defenderSpeed = getSpeedDefender def env
-   in min 150 (floor (25 * on (/) fromIntegral attackerSpeed defenderSpeed + 1))
+  let attackerSpeed = fromIntegral $ getSpeedAttacker atk env :: Double
+      defenderSpeed = fromIntegral $ getSpeedDefender def env :: Double
+   in min 150 (floor ((25 * defenderSpeed / attackerSpeed) + 1))
 getBp' "electroball" _ atk def env =
   let attackerSpeed = getSpeedAttacker atk env
       defenderSpeed = getSpeedDefender def env

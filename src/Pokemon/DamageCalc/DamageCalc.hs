@@ -143,6 +143,8 @@ baseDamage = do
   log "defM" (if show statDMult == "0" then "" else show statDMult)
   log "ne" (toShowdownRep natureEffect)
   log "defNe" (toShowdownRep defNe)
+  log "attackerStats" (show attackerStats)
+  log "defenderStats" (show defenderStats)
   return $ floor ((((2 * fromIntegral lvl) / 5 + 2) * bp * (a / d)) / 50 + 2)
 
 

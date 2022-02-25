@@ -116,7 +116,7 @@ data EffectiveStats = ES
     spaStat :: Int,
     spdStat :: Int,
     speStat :: Int
-  }
+  } deriving Show
 
 data Environment = Env
   { activeTerrain :: Maybe Terrain,
