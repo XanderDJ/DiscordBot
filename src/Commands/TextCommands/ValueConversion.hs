@@ -20,7 +20,7 @@ valueConversionCom = Com "lvc <value> [--(ob,oldbudget) budget| 80000] [--(opa|o
 
 valueConversionCommand :: Message -> DiscordHandler ()
 valueConversionCommand m = do
-    let (msg, opts) = parseOptions (messageText m)
+    let (msg, opts) = parseOptions (messageContent m)
         value = parse (parseIntCommand "lvc") "" msg
     printIO value
     ifElse (isLeft value || isNothing (extractRight value)) (usageValueConversion m) (validData ((fromJust . extractRight) value) opts m)
@@ -35,4 +35,4 @@ validData oldVal opts m = do
         newAmount = fromMaybe 9 (getOption ["npa", "newplayeramount", "newamount"] opts >>= (readMaybe . T.unpack))
         ratio = (newBudget / newAmount) / (oldBudget / oldAmount) :: Double
         newVal = fromIntegral oldVal * ratio  
-    sendMessage $ R.CreateMessage (messageChannel m) (T.append (pingUserText m) (L.foldl T.append "" [", the given value would be equal to ", T.pack (printDouble 2 newVal), " units"]))
+    sendMessage $ R.CreateMessage (messageChannelId m) (T.append (pingUserText m) (L.foldl T.append "" [", the given value would be equal to ", T.pack (printDouble 2 newVal), " units"]))

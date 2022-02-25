@@ -22,13 +22,13 @@ ccCom = Com "l(calcChance|cc) (chance of occurring, 0.9|9/10) (times tried)" (Te
 
 ccCommand :: Message -> DiscordHandler ()
 ccCommand m = do
-    let parsedMessage = parse parseCC "Parsing for calculate Chance command" (messageText m)
+    let parsedMessage = parse parseCC "Parsing for calculate Chance command" (messageContent m)
     ifElse (isLeft parsedMessage) (calcTriesUsage m) (ccCommand' m (extractRight parsedMessage))
 
 
 ctCommand :: Message -> DiscordHandler ()
 ctCommand m = do
-    let parsedMessage = parse parseCT "Parsing for calculate Tries command" (messageText m)
+    let parsedMessage = parse parseCT "Parsing for calculate Tries command" (messageContent m)
     ifElse (isLeft parsedMessage) (calcChanceUsage m) (ctCommand' m (extractRight parsedMessage))
 
 ccCommand' :: Message -> (Double, Int) -> DiscordHandler ()
@@ -38,7 +38,7 @@ ccCommand' m c@(ps, tries) = do
 ccCommand'' :: Message -> (Double, Int) -> DiscordHandler ()
 ccCommand'' m (ps, tries) = do
     let chance = chanceFor ps tries
-    sendMessage $ R.CreateMessage (messageChannel m) (append (pingUserText m) (pack $ ", the chance of the event happening at least once after " ++ show tries ++ " tries is: " ++ show chance ++ "!"))
+    sendMessage $ R.CreateMessage (messageChannelId m) (append (pingUserText m) (pack $ ", the chance of the event happening at least once after " ++ show tries ++ " tries is: " ++ show chance ++ "!"))
 
 ctCommand' :: Message -> (Double, Double) -> DiscordHandler ()
 ctCommand' m c@(ps, dsr) = do
@@ -47,17 +47,17 @@ ctCommand' m c@(ps, dsr) = do
 ctCommand'' :: Message -> (Double, Double) -> DiscordHandler ()
 ctCommand'' m (ps, dsr) = do
     let tries = calculateTries ps dsr
-    sendMessage $ R.CreateMessage (messageChannel m) (append (pingUserText m) (pack $ ", the number of tries needed to achieve your desired success rate is " ++ show tries ++ " tries!" ))
+    sendMessage $ R.CreateMessage (messageChannelId m) (append (pingUserText m) (pack $ ", the number of tries needed to achieve your desired success rate is " ++ show tries ++ " tries!" ))
 
 calcTriesUsage :: Message -> DiscordHandler ()
-calcTriesUsage m = sendMessage $ R.CreateMessage (messageChannel m) (append (pingUserText m) ", l(ct|calctries) (chance of success, 0.5|1/2) (desired successrate, 0.5|1/2)")
+calcTriesUsage m = sendMessage $ R.CreateMessage (messageChannelId m) (append (pingUserText m) ", l(ct|calctries) (chance of success, 0.5|1/2) (desired successrate, 0.5|1/2)")
 
 calcChanceUsage :: Message -> DiscordHandler ()
-calcChanceUsage m = sendMessage $ R.CreateMessage (messageChannel m) (append (pingUserText m) ", l(cc|calcchance) (chance of success, 0.5|1/2) (times tried, 13)")
+calcChanceUsage m = sendMessage $ R.CreateMessage (messageChannelId m) (append (pingUserText m) ", l(cc|calcchance) (chance of success, 0.5|1/2) (times tried, 13)")
 
 calcTriesNegative :: Message -> DiscordHandler ()
-calcTriesNegative m = sendMessage $ R.CreateMessage (messageChannel m) (append (pingUserText m) ", success chance and desired success rate need to be positive and smaller than 1")
+calcTriesNegative m = sendMessage $ R.CreateMessage (messageChannelId m) (append (pingUserText m) ", success chance and desired success rate need to be positive and smaller than 1")
 
 calcChanceNegative :: Message -> DiscordHandler ()
-calcChanceNegative m = sendMessage $ R.CreateMessage (messageChannel m) (append (pingUserText m) ", success chance needs to be positive and smaller than 1, times tried needs to be positive")
+calcChanceNegative m = sendMessage $ R.CreateMessage (messageChannelId m) (append (pingUserText m) ", success chance needs to be positive and smaller than 1, times tried needs to be positive")
 

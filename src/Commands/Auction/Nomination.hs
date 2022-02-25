@@ -29,7 +29,7 @@ import Data.Maybe (fromJust, isJust)
 import Data.Text (Text, append, pack, toLower, unpack)
 import Discord (DiscordHandler, restCall)
 import qualified Discord.Requests as R
-import Discord.Types (Message (messageChannel, messageText))
+import Discord.Types 
 import Text.Parsec (parse)
 
 nominationCommand :: Command
@@ -48,7 +48,7 @@ hasSlots mvar m as a = do
 
 parseNomination :: MVar [Auction] -> Message -> [Auction] -> Auction -> DiscordHandler ()
 parseNomination mvar m as a = do
-  let nomination = parse nominatePlayerP "parse Nominate player" (toLower (messageText m))
+  let nomination = parse nominatePlayerP "parse Nominate player" (toLower (messageContent m))
   ifElse (isLeft nomination) (storeAuctions mvar as >> nominateCommandHelp m) (startNomination mvar m as a (extractRight nomination))
 
 startNomination :: MVar Auctions -> Message -> Auctions -> Auction -> Text -> DiscordHandler ()
@@ -57,13 +57,13 @@ startNomination mvar m as a name = do
       a' = a {_aCurrentBid = currentBid}
       as' = updateAuction a' as
   lift $ putMVar mvar as'
-  void . restCall $ R.CreateMessage (messageChannel m) (append (pingUserText m) (nominateText name (_aMinBid a)))
+  void . restCall $ R.CreateMessage (messageChannelId m) (append (pingUserText m) (nominateText name (_aMinBid a)))
 
 nominateCommandHelp :: Message -> DiscordHandler ()
-nominateCommandHelp m = void . restCall $ R.CreateMessage (messageChannel m) (append (pingUserText m) ", correct usage: nom (player)")
+nominateCommandHelp m = void . restCall $ R.CreateMessage (messageChannelId m) (append (pingUserText m) ", correct usage: nom (player)")
 
 nominationAlreadyActive :: Message -> DiscordHandler ()
-nominationAlreadyActive m = void . restCall $ R.CreateMessage (messageChannel m) (append (pingUserText m) ", there is already a nomination active!")
+nominationAlreadyActive m = void . restCall $ R.CreateMessage (messageChannelId m) (append (pingUserText m) ", there is already a nomination active!")
 
 nominateText :: Text -> Maybe Int -> Text
 nominateText t (Just x) = pack $ ", player " ++ unpack t ++ " was nominated! Starting bid is " ++ show x ++ " and held by the nominator!"

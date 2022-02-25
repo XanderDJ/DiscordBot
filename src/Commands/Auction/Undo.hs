@@ -33,7 +33,7 @@ import Data.Either (isLeft)
 import Data.Text (append, pack, unpack)
 import Discord (DiscordHandler, restCall)
 import qualified Discord.Requests as R
-import Discord.Types (Message (messageChannel, messageText))
+import Discord.Types 
 import Text.Parsec (parse)
 
 undoCommand :: Command
@@ -61,4 +61,4 @@ undo mvar m as a@A {..} = do
       a' = a {_aParticipants = ps', _aPreviousBids = tail _aPreviousBids}
       as' = updateAuction a' as
   lift $ putMVar mvar as'
-  void . restCall $ R.CreateMessage (messageChannel m) (append (pingUserText m) (pack $ ", the previous bid has been undone: " ++ unpack name ++ " can now be nominated again!"))
+  void . restCall $ R.CreateMessage (messageChannelId m) (append (pingUserText m) (pack $ ", the previous bid has been undone: " ++ unpack name ++ " can now be nominated again!"))

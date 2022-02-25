@@ -14,7 +14,7 @@ help m map = do
     let 
         commands = L.nub . M.elems $ map
         descriptions = L.foldr appendDescription "" commands
-    sendMessage $ R.CreateMessage (messageChannel m) descriptions
+    sendMessage $ R.CreateMessage (messageChannelId m) descriptions
 
 
 appendDescription :: Command -> Text -> Text

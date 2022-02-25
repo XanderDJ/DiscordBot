@@ -31,7 +31,7 @@ import Data.Maybe (fromJust, isNothing)
 import Data.Text (append, pack, toLower, unpack)
 import Discord (DiscordHandler, restCall)
 import qualified Discord.Requests as R
-import Discord.Types (Message (messageChannel, messageText))
+import Discord.Types 
 import Text.Parsec (parse)
 
 bidCommand :: Command
@@ -52,7 +52,7 @@ checkEnoughSlots mvar m as a = do
 
 parseBid :: MVar Auctions -> Message -> Auctions -> Auction -> DiscordHandler ()
 parseBid mvar m as a = do
-  let bid = parse bidP "parse !bid command" (toLower (messageText m))
+  let bid = parse bidP "parse !bid command" (toLower (messageContent m))
   ifElse (isLeft bid || (isNothing . extractRight) bid) (storeAuctions mvar as >> bidCommandHelp m) (checkBidHigher mvar m as a ((fromJust . extractRight) bid))
 
 checkBidHigher :: MVar Auctions -> Message -> Auctions -> Auction -> Int -> DiscordHandler ()
@@ -83,19 +83,19 @@ updateBid mvar m as a b = do
       a' = a {_aCurrentBid = newBid}
       as' = updateAuction a' as
   lift $ putMVar mvar as'
-  void . restCall $ R.CreateMessage (messageChannel m) (append (pingUserText m) (pack $ " has successfully bid " ++ show b ++ " for " ++ unpack name ++ "!"))
+  void . restCall $ R.CreateMessage (messageChannelId m) (append (pingUserText m) (pack $ " has successfully bid " ++ show b ++ " for " ++ unpack name ++ "!"))
 
 bidCommandHelp :: Message -> DiscordHandler ()
-bidCommandHelp m = void . restCall $ R.CreateMessage (messageChannel m) (append (pingUserText m) ", correct usage: lb (x|x.y|xk|x.yk)")
+bidCommandHelp m = void . restCall $ R.CreateMessage (messageChannelId m) (append (pingUserText m) ", correct usage: lb (x|x.y|xk|x.yk)")
 
 notEnoughBudget :: Message -> DiscordHandler ()
-notEnoughBudget m = void . restCall $ R.CreateMessage (messageChannel m) (append (pingUserText m) ", you don't have the budget for this bid!")
+notEnoughBudget m = void . restCall $ R.CreateMessage (messageChannelId m) (append (pingUserText m) ", you don't have the budget for this bid!")
 
 alreadyHaveBid :: Message -> DiscordHandler ()
-alreadyHaveBid m = void . restCall $ R.CreateMessage (messageChannel m) (append (pingUserText m) ", you already have the current bid!")
+alreadyHaveBid m = void . restCall $ R.CreateMessage (messageChannelId m) (append (pingUserText m) ", you already have the current bid!")
 
 mustBidHigher :: Message -> Int -> DiscordHandler ()
-mustBidHigher m b = void . restCall $ R.CreateMessage (messageChannel m) (append (pingUserText m) (pack $ ", you must bid higher than the previous bid (" ++ show b ++ ")!"))
+mustBidHigher m b = void . restCall $ R.CreateMessage (messageChannelId m) (append (pingUserText m) (pack $ ", you must bid higher than the previous bid (" ++ show b ++ ")!"))
 
 mustBidCorrectStep :: Message -> Int -> DiscordHandler ()
-mustBidCorrectStep m step = void . restCall $ R.CreateMessage (messageChannel m) (append (pingUserText m) (pack $ ", your bid must be a multiple of " ++ show step ++ "!"))
+mustBidCorrectStep m step = void . restCall $ R.CreateMessage (messageChannelId m) (append (pingUserText m) (pack $ ", your bid must be a multiple of " ++ show step ++ "!"))

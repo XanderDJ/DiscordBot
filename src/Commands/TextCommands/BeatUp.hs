@@ -27,7 +27,7 @@ beatUpCom = Com "l(bu|beatup) mon with spaces, mon-without-spaces, mon2" (TextCo
 
 beatUpCommand :: Message -> DiscordHandler ()
 beatUpCommand m = do
-  let mons = parse parseBeatUp "Parsing beat up command" (messageText m)
+  let mons = parse parseBeatUp "Parsing beat up command" (messageContent m)
   ifElse (isLeft mons || (length (extractRight mons) == 1 && (T.null . head . extractRight) mons)) (beatUpUsage m) (pokemonDb (beatUpCommand' (extractRight mons)) m)
 
 
@@ -43,7 +43,7 @@ beatUpCommand''' m mons = do
   let monsAndAtkStats = map (\mon -> (pName mon, (getValue . getBaseStat "atk") mon)) mons
       bpPerMon = map (second (\a -> 5 + div a 10)) monsAndAtkStats
       totalBp = (sum . map snd) bpPerMon
-  sendMessage $ R.CreateMessage (messageChannel m) (append (pingUserText m) (pack $ bpMessage totalBp bpPerMon))
+  sendMessage $ R.CreateMessage (messageChannelId m) (append (pingUserText m) (pack $ bpMessage totalBp bpPerMon))
 
 bpMessage :: Int -> [(Name, Int)] -> String
 bpMessage totalBp monsAndBP = ", total bp of beatup with your team: " ++ show totalBp ++ "\n" ++ intercalate "\n" (map showMonsBp monsAndBP)
@@ -52,4 +52,4 @@ showMonsBp :: Show a => (T.Text, a) -> [Char]
 showMonsBp (mon, bp) = T.unpack mon ++ ": " ++ show bp
 
 beatUpUsage :: Message -> DiscordHandler ()
-beatUpUsage m = sendMessage $ R.CreateMessage (messageChannel m) (append (pingUserText m) ", usage: l(bu|beatup) mon1, mon 2, mon-3, ...")
+beatUpUsage m = sendMessage $ R.CreateMessage (messageChannelId m) (append (pingUserText m) ", usage: l(bu|beatup) mon1, mon 2, mon-3, ...")

@@ -5,26 +5,26 @@
 
 packages:
 - completed:
-    hackage: discord-haskell-1.9.1@sha256:8145dcae4db532e2aba049fbdafef08f742c80a15b5c5694f7e6ed3beb452549,3630
+    hackage: discord-haskell-1.12.0@sha256:aa427494f6c1f646c9bba81b15330557b972cae4d32ff329262ce30d13b77e3e,4527
     pantry-tree:
-      size: 2108
-      sha256: ec151d009bd24dbcf8fcf0d847963eac8860a0a3914b4f7de44265d9c0c68db6
+      size: 2681
+      sha256: 35edd22a7cfec04a512c1fdd7b2620674349904451d303a5cf3823ff75c45b80
   original:
-    hackage: discord-haskell-1.9.1
+    hackage: discord-haskell-1.12.0
 - completed:
     hackage: emoji-0.1.0.2@sha256:d995572a5c7dcd28f98eb15c6e387a7b3bda1ac2477ab0d9dba8580d5d7b161f,1273
     pantry-tree:
       size: 437
       sha256: dd9ea90a631342e5db0fc21331ade4d563a685e9125d5a3989eefa8e1b96c6c6
   original:
-    hackage: emoji-0.1.0.2@sha256:d995572a5c7dcd28f98eb15c6e387a7b3bda1ac2477ab0d9dba8580d5d7b161f,1273
+    hackage: emoji-0.1.0.2
 - completed:
     hackage: parsec3-numbers-0.1.0@sha256:2f32295f9f4023f7f97da851549aaaf5e72866e98bf016a1ac3c6e8715bbaf8a,685
     pantry-tree:
       size: 264
       sha256: a3d23f56cc2a9d17ed24ac5119a7b2102d40c0afeed5271f6b41b7597f181df0
   original:
-    hackage: parsec3-numbers-0.1.0@sha256:2f32295f9f4023f7f97da851549aaaf5e72866e98bf016a1ac3c6e8715bbaf8a,685
+    hackage: parsec3-numbers-0.1.0
 snapshots:
 - completed:
     size: 586292

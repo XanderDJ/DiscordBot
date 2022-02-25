@@ -30,7 +30,7 @@ dtCommand = Com "ldt (item/pokemon/move/nature/ability)" (TextCommand returnDT)
 
 returnDT :: Message -> DiscordHandler ()
 returnDT m = do
-  let (t, opts) = parseOptions (toLower (messageText m))
+  let (t, opts) = parseOptions (toLower (messageContent m))
       dt = parse dtP "parse DT" t
   ifElse (isLeft dt) (nonValidDt m) (handleDt (extractRight dt) opts m)
 
@@ -38,7 +38,7 @@ handleDt :: Text -> M.Map Text Text -> Message -> DiscordHandler ()
 handleDt dt' opts m = do
   let dt = toId dt'
       nature = getNature dt
-  ifElse (isNothing nature) (pokemonDb (handleDt' dt opts) m) (sendMessage $ R.CreateMessageEmbed (messageChannel m) "" (createNatureEmbed (fromJust nature)))
+  ifElse (isNothing nature) (pokemonDb (handleDt' dt opts) m) (sendMessage $ R.CreateMessageDetailed (messageChannelId m) def {R.messageDetailedEmbeds = Just [createNatureEmbed (fromJust nature)]})
 
 handleDt' :: Text -> M.Map Text Text -> Connection -> Message -> DiscordHandler ()
 handleDt' dt opts con m = do
@@ -47,17 +47,17 @@ handleDt' dt opts con m = do
   ifElse (isNothing dt') (dtNotFound m) (dtFound (toDTType . fromJust $ dt') opts m)
 
 dtFound :: DTType -> M.Map Text Text -> Message -> DiscordHandler ()
-dtFound (DtPokemon mon) opts m = sendMessage (R.CreateMessageEmbed (messageChannel m) "" (createPokemonEmbed mon opts))
-dtFound (DtAbility ability) opts m = sendMessage (R.CreateMessageEmbed (messageChannel m) "" (createAbilityEmbed ability))
-dtFound (DtItem item) opts m = sendMessage (R.CreateMessageEmbed (messageChannel m) "" (createItemEmbed item))
-dtFound (DtMove move) opts m = sendMessage (R.CreateMessageEmbed (messageChannel m) "" (createMoveEmbed move))
-dtFound dt _ m = sendMessage $ R.CreateMessage (messageChannel m) (append (pingUserText m) (pack $ ", " ++ show dt))
+dtFound (DtPokemon mon) opts m = sendMessage (R.CreateMessageDetailed (messageChannelId m) def {R.messageDetailedEmbeds = Just [createPokemonEmbed mon opts]})
+dtFound (DtAbility ability) opts m = sendMessage (R.CreateMessageDetailed (messageChannelId m) def {R.messageDetailedEmbeds = Just [createAbilityEmbed ability]})
+dtFound (DtItem item) opts m = sendMessage (R.CreateMessageDetailed (messageChannelId m) def {R.messageDetailedEmbeds = Just [createItemEmbed item]})
+dtFound (DtMove move) opts m = sendMessage (R.CreateMessageDetailed (messageChannelId m) def {R.messageDetailedEmbeds = Just [createMoveEmbed move]})
+dtFound dt _ m = sendMessage $ R.CreateMessage (messageChannelId m) (append (pingUserText m) (pack $ ", " ++ show dt))
 
 dtNotFound :: Message -> DiscordHandler ()
-dtNotFound m = sendMessage $ R.CreateMessage (messageChannel m) (append (pingUserText m) ", couldn't find the data you were looking for.")
+dtNotFound m = sendMessage $ R.CreateMessage (messageChannelId m) (append (pingUserText m) ", couldn't find the data you were looking for.")
 
 nonValidDt :: Message -> DiscordHandler ()
-nonValidDt m = void . restCall $ R.CreateMessage (messageChannel m) "Usage: ldt (item/pokemon/move/nature/ability)"
+nonValidDt m = void . restCall $ R.CreateMessage (messageChannelId m) "Usage: ldt (item/pokemon/move/nature/ability)"
 
 createPokemonEmbed :: Pokemon -> M.Map Text Text -> CreateEmbed
 createPokemonEmbed mon opts =

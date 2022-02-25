@@ -22,7 +22,7 @@ import Data.Maybe (isJust)
 import Data.Text (append, pack)
 import Discord (DiscordHandler, restCall)
 import qualified Discord.Requests as R
-import Discord.Types (Message (messageChannel))
+import Discord.Types 
 
 endAuctionCommand :: Command
 endAuctionCommand = Com "lendauction - ends the current auction in the channel" (AuctionCommand endAuction')
@@ -42,9 +42,9 @@ endAuction mvar m as a = do
   let as' = Prelude.filter (\a' -> _aID a /= _aID a') as
       teams = _aParticipants a
   lift $ putMVar mvar as'
-  sendMessage $ R.CreateMessage (messageChannel m) "RESULTS:"
+  sendMessage $ R.CreateMessage (messageChannelId m) "RESULTS:"
   sendTeams teams m
 
 sendTeams [] _ = pure ()
-sendTeams (t:ts) m = sendMessage (R.CreateMessage (messageChannel m) ((pack . show) t)) >> sendTeams ts m
+sendTeams (t:ts) m = sendMessage (R.CreateMessage (messageChannelId m) ((pack . show) t)) >> sendTeams ts m
 

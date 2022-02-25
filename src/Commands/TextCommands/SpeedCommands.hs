@@ -7,7 +7,7 @@ import Data.Maybe (fromJust, isNothing)
 import Data.Text (append, pack)
 import Discord (DiscordHandler)
 import qualified Discord.Requests as R
-import Discord.Types (Message (messageChannel, messageText))
+import Discord.Types
 import Commands.Parsers (parseOutspeedLevel)
 import Pokemon.Functions (maxStatAt, neutralMaxStatAt, (*//))
 import Pokemon.Types 
@@ -20,7 +20,7 @@ osCom = Com "los (speed) (level) - Gives the basespeeds a pokemon at level l (10
 
 outspeedLevelCommand :: Message -> DiscordHandler ()
 outspeedLevelCommand m = do
-  let r = parse parseOutspeedLevel "Parsing speed and level" (messageText m)
+  let r = parse parseOutspeedLevel "Parsing speed and level" (messageContent m)
   ifElse (isLeft r) (outspeedLevelUsage m) (outspeedLevelCommand' m (fromRight (Nothing, Nothing) r))
 
 outspeedLevelCommand' :: Message -> (Maybe Int, Maybe Level) -> DiscordHandler ()
@@ -29,12 +29,12 @@ outspeedLevelCommand' m (mi, ml) = ifElse (isNothing mi) (outspeedLevelUsage m) 
 outspeedCommand'' :: Message -> Int -> Level -> DiscordHandler ()
 outspeedCommand'' m i l = do
   let s = toSpeedText i $ outspeed i l
-  sendMessage $ R.CreateMessage (messageChannel m) (append (pingUserText m) (append ", " (pack s)))
+  sendMessage $ R.CreateMessage (messageChannelId m) (append (pingUserText m) (append ", " (pack s)))
 
 -- ERROR MESSAGES
 
 outspeedLevelUsage :: Message -> DiscordHandler ()
-outspeedLevelUsage m = sendMessage $ R.CreateMessage (messageChannel m) (append (pingUserText m) ", correct usage: losl (speed) (lvl, 100 if not given)")
+outspeedLevelUsage m = sendMessage $ R.CreateMessage (messageChannelId m) (append (pingUserText m) ", correct usage: losl (speed) (lvl, 100 if not given)")
 
 -- HELPER FUNCTIONS
 

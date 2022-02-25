@@ -29,7 +29,7 @@ import Data.Maybe (fromJust, isNothing)
 import Data.Text (append, pack, toLower)
 import Discord (DiscordHandler, restCall)
 import qualified Discord.Requests as R
-import Discord.Types (Message (messageChannel, messageText))
+import Discord.Types hiding (User)
 import Text.Parsec (parse)
 
 infoCommand :: Command
@@ -50,7 +50,7 @@ checkParticipant mvar m as a u = ifElse (containsUser (user m) (_aParticipants a
 giveInfo :: MVar Auctions -> Message -> Auctions -> Auction -> User -> DiscordHandler ()
 giveInfo mvar m as a u = do
   let p = getParticipant u (_aParticipants a)
-  void . restCall $ R.CreateMessage (messageChannel m) (append (append (pingUserText m) ":\n") ((pack . show) p))
+  void . restCall $ R.CreateMessage (messageChannelId m) (append (append (pingUserText m) ":\n") ((pack . show) p))
 
 getInfoUser :: MVar Auctions -> Message -> DiscordHandler ()
 getInfoUser mvar m = do
@@ -60,7 +60,7 @@ getInfoUser mvar m = do
 
 parseInfoUser :: MVar Auctions -> Message -> Auctions -> Auction -> DiscordHandler ()
 parseInfoUser mvar m as a = do
-  let u = parse infoP "parsing user info" (toLower (messageText m))
+  let u = parse infoP "parsing user info" (toLower (messageContent m))
   ifElse (isLeft u) (infoUserCommandHelp m) (hasInfoUser mvar m as a (extractRight u))
 
 hasInfoUser :: MVar Auctions -> Message -> Auctions -> Auction -> User -> DiscordHandler ()
@@ -69,7 +69,7 @@ hasInfoUser mvar m as a u = ifElse (containsUser u (_aParticipants a)) (giveInfo
 giveInfoUser :: MVar Auctions -> Message -> Auctions -> Auction -> User -> DiscordHandler ()
 giveInfoUser mvar m as a u = do
   let p = getParticipant u (_aParticipants a)
-  void . restCall $ R.CreateMessage (messageChannel m) (append (append (pingUserText m) ":\n") ((pack . show) p))
+  void . restCall $ R.CreateMessage (messageChannelId m) (append (append (pingUserText m) ":\n") ((pack . show) p))
 
 infoUserCommandHelp :: Message -> DiscordHandler ()
-infoUserCommandHelp m = void . restCall $ R.CreateMessage (messageChannel m) (append (pingUserText m) ", correct usage: info (name)#(identifier)")
+infoUserCommandHelp m = void . restCall $ R.CreateMessage (messageChannelId m) (append (pingUserText m) ", correct usage: info (name)#(identifier)")

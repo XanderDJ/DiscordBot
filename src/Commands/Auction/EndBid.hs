@@ -29,7 +29,7 @@ import Data.Maybe (fromJust, isNothing)
 import Data.Text (pack, unpack)
 import Discord (DiscordHandler, restCall)
 import qualified Discord.Requests as R
-import Discord.Types (Message (messageChannel))
+import Discord.Types 
 
 endBidCommand :: Command
 endBidCommand = Com "lendbid" (AuctionCommand startEndBid)
@@ -51,7 +51,7 @@ endBid mvar m as a@A {..} = do
   lift $ putMVar mvar as'
   void . restCall $
     R.CreateMessage
-      (messageChannel m)
+      (messageChannelId m)
       ( pack $
           unpack (_uName user) ++ " has won " ++ unpack (_iName item)
             ++ " for "

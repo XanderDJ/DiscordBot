@@ -22,7 +22,7 @@ learnCom = Com "l(learn|l) (pokemon name), move1, move2, ..." (TextCommand learn
 
 learnCommand :: Message -> DiscordHandler ()
 learnCommand m = do
-  let p = parse parseLC "Parsing message for learncommand" (messageText m)
+  let p = parse parseLC "Parsing message for learncommand" (messageContent m)
   ifElse (isLeft p) (learnUsage m) (pokemonDb (learnCommand' (extractRight p)) m)
 
 learnCommand' :: (T.Text, [T.Text]) -> Connection -> Message -> DiscordHandler ()
@@ -34,7 +34,7 @@ learnCommand' (mon, ms) con m = do
   ifElse (isLeft mon') (invalidMons m [extractLeft mon']) (learnCommand'' (toPokemon . extractRight $ mon') moves ms m)
 
 learnCommand'' :: Pokemon -> [Move] -> [T.Text] -> Message -> DiscordHandler ()
-learnCommand'' mon moves allMoves m = void . restCall $ R.CreateMessageEmbed (messageChannel m) "" (createMovesEmbed (pName mon) moves allMoves)
+learnCommand'' mon moves allMoves m = void . restCall $ R.CreateMessageDetailed (messageChannelId m) def {R.messageDetailedEmbeds = Just [createMovesEmbed (pName mon) moves allMoves]}
 
 createMovesEmbed :: T.Text -> [Move] -> [T.Text] -> CreateEmbed
 createMovesEmbed pId moves allMoves =

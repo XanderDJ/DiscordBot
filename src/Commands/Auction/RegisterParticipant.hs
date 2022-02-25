@@ -30,6 +30,7 @@ import Discord (DiscordHandler, restCall)
 import qualified Discord.Requests as R
 import Discord.Types
 import Text.Parsec (parse)
+import Text.Read (readMaybe)
 
 registerParticipantCommand :: Command
 registerParticipantCommand = Com "lrp <budget> @participant1 @participant2 ..." (AuctionCommand registerParticipant)
@@ -42,11 +43,11 @@ addParticipant mvar m as a = do
   ifElse (user m /= _aAuctioneer a) (lift (putMVar mvar as) >> notAuctioneer m) (authorizedAddParticipant mvar m a as)
 
 toParticipant :: Int -> Discord.Types.User -> Participant
-toParticipant b u = P (U ((T.toLower . userName) u) (Just ((read . T.unpack . userDiscrim) u))) (Just b) []
+toParticipant b u = P (U ((T.toLower . userName) u) (fromMaybe Nothing (userDiscrim u >>= readMaybe . T.unpack))) (Just b) []
 
 authorizedAddParticipant :: MVar [Auction] -> Message -> Auction -> [Auction] -> DiscordHandler ()
 authorizedAddParticipant mvar m a as = do
-  let budget = parse (parseIntCommand "lrp") "" (messageText m)
+  let budget = parse (parseIntCommand "lrp") "" (messageContent m)
   ifElse (isLeft budget || isNothing (extractRight budget)) (lift (putMVar mvar as) >> usageRp m) (checkParticipants mvar a as (fromJust (extractRight budget)) m)
 
 usageRp = reportError "lrp <budget> @participant1 @participant2 ..."
@@ -68,13 +69,13 @@ addValidParticipant mvar a as p m = do
       a' = a {_aParticipants = p ++ ps}
       as' = updateAuction a' as
   storeAuctions mvar as'
-  void . restCall $ R.CreateMessage (messageChannel m) (append (pingUserText m) ", everyone was registered as a participant!")
+  void . restCall $ R.CreateMessage (messageChannelId m) (append (pingUserText m) ", everyone was registered as a participant!")
 
 participantAlreadyRegistered :: Message -> DiscordHandler ()
-participantAlreadyRegistered m = void . restCall $ R.CreateMessage (messageChannel m) (append (pingUserText m) ", user already registered!")
+participantAlreadyRegistered m = void . restCall $ R.CreateMessage (messageChannelId m) (append (pingUserText m) ", user already registered!")
 
 participantCommandHelp :: Message -> DiscordHandler ()
-participantCommandHelp m = void $ restCall (R.CreateMessage (messageChannel m) (append (pingUserText m) ", use the command in this way: rp (name)#(identifier) (budget i.e. 60000)"))
+participantCommandHelp m = void $ restCall (R.CreateMessage (messageChannelId m) (append (pingUserText m) ", use the command in this way: rp (name)#(identifier) (budget i.e. 60000)"))
 
 isValidParticipant :: Participant -> Bool
 isValidParticipant (P _ (Just _) _) = True

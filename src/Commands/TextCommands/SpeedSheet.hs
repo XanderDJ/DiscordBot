@@ -18,7 +18,7 @@ import Data.Time.Clock.POSIX (getPOSIXTime)
 import Database.PostgreSQL.Simple (Connection, close)
 import Discord (DiscordHandler)
 import qualified Discord.Requests as R
-import Discord.Types (Message (messageChannel, messageText))
+import Discord.Types 
 import Excel
 import Pokemon.DBConversion (toPokemon)
 import Pokemon.Excel (pokemonMoveMap, speedTable)
@@ -33,7 +33,7 @@ speedSheetCommand = Com "lss - makes an excel sheet of speed tiers with the team
 
 makeSpeedSheet :: Message -> DiscordHandler ()
 makeSpeedSheet m = do
-  let text = T.lines (messageText m)
+  let text = T.lines (messageContent m)
       parsed = map (parse parseNOrP "Parsing team names or pokemon names from list") text
       correctlyParsed = rights parsed
   if null correctlyParsed then spCommandHelp m else makeSpeedSheet' m correctlyParsed
@@ -61,7 +61,7 @@ makeSS m teams = do
       xl' = emptyXlsx & atSheet "SpeedTiers" ?~ sheet
       xl = insertMoveMaps xl' (L.concat moveMaps)
   time <- lift getPOSIXTime
-  sendMessage $ R.CreateMessageUploadFile (messageChannel m) fileName (L.toStrict (fromXlsx time xl))
+  sendMessage $ R.CreateMessageUploadFile (messageChannelId m) fileName (L.toStrict (fromXlsx time xl))
 
 insertTables :: [ExcelTable] -> (Int, Int) -> Worksheet -> Worksheet
 insertTables [] _ sheet = sheet
@@ -99,7 +99,7 @@ nOrPsToTeams = go []
        in go (t' : ts') norps
 
 spCommandHelp :: Message -> DiscordHandler ()
-spCommandHelp m = sendMessage $ R.CreateMessage (messageChannel m) (T.append (pingUserText m) helpText)
+spCommandHelp m = sendMessage $ R.CreateMessage (messageChannelId m) (T.append (pingUserText m) helpText)
 
 helpText :: T.Text
 helpText = ", USAGE \n\nlss <TEAMNAME>:\n<PokemonName>\n\nYou can add as many pokemons as you want per team.\n A new team starts when you add a new name with a :\n\n You can give as many teams as you like, this should normally be only one or two.\nEXAMPLE:\n\nplayer1:\ncharizard\nblastoise\nvenusaur mega\n\n\nplayer2:\npersian-   alola\nrapidash galar\ncharizard mega y"

@@ -19,7 +19,7 @@ import Discord
 import qualified Discord.Requests as R
 import Discord.Types
   ( Event (MessageCreate, GuildMemberUpdate, GuildMemberAdd),
-    Message (messageAuthor, messageText),
+    Message (messageAuthor, messageContent),
     User (userIsBot),
   )
 import Commands.Parsers
@@ -57,7 +57,7 @@ eventHandler mvar event = case event of
 runCommands :: MVar Auctions -> Message -> M.Map Text Command -> DiscordHandler ()
 runCommands mvar m map = if isJust com then runCommand (fromJust com) mvar m map else pure ()
   where
-    commandName = parse parseCommand "Parse Command name" ((toLower . messageText) m)
+    commandName = parse parseCommand "Parse Command name" ((toLower . messageContent) m)
     com = if isLeft commandName then Nothing else M.lookup (fromRight "" commandName) map
 
 runCommand :: Command -> MVar Auctions -> Message -> M.Map Text Command -> DiscordHandler ()

@@ -31,7 +31,7 @@ damageCalcCom = Com "ldc mon1 --options, move --environmentoptions, mon2 --optio
 
 dcCommand :: Message -> DiscordHandler ()
 dcCommand msg = do
-  let parsedMessage = parseDC (messageText msg)
+  let parsedMessage = parseDC (messageContent msg)
   ifElse (isLeft parsedMessage) (dcUsage msg) (pokemonDb (validMessage (extractRight parsedMessage)) msg)
 
 validMessage :: (T.Text, T.Text, T.Text) -> Connection -> Message -> DiscordHandler ()
@@ -83,8 +83,8 @@ validDbData (mon1, m1Opts) (mon2, m2Opts) (move, moveOpts) i1 i2 a1 a2 m = do
       calc = runCalc damageCalcState
       calcMessage = makeCalcMessage (dmg (fst calc)) (getMinPercent (fst calc), getMaxPercent (fst calc)) (snd calc)
   if not (hasOption ["debug", "d"] moveOpts)
-    then sendMessage $ R.CreateMessage (messageChannel m) calcMessage
-    else sendMessage $ R.CreateMessage (messageChannel m) (T.pack (show (snd calc)))
+    then sendMessage $ R.CreateMessage (messageChannelId m) calcMessage
+    else sendMessage $ R.CreateMessage (messageChannelId m) (T.pack (show (snd calc)))
 
 -- Anyone watching? where should I put hp recovered from drain and recoil taken from recoil moves?
 makeCalcMessage :: (Int, Int) -> (String, String) -> M.Map String String -> T.Text

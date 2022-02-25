@@ -4,7 +4,7 @@ import Control.Monad.Trans
 import qualified Data.Text as T hiding (map)
 import Discord ( restCall, DiscordHandler )
 import qualified Discord.Requests as R
-import Discord.Types ( Message(messageAuthor, messageChannel, messageGuild), User(userId), Snowflake, Guild (guildId), memberRoles, RoleId, Role, rolePos, roleId, roleName )
+import Discord.Types
 import Control.Monad ( void )
 import qualified Data.Map as M
 import DiscordDB.Tables (GuildRoleF)
@@ -27,7 +27,8 @@ extractLeft :: Either a b -> a
 extractLeft  (Left a) = a
 extractLeft  (Right b) = error "Tried extracting Left from Right"
 
-sideColor = Just 0xf984ef
+sideColor :: Maybe DiscordColor 
+sideColor = Just (hexToDiscordColor "f984ef")
 
 ifElse :: Bool -> DiscordHandler a -> DiscordHandler a -> DiscordHandler a
 ifElse True a _ = a
@@ -37,10 +38,10 @@ pingUserText :: Message -> T.Text
 pingUserText m = T.pack $ "<@" ++ show (userId . messageAuthor $ m) ++ ">"
 
 reportError ::  T.Text -> Message -> DiscordHandler ()
-reportError t m = sendMessage $ R.CreateMessage (messageChannel m) (T.append (pingUserText m) t)
+reportError t m = sendMessage $ R.CreateMessage (messageChannelId m) (T.append (pingUserText m) t)
 
 invalidMons :: Message -> [T.Text] -> DiscordHandler ()
-invalidMons m lfts = sendMessage $ R.CreateMessage (messageChannel m) (T.append (pingUserText m) (T.append ", couldn't the following mons: " (T.intercalate "," lfts)))
+invalidMons m lfts = sendMessage $ R.CreateMessage (messageChannelId m) (T.append (pingUserText m) (T.append ", couldn't the following mons: " (T.intercalate "," lfts)))
 
 invalidGuild :: Message -> DiscordHandler ()
 invalidGuild = reportError ", you need to send this command in a guild!"
@@ -77,7 +78,7 @@ printDouble = printf "%0.*f"
 
 checkAllowed :: Message -> DiscordHandler Bool
 checkAllowed m = do
-    let mgId = messageGuild m
+    let mgId = messageGuildId m
     if isNothing mgId
         then return False
         else do

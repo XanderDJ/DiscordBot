@@ -20,7 +20,7 @@ import Data.StatMultiplier (StatMultiplier, getMultiplier)
 import Data.Text (append, pack, unpack)
 import Discord (DiscordHandler)
 import qualified Discord.Requests as R
-import Discord.Types (Message (messageChannel, messageText))
+import Discord.Types
 import Pokemon.Functions (calcStat, (*//))
 import Text.Parsec (parse)
 
@@ -35,7 +35,7 @@ msCom = Com "l(ms|maxstat) (hp|atk|def|spa|spd|spe:basestat) [--(boost|multiplie
 calcStatHandler :: Message -> DiscordHandler ()
 calcStatHandler msg = do
   -- parse message
-  let (m, opts) = parseOptions (messageText msg)
+  let (m, opts) = parseOptions (messageContent msg)
       pm = parse parseCalcStat "parse calcstat message" m
   ifElse
     (isLeft pm)
@@ -51,7 +51,7 @@ calcStatHandler msg = do
 
 calcMaxStatHandler :: Message -> DiscordHandler ()
 calcMaxStatHandler msg = do
-  let (m, opts) = parseOptions (messageText msg)
+  let (m, opts) = parseOptions (messageContent msg)
       pm = parse parseMaxCalcStat "parsing Max calcstat message" m
   ifElse
    (isLeft pm)
@@ -61,12 +61,12 @@ calcMaxStatHandler msg = do
 calcStatHandler' :: Message -> CalcStat -> Int -> Int -> Int -> StatMultiplier -> DiscordHandler ()
 calcStatHandler' m (CS bs ne) lvl iv ev multiplier = do
   let stat = calcStat lvl iv ev ne bs
-  sendMessage $ R.CreateMessage (messageChannel m) (append (pingUserText m) (pack $ ", " ++ show (fromIntegral stat *// getMultiplier multiplier)))
+  sendMessage $ R.CreateMessage (messageChannelId m) (append (pingUserText m) (pack $ ", " ++ show (fromIntegral stat *// getMultiplier multiplier)))
 
 -- ERROR MESSAGES
 
 calcStatUsage :: Message -> DiscordHandler ()
-calcStatUsage m = sendMessage $ R.CreateMessage (messageChannel m) (append (pingUserText m) ", correct usage: l(cs|calcstat) ((hp|atk|def|spa|spd|spe):basestat) (positive|neutral|negative|pos|neu|neg) [--level lvl, 100] [--iv iv, 31] [--ev ev, 252] [--(boost|multiplier) -1 0 1, 0]")
+calcStatUsage m = sendMessage $ R.CreateMessage (messageChannelId m) (append (pingUserText m) ", correct usage: l(cs|calcstat) ((hp|atk|def|spa|spd|spe):basestat) (positive|neutral|negative|pos|neu|neg) [--level lvl, 100] [--iv iv, 31] [--ev ev, 252] [--(boost|multiplier) -1 0 1, 0]")
 
 maxStatUsage :: Message -> DiscordHandler ()
-maxStatUsage m = sendMessage $ R.CreateMessage (messageChannel m) (append (pingUserText m) ", correct usage: l(ms|maxstat) ((hp|atk|def|spa|spd|spe):basestat) [--(boost|multiplier) -1 0 1, 0]")
+maxStatUsage m = sendMessage $ R.CreateMessage (messageChannelId m) (append (pingUserText m) ", correct usage: l(ms|maxstat) ((hp|atk|def|spa|spd|spe):basestat) [--(boost|multiplier) -1 0 1, 0]")

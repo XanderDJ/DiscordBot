@@ -22,7 +22,9 @@ addRoleToUser gId gMember = do
      else do
         defaultRoles <- lift $ getDefaultRoles (fromJust con) (fromIntegral gId)
         let roleIds = map DiscordDB.Types.roleId defaultRoles
-        mapM_ (addRole gId (userId . memberUser $ gMember)) roleIds
+        if isNothing (memberUser gMember)
+            then pure ()
+            else mapM_ (addRole gId (userId . fromJust . memberUser $ gMember)) roleIds
         lift $ close (fromJust con)
 
 addRole :: Integral a => GuildId -> UserId -> a -> DiscordHandler (Either RestCallErrorCode ())
