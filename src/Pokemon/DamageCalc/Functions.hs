@@ -304,10 +304,10 @@ getWeight EP {epWeight = baseWeight, epAbilityId = ability}
 
 getRatioPower :: Int -> Int
 getRatioPower ratio
-  | ratio >= 4 = 150
-  | ratio == 3 = 120
-  | ratio == 2 = 80
-  | ratio == 1 = 60
+  | ratio >= 5 = 120
+  | ratio == 4 = 100
+  | ratio == 3 = 80
+  | ratio == 2 = 60
   | otherwise = 40
 
 getEffectiveStats :: EffectivePokemon -> EffectiveStats
