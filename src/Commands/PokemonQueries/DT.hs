@@ -1,9 +1,9 @@
 {-# LANGUAGE RecordWildCards #-}
 
-module Commands.TextCommands.DT (dtCommand) where
+module Commands.PokemonQueries.DT (dtCommand) where
 
 import Commands.Parsers
-import Commands.Types
+import Commands.Types ( CommandFunction(TextCommand), Command(..) )
 import Commands.Utility
 import Control.Monad
 import Control.Monad.Trans

@@ -4,7 +4,7 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: cc7b39b7c7ef5636416054961cf74d8b245524d06b461ff4110cfc6476b5b73a
+-- hash: 951967d50307aa1677035613aa2decaf0769985d36271815dd82ba2e875be9c5
 
 name:           Lonewulfx6
 version:        0.1.0.0
@@ -48,15 +48,14 @@ library
       Commands.Manage.Role
       Commands.Parsers
       Commands.PokemonQueries
+      Commands.PokemonQueries.DT
       Commands.PokemonQueries.Learn
       Commands.TextCommands
       Commands.TextCommands.AddDefaultRole
       Commands.TextCommands.BeatUp
-      Commands.TextCommands.Bomko
       Commands.TextCommands.CalcStat
       Commands.TextCommands.ChanceCalculation
       Commands.TextCommands.DamageCalc
-      Commands.TextCommands.DT
       Commands.TextCommands.RemoveDefaultRole
       Commands.TextCommands.SpeedCommands
       Commands.TextCommands.SpeedSheet
