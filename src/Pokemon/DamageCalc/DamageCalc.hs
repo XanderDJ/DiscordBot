@@ -107,7 +107,15 @@ baseDamage = do
   log "defS" defS
   log "atk" (show a)
   log "def" (show d)
-  log "atkEv" (if atkS == "Atk" then (show . atkEv . epEvs) attacker else (show . spaEv . epEvs) attacker)
+  log
+    "atkEv"
+    ( if atkS == "Atk"
+        then (show . atkEv . epEvs) attacker
+        else
+          if atkS == "Def"
+            then (show . defEv . epEvs) attacker
+            else (show . spaEv . epEvs) attacker
+    )
   log "defEv" (if defS == "Def" then (show . defEv . epEvs) defender else (show . spdEv . epEvs) defender)
   log "attacker" ((T.unpack . epName) attacker)
   log "defender" ((T.unpack . epName) defender)
@@ -146,7 +154,6 @@ baseDamage = do
   log "attackerStats" (show attackerStats)
   log "defenderStats" (show defenderStats)
   return $ floor ((((2 * fromIntegral lvl) / 5 + 2) * bp * (a / d)) / 50 + 2)
-
 
 -- return $ div ((div (2 * lvl) 5 + 2) * bp * div atk def) 50 + 2
 
