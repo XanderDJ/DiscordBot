@@ -242,7 +242,7 @@ getBp' "gyroball" _ atk def env =
 getBp' "electroball" _ atk def env =
   let attackerSpeed = getSpeedAttacker atk env
       defenderSpeed = getSpeedDefender def env
-   in getRatioPower (floor (on (/) fromIntegral attackerSpeed defenderSpeed))
+   in getSpeedRatioPower (floor (on (/) fromIntegral attackerSpeed defenderSpeed))
 getBp' "fling" _ atk _ _ = fromMaybe 0 (epItem atk <&> iFlingBp)
 getBp' "flail" _ atk _ _ = let ratio = floor $ (epHPPercentage atk * 48) / 100 in getHpRatioPower ratio
 getBp' "reversal" _ atk _ _ = let ratio = floor $ (epHPPercentage atk * 48) / 100 in getHpRatioPower ratio
@@ -309,6 +309,14 @@ getRatioPower ratio
   | ratio == 3 = 80
   | ratio == 2 = 60
   | otherwise = 40
+
+getSpeedRatioPower :: Int -> Int
+getSpeedRatioPower ratio
+ | ratio >= 4 = 150
+ | ratio == 3 = 120
+ | ratio == 2 = 80
+ | ratio == 1 = 60
+ | otherwise = 40
 
 getEffectiveStats :: EffectivePokemon -> EffectiveStats
 getEffectiveStats EP {..} = ES hp atk def spa spd spe
