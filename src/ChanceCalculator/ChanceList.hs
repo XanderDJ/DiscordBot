@@ -1,8 +1,20 @@
 {-# LANGUAGE GADTs #-}
 
-module ChanceCalculator.ChanceList (ChanceList(..), insertChance, getChance, validateChanceList, fixChanceList, fromList, toList, reduceCL) where
+module ChanceCalculator.ChanceList
+  ( ChanceList (..),
+    insertChance,
+    getChance,
+    validateChanceList,
+    fixChanceList,
+    fromList,
+    toList,
+    reduceCL,
+  )
+where
 
-import qualified Data.List as L (sortOn)
+import qualified Data.List as L
+  ( sortOn,
+  )
 import Data.Monoid
 
 -- | List that contains the chance of an event occuring after a specific amount of tries. The tries in the chance list should be in ascending order.
@@ -29,13 +41,12 @@ fromList = foldl insertChance' CLEmpty
 validateChanceList :: Ord n => ChanceList n c -> Bool
 validateChanceList CLEmpty = True
 validateChanceList (CLNode _ _ CLEmpty) = True
-validateChanceList (CLNode n c (CLNode n' c' cl')) = n < n' && validateChanceList cl'
+validateChanceList (CLNode n c (CLNode n' c' cl')) =
+  n < n' && validateChanceList cl'
 
 -- | Fix an invalid  ChanceList. It will first validate that the
 fixChanceList :: Ord n => ChanceList n c -> ChanceList n c
-fixChanceList cl = fromList (L.sortOn fst tcs)
-  where
-    tcs = toList cl
+fixChanceList cl = fromList (L.sortOn fst tcs) where tcs = toList cl
 
 -- | get Chance c at try n from chancelist. If n is smaller than the first n found then return default parameter.
 --   Also returns default parameter when Empty chancelist is given.
@@ -63,4 +74,5 @@ instance Foldable (ChanceList n) where
 
 instance (Show n, Show c) => Show (ChanceList n c) where
   show CLEmpty = "CLEmpty"
-  show (CLNode n c cl) = "CLNode " ++ show n ++ " " ++ show c ++ " (" ++ show cl ++ ")"
+  show (CLNode n c cl) =
+    "CLNode " ++ show n ++ " " ++ show c ++ " (" ++ show cl ++ ")"

@@ -1,5 +1,6 @@
 module Pokemon.Functions where
 
+import Control.Lens (_18')
 import Data.List (sort, sortBy)
 import Data.Maybe
 import Data.Ord (Down (Down))
@@ -8,7 +9,6 @@ import qualified Data.Text as T
 import Pokemon.Nature
 import Pokemon.Types
 import Text.Read (readMaybe)
-import Control.Lens (_18')
 
 getType :: String -> Maybe Type
 getType = readMaybe
@@ -56,7 +56,7 @@ getNatureEffect s (Nature _ pos neg)
 toShowdownRep :: NatureEffect -> String
 toShowdownRep NPositive = "+"
 toShowdownRep NNegative = "-"
-toShowdownRep NNeutral  = ""
+toShowdownRep NNeutral = ""
 
 -- | Get the base stat of a pokemon using a string as a name
 getBaseStat :: String -> Pokemon -> BaseStat
@@ -235,6 +235,7 @@ other =
     "eerie-impulse",
     "electrify",
     "embargo",
+    "encore",
     "endure",
     "entrainment",
     "fairy-lock",
@@ -396,8 +397,7 @@ statusMoves =
     "poison-gas",
     "sing",
     "sweet-kiss",
-    "teeter-dance",
-    "encore"
+    "teeter-dance"
   ]
 
 boostMoves :: [T.Text]
@@ -765,9 +765,8 @@ abilityIgnoringAbilities :: [T.Text]
 abilityIgnoringAbilities = ["moldbreaker", "teravolt", "turboblaze"]
 
 unknockableItems :: [T.Text]
-unknockableItems = 
-  [
-    "buginiumz",
+unknockableItems =
+  [ "buginiumz",
     "darkiniumz",
     "dragoniumz",
     "electriumz",
@@ -851,15 +850,11 @@ unknockableItems =
     "venusaurite"
   ]
 
-
-
 recoilBlockingAbilities :: [T.Text]
-recoilBlockingAbilities = 
-  [
-    "rockhead",
+recoilBlockingAbilities =
+  [ "rockhead",
     "magicguard"
   ]
-
 
 toId :: T.Text -> T.Text
 toId = T.replace " " "" . T.replace "-" "" . T.toLower
