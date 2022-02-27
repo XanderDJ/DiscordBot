@@ -290,13 +290,11 @@ isOc :: T.OCF -> ObjectId -> Select ()
 isOc oc oId = where_ $ ocId oc .== toFields oId
 
 getObjectClass :: Connection -> ObjectId -> IO (Maybe ObjectClass)
-getObjectClass con oId =
-  ( \l ->
-      if length l == 1
-        then Just (head l)
-        else Nothing
-  )
-    <$> runSelect con (selectObjectClass oId)
+
+getObjectClass con oId = (\l -> if length l == 1
+                                then Just (head l)
+                                else Nothing)
+  <$> runSelect con (selectObjectClass oId)
 
 getData :: Connection -> ObjectId -> IO (Maybe DBData)
 getData con oId = do

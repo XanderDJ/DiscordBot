@@ -22,7 +22,7 @@ chanceFor p tries = 1 - (1 - p) ** fromIntegral tries
 --   returns the tries needed to reach the desired successrate.
 calculateTriesWithCL :: (Num c, Ord c) => ChanceList Int c -> c -> Int
 calculateTriesWithCL cl dsr = go cl dsr cpf 0
-  where
+ where
     -- current chance of failure
     cpf = (1 -) $ getChance cl 0 0
     -- Method to calculate current failure chance (old failure chance times new chance of failure)

@@ -1,6 +1,6 @@
 module PokemonDB.Types where
 
-import Data.Text (Text)
+import           Data.Text                      ( Text )
 
 data ItemT a b c d = ItemT
   { itemId :: a,
