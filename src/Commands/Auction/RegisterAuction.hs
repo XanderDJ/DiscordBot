@@ -1,6 +1,6 @@
 module Commands.Auction.RegisterAuction (registerAuctionCommand) where
 
-import Commands.Auction.Types (Auction (A, _aName))
+import Commands.Auction.Types (Auction (A, _aName), _aMinBid)
 import Commands.Auction.Utility (auctionID, getAuction, user)
 import Commands.Parsers (registerAuctionP)
 import Commands.Types
@@ -43,7 +43,9 @@ parseAuction mvar m = do
 addValidAuction :: MVar [Auction] -> Message -> Auction -> DiscordHandler ()
 addValidAuction mvar m a = do
   auctions <- lift $ takeMVar mvar
-  let as' = a : auctions
+  let 
+    a' = if _aMinBid a == Just 0 then a {_aMinBid = Just 1} else a
+    as' = a' : auctions
   lift $ putMVar mvar as'
   void . restCall $ R.CreateMessage (messageChannelId m) (append (pingUserText m) (pack $ ", Auction " ++ (unpack . _aName) a ++ " was created!"))
 
