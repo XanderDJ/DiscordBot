@@ -15,7 +15,7 @@ import Discord
 import Discord.Requests
 import qualified Discord.Requests as R
 import Discord.Types
-import Pokemon.DBConversion (toDTType)
+import Pokemon.DBConversion (toDTType, toMove)
 import Pokemon.Nature
 import Pokemon.Types
 import PokemonDB.Queries
@@ -24,6 +24,7 @@ import Text.Parsec
 import Commands.PokemonQueries.EmbedMessage.Ability
 import Commands.PokemonQueries.EmbedMessage.Move (createMoveEmbed)
 import Commands.PokemonQueries.EmbedMessage.Item
+import Commands.PokemonQueries.EmbedMessage.Learn
 
 queryCom :: Command
 queryCom = Com "To be defined" (TextCommand parseQuery)
@@ -71,4 +72,5 @@ createDiscordMessage (DT oId) (DTR mdt) opts m = case mdt of
     DtMove move -> createDetailedMessage $ createMoveEmbed move
     DtAbility ability -> createDetailedMessage $ createAbilityEmbed ability
     other -> def {messageDetailedContent = "Encountered unreachable situation"}
+createDiscordMessage (Learn pId allMoves) (LearnR learnableMoves) _ _ = createDetailedMessage $ createLearnEmbed pId (map toMove learnableMoves) (map toId allMoves) 
 createDiscordMessage pq pqr opts m = def {R.messageDetailedContent = "Not implemented yet"}
