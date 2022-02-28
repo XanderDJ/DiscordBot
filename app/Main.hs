@@ -46,7 +46,7 @@ bot = do
           discordOnEnd = putStrLn "Ending",
           discordOnStart = lift $ putStrLn "Starting"
         }
-  TIO.putStrLn userFacingError
+  TIO.appendFile "log.txt" (append userFacingError "\n\n")
 
 eventHandler :: MVar Auctions -> Event -> DiscordHandler ()
 eventHandler mvar event = case event of
