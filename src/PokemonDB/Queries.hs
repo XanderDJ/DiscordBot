@@ -20,7 +20,8 @@ module PokemonDB.Queries
     getCategoryMoves,
     getCategoryCoverageMoves,
     getObjectClass,
-    getData
+    getData,
+    runPokemonQuery
   )
 where
 
@@ -28,29 +29,30 @@ import Data.Either
 import Data.Maybe
 import Data.Profunctor.Product.Default
 import Data.Text (Text, toTitle)
+import qualified Data.Text as T
 import Database.PostgreSQL.Simple
 import Opaleye hiding (not, null)
 import qualified PokemonDB.Tables as T
 import PokemonDB.Types
 
 runPokemonQuery :: Connection -> PokemonQuery -> IO PokemonQueryResult
-runPokemonQuery con (Learn pId mIds) = LearnR <$> getMovesFrom con pId mIds
-runPokemonQuery con (DT oId) = DTR <$> getData con oId
-runPokemonQuery con (AllMoves pId) = AllMovesR <$> getPokemonMoves con pId
-runPokemonQuery con (AllMovesFromType pId tipe) = AllMovesFromTypeR <$> getCoverageMoves con pId tipe
-runPokemonQuery con (AllMovesFromCategory pId category) = AllMovesFromCategoryR <$> getCategoryMoves con pId category
-runPokemonQuery con (AllMovesFromCategoryAndType pId category tipe) = AllMovesFromCategoryAndTypeR <$> getCategoryCoverageMoves con pId category tipe
+runPokemonQuery con (Learn pId mIds) = LearnR <$> getMovesFrom con (toId pId) (map toId mIds)
+runPokemonQuery con (DT oId) = DTR <$> getData con (toId oId)
+runPokemonQuery con (AllMoves pId) = AllMovesR <$> getPokemonMoves con (toId pId)
+runPokemonQuery con (AllMovesFromType pId tipe) = AllMovesFromTypeR <$> getCoverageMoves con (toId pId) (toTitle tipe)
+runPokemonQuery con (AllMovesFromCategory pId category) = AllMovesFromCategoryR <$> getCategoryMoves con (toId pId) category
+runPokemonQuery con (AllMovesFromCategoryAndType pId category tipe) = AllMovesFromCategoryAndTypeR <$> getCategoryCoverageMoves con (toId pId) category (toTitle tipe)
 runPokemonQuery con (AllPokemonWithStat stat value) = AllPokemonWithStatR <$> getPokemonsWithStat con stat value
-runPokemonQuery con (AllPokemonsWithAbility aId) = AllPokemonsWithAbilityR <$> getPokemonsWithAbility con aId
-runPokemonQuery con (AllPokemonsWithMove mId) = AllPokemonsWithMoveR <$> getPokemonsWithMove con mId
-runPokemonQuery con (AllPriorityMoves pId) = AllPriorityMovesR <$> getPriorityMoves con pId
-runPokemonQuery con (AllHazardMoves pId) = AllHazardMovesR <$> getHazardMoves con pId
-runPokemonQuery con (AllClericMoves pId) = AllClericMovesR <$> getClericMoves con pId
-runPokemonQuery con (AllRecoveryMoves pId) = AllRecoveryMovesR <$> getRecoveryMoves con pId
-runPokemonQuery con (AllScreens pId) = AllScreensR <$> getScreenMoves con pId
-runPokemonQuery con (AllHazardControl pId) = AllHazardControlR <$> getHazardControlMoves con pId
-runPokemonQuery con (AllSetUpMoves pId) = AllSetUpMovesR <$> getSetUpMoves con pId
-runPokemonQuery con (AllStatusMoves pId) = AllStatusMovesR <$> getStatusMoves con pId
+runPokemonQuery con (AllPokemonsWithAbility aId) = AllPokemonsWithAbilityR <$> getPokemonsWithAbility con (toId aId)
+runPokemonQuery con (AllPokemonsWithMove mId) = AllPokemonsWithMoveR <$> getPokemonsWithMove con (toId mId)
+runPokemonQuery con (AllPriorityMoves pId) = AllPriorityMovesR <$> getPriorityMoves con (toId pId)
+runPokemonQuery con (AllHazardMoves pId) = AllHazardMovesR <$> getHazardMoves con (toId pId)
+runPokemonQuery con (AllClericMoves pId) = AllClericMovesR <$> getClericMoves con (toId pId)
+runPokemonQuery con (AllRecoveryMoves pId) = AllRecoveryMovesR <$> getRecoveryMoves con (toId pId)
+runPokemonQuery con (AllScreens pId) = AllScreensR <$> getScreenMoves con (toId pId)
+runPokemonQuery con (AllHazardControl pId) = AllHazardControlR <$> getHazardControlMoves con (toId pId)
+runPokemonQuery con (AllSetUpMoves pId) = AllSetUpMovesR <$> getSetUpMoves con (toId pId)
+runPokemonQuery con (AllStatusMoves pId) = AllStatusMovesR <$> getStatusMoves con (toId pId)
 
 selectPokemon :: PokemonId -> Select T.PokemonF
 selectPokemon id = do
@@ -496,6 +498,9 @@ extractRight :: Show a => Either a p -> p
 extractRight e = case e of
   Left a -> error ("Tried to extract right from Left " ++ show a)
   Right p -> p
+
+toId :: T.Text -> T.Text
+toId = T.replace " " "" . T.replace "-" "" . T.toLower
 
 printSql :: Default Unpackspec a a => Select a -> IO ()
 printSql = putStrLn . fromMaybe "Empty select". showSql

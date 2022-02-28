@@ -17,6 +17,8 @@ import Text.Parsec
 import Text.Parsec.Number (fractional, int)
 import Text.Parsec.Text (Parser)
 import Text.Read (readMaybe)
+import PokemonDB.Types (PokemonQuery(..))
+import Commands.Types (Options)
 
 parseSep :: Parser Text
 parseSep = T.singleton <$> char ','
@@ -153,6 +155,15 @@ parseOptions t =
       options = if length ts > 1 then getOpts M.empty (tail ts) else M.empty
    in ((T.strip . head) ts, options)
 
+parseOptionsOnSep :: Char -> Text -> [(Text, M.Map Text Text)]
+parseOptionsOnSep sep t = map parseOptions (T.split (== sep) t)
+
+combineOptionsWith :: ((Text, Options) -> (Text, Options) -> (Text, Options)) -> [(Text, Options)] -> (Text, Options)
+combineOptionsWith = foldl1
+
+combineWithSep :: Semigroup b => Text -> (Text, b) -> (Text, b) -> (Text, b)
+combineWithSep sep (t, opts) (t', opts') = (T.intercalate sep [t,t'], opts <> opts')
+
 -- | Parse a command to get a list of pokemon names
 -- Ex: l(bu|beatup) mon with space, mon2, mon3, ...
 parseBeatUp :: Parser [Text]
@@ -191,3 +202,13 @@ parseLC = do
   parseSep
   moves <- sepByComma parseId
   return (mon, moves)
+
+
+queryParser :: Parser PokemonQuery
+queryParser = DT <$> dtP <||> toLearnQuery <$> parseLC
+ where toLearnQuery (p, ms) = Learn p ms
+
+(<||>) :: ParsecT s u m a -> ParsecT s u m a -> ParsecT s u m a
+(<||>) a b = try a <|> b
+
+infixl 3 <||>

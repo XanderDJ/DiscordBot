@@ -1,6 +1,7 @@
 module PokemonDB.Types where
 
-import           Data.Text                      ( Text )
+import Data.Text (Text)
+import qualified Data.Map as M
 
 data ItemT a b c d = ItemT
   { itemId :: a,
@@ -177,6 +178,9 @@ type MoveType =
   -- | Title Case, examples: "Fire", "Water", "Grass"
   Text
 
+
+type QueryOpts = M.Map Text Text
+
 data PokemonQuery
   = -- | Query if Pokemon learns some of the moves given
     Learn PokemonId [MoveId]
@@ -212,7 +216,9 @@ data PokemonQuery
     AllHazardControl PokemonId
   | -- | Query all the SetUp moves a mon has
     AllSetUpMoves PokemonId
-  | AllStatusMoves PokemonId -- ^Query all the status moves a mon has
+  | -- | Query all the status moves a mon has
+    AllStatusMoves PokemonId
+  deriving (Show)
 
 data PokemonQueryResult
   = LearnR [DBMove]
@@ -233,3 +239,4 @@ data PokemonQueryResult
   | AllHazardControlR [DBMove]
   | AllSetUpMovesR [DBMove]
   | AllStatusMovesR [DBMove]
+  deriving (Show)

@@ -10,7 +10,7 @@ commandMap :: Map Text Command
 commandMap =
   fromList
     [ ("help", helpCommand),
-      ("dt", dtCommand),
+      ("dt", queryCom),
       ("hostauction", registerAuctionCommand),
       ("rp", registerParticipantCommand),
       ("nom", nominationCommand),

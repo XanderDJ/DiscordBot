@@ -8,6 +8,7 @@ import Discord
 import Discord.Types
 
 type Usage = Text
+type Options = M.Map Text Text
 
 data CommandFunction
   = TextCommand (Message -> DiscordHandler ())
