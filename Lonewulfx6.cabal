@@ -3,8 +3,6 @@ cabal-version: 1.12
 -- This file has been generated from package.yaml by hpack version 0.34.4.
 --
 -- see: https://github.com/sol/hpack
---
--- hash: 5b1ee5da74e05c4330008c9209c213a765d39ecf8fa2edb7d0c23e0f6baa776a
 
 name:           Lonewulfx6
 version:        0.1.0.0
@@ -50,6 +48,7 @@ library
       Commands.PokemonQueries
       Commands.PokemonQueries.EmbedMessage.Ability
       Commands.PokemonQueries.EmbedMessage.Item
+      Commands.PokemonQueries.EmbedMessage.Learn
       Commands.PokemonQueries.EmbedMessage.Move
       Commands.PokemonQueries.EmbedMessage.Nature
       Commands.PokemonQueries.EmbedMessage.Pokemon
