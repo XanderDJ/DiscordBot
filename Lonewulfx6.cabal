@@ -4,7 +4,7 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: a3399cd21574ca9f986ffffa1aa47037dcee6c1fd4de69d4f65ce4ae1a9ba6cc
+-- hash: 5b1ee5da74e05c4330008c9209c213a765d39ecf8fa2edb7d0c23e0f6baa776a
 
 name:           Lonewulfx6
 version:        0.1.0.0
@@ -48,7 +48,6 @@ library
       Commands.Manage.Role
       Commands.Parsers
       Commands.PokemonQueries
-      Commands.PokemonQueries.DT
       Commands.PokemonQueries.EmbedMessage.Ability
       Commands.PokemonQueries.EmbedMessage.Item
       Commands.PokemonQueries.EmbedMessage.Move
