@@ -9,7 +9,7 @@ import Pokemon.Types
 createLearnEmbed :: T.Text -> [Move] -> [T.Text] -> CreateEmbed
 createLearnEmbed pId moves allMoves =
   def
-    { createEmbedTitle = pId,
+    { createEmbedTitle = T.toTitle pId,
       createEmbedFields =
         [EmbedField "Moves learnable" (if null moves then "Can't learn any of the provided moves" else T.intercalate ", " (map mName moves)) Nothing],
       createEmbedColor = sideColor
