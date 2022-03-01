@@ -18,31 +18,39 @@ import Discord
   )
 import qualified Discord.Requests as R
 import Discord.Types
-  ( Event (MessageCreate, GuildMemberUpdate, GuildMemberAdd),
-    Message (messageAuthor, messageContent),
+  ( Event (MessageCreate, GuildMemberUpdate, GuildMemberAdd, InteractionCreate),
+    Message (messageAuthor, messageContent, messageId),
     User (userIsBot),
   )
 import Commands.Parsers
 import System.Environment (getArgs)
 import Text.Parsec
-import qualified Discord as R
+import qualified Discord
+import qualified Discord.Requests as R
 import Control.Monad
 import Control.Monad.Trans
 import Commands.Manage.Role
+import Discord.Interactions
+import Text.Pretty.Simple (pPrint)
+import System.Random (getStdGen)
+import BotState (BotState(BotState))
 
 main = bot
 
 bot :: IO ()
 bot = do
   [token] <- getArgs
-  mVar <- newEmptyMVar
-  putMVar mVar []
+  auctionVar <- newEmptyMVar
+  putMVar auctionVar []
+  botStateVar <- newEmptyMVar
+  stdGen <- getStdGen
+  putMVar botStateVar (BotState stdGen)
   userFacingError <-
     runDiscord $
       def
         { discordToken = append "Bot " (pack token),
           discordOnLog = print,
-          discordOnEvent = eventHandler mVar,
+          discordOnEvent = eventHandler auctionVar,
           discordOnEnd = putStrLn "Ending",
           discordOnStart = lift $ putStrLn "Starting"
         }
@@ -52,6 +60,9 @@ eventHandler :: MVar Auctions -> Event -> DiscordHandler ()
 eventHandler mvar event = case event of
   MessageCreate m -> if not (fromBot m) then runCommands mvar m commandMap else pure ()
   GuildMemberAdd gId gM -> addRoleToUser gId gM
+  InteractionCreate i -> do 
+    lift $ pPrint i
+    void . restCall $ R.CreateInteractionResponse (interactionId i) (interactionToken i) (InteractionResponseUpdateMessage (InteractionResponseMessage Nothing (Just "Edited") Nothing Nothing Nothing Nothing Nothing))
   _ -> pure ()
 
 runCommands :: MVar Auctions -> Message -> M.Map Text Command -> DiscordHandler ()

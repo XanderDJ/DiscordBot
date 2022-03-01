@@ -97,7 +97,8 @@ makeCalcMessage (minHp, maxHp) (minP, maxP) map =
       +|+ getValue "item"
       +|+ getValue "atkAbility"
       +|+ getValue "status"
-      +|+ getValue "attacker" ++ getValue "atkGender"
+      +|+ getValue "attacker"
+      ++ getValue "atkGender"
       +|+ getValue "powerspot"
       +|+ getValue "battery"
       +|+ getValue "switching"
@@ -113,7 +114,8 @@ makeCalcMessage (minHp, maxHp) (minP, maxP) map =
       +|+ getValue "defS"
       +|+ getValue "defItem"
       +|+ getValue "defAbility"
-      +|+ getValue "defender" ++ getValue "defGender"
+      +|+ getValue "defender"
+      ++ getValue "defGender"
       +|+ (if null (getValue "weather") then "" else "in" +|+ getValue "weather")
       +|+ (if null (getValue "terrain") then "" else "in" +|+ getValue "terrain")
       +|+ getValue "screens"
@@ -128,26 +130,26 @@ makeCalcMessage (minHp, maxHp) (minP, maxP) map =
       +|+ maxP
       ++ ")"
       ++ ( if (not . null . getValue) "drain"
-              then
-                let drainPercentage = (readDouble . getValue) "drain"
-                    hasBigRoot = not . null . getValue $ "bigroot"
-                    totalHp = (readInt . getValue) "hpAttacker"
-                    totalHpDefender = (readInt . getValue) "hpDefender"
-                    maxHpRecovered = drainPercentage * (if hasBigRoot then 1.3 else 1) * fromIntegral (if maxHp > totalHpDefender then totalHpDefender else maxHp) * 100 / fromIntegral totalHp
-                    minHpRecovered = drainPercentage * (if hasBigRoot then 1.3 else 1) * fromIntegral (if minHp > totalHpDefender then totalHpDefender else minHp) * 100 / fromIntegral totalHp
-                 in "\n(" ++ printPercentage 2 minHpRecovered +|+ "-" +|+ printPercentage 2 maxHpRecovered +|+ "Hp Recovered)"
-              else ""
-          )
+             then
+               let drainPercentage = (readDouble . getValue) "drain"
+                   hasBigRoot = not . null . getValue $ "bigroot"
+                   totalHp = (readInt . getValue) "hpAttacker"
+                   totalHpDefender = (readInt . getValue) "hpDefender"
+                   maxHpRecovered = drainPercentage * (if hasBigRoot then 1.3 else 1) * fromIntegral (if maxHp > totalHpDefender then totalHpDefender else maxHp) * 100 / fromIntegral totalHp
+                   minHpRecovered = drainPercentage * (if hasBigRoot then 1.3 else 1) * fromIntegral (if minHp > totalHpDefender then totalHpDefender else minHp) * 100 / fromIntegral totalHp
+                in "\n(" ++ printPercentage 2 minHpRecovered +|+ "-" +|+ printPercentage 2 maxHpRecovered +|+ "Hp Recovered)"
+             else ""
+         )
       ++ ( if (not . null . getValue) "recoil"
-              then
-                let recoilPercentage = (readDouble . getValue) "recoil" -- "0.33" for flare blitz
-                    totalHp = (readInt . getValue) "hpAttacker"
-                    totalHpDefender = (readInt . getValue) "hpDefender"
-                    maxHpRecoil = recoilPercentage * fromIntegral (if maxHp > totalHpDefender then totalHpDefender else maxHp) * 100 / fromIntegral totalHp
-                    minHpRecoil = recoilPercentage * fromIntegral (if minHp > totalHpDefender then totalHpDefender else minHp) * 100 / fromIntegral totalHp
-                 in "\n(" ++ printPercentage 2 minHpRecoil +|+ "-" +|+ printPercentage 2 maxHpRecoil +|+ "Recoil)"
-              else ""
-          )
+             then
+               let recoilPercentage = (readDouble . getValue) "recoil" -- "0.33" for flare blitz
+                   totalHp = (readInt . getValue) "hpAttacker"
+                   totalHpDefender = (readInt . getValue) "hpDefender"
+                   maxHpRecoil = recoilPercentage * fromIntegral (if maxHp > totalHpDefender then totalHpDefender else maxHp) * 100 / fromIntegral totalHp
+                   minHpRecoil = recoilPercentage * fromIntegral (if minHp > totalHpDefender then totalHpDefender else minHp) * 100 / fromIntegral totalHp
+                in "\n(" ++ printPercentage 2 minHpRecoil +|+ "-" +|+ printPercentage 2 maxHpRecoil +|+ "Recoil)"
+             else ""
+         )
   where
     getValue = getTextValue map
     (+|+) b a = b ++ " " ++ a
@@ -169,7 +171,7 @@ parseMon Pokemon {..} i a opts EM {..} =
       epTyping = typing,
       epStats = baseStats,
       epLevel = let level = getOption ["l", "level"] opts in fromMaybe 100 (level >>= \l -> readMaybe (T.unpack l)),
-      epGender = fromMaybe NEUTRAL (getOption ["gender", "g","sex"] opts >>= parseGender),
+      epGender = fromMaybe NEUTRAL (getOption ["gender", "g", "sex"] opts >>= parseGender),
       epItem = i,
       epNature = fromMaybe (maybe (getDefaultNature emCategory) third set) nature,
       epEvs = maybe (EVS hpev atkev defev spaev spdev speev) first set,

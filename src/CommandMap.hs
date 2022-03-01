@@ -43,5 +43,6 @@ commandMap =
       ("damagecalc", damageCalcCom),
       ("dc", damageCalcCom),
       ("vc", valueConversionCom),
-      ("valueconversion", valueConversionCom)
+      ("valueconversion", valueConversionCom),
+      ("test", testCom)
     ]
