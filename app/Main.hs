@@ -76,6 +76,7 @@ runCommand :: Command -> BotState -> Message -> M.Map Text Command -> DiscordHan
 runCommand (Com _ (AuctionCommand f)) botState m _ = f (auctionState botState) m
 runCommand (Com _ (HelpCommand f)) _ m map = f map m
 runCommand (Com _ (TextCommand f)) _ m _ = f m
+runCommand (Com _ (CursorCommand f)) botState m _ = f (cursorManager botState) m 
 runCommand (Com _ NoOp) _ _ _ = pure ()
 
 fromBot :: Message -> Bool
