@@ -48,6 +48,7 @@ dependencies:
 - hspec-contrib
 - QuickCheck
 - HUnit
+- random
 
 library:
   source-dirs: src

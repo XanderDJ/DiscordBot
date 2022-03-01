@@ -25,6 +25,7 @@ source-repository head
 
 library
   exposed-modules:
+      BotState
       ChanceCalculator
       ChanceCalculator.ChanceCalculator
       ChanceCalculator.ChanceList
@@ -42,6 +43,7 @@ library
       Commands.Auction.Utility
       Commands.AuctionCommands
       Commands.Commands
+      Commands.Cursor
       Commands.Help
       Commands.Manage.Role
       Commands.Parsers
@@ -62,6 +64,7 @@ library
       Commands.TextCommands.RemoveDefaultRole
       Commands.TextCommands.SpeedCommands
       Commands.TextCommands.SpeedSheet
+      Commands.TextCommands.Test
       Commands.TextCommands.ValueConversion
       Commands.Types
       Commands.Utility
@@ -122,6 +125,7 @@ library
     , postgresql-simple
     , pretty-simple
     , product-profunctors
+    , random
     , split
     , text
     , time
@@ -163,6 +167,7 @@ executable Lonewulfx6-exe
     , postgresql-simple
     , pretty-simple
     , product-profunctors
+    , random
     , split
     , text
     , time
@@ -206,6 +211,7 @@ test-suite Lonewulfx6-test
     , postgresql-simple
     , pretty-simple
     , product-profunctors
+    , random
     , split
     , text
     , time
