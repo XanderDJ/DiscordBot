@@ -25,15 +25,17 @@ import Commands.PokemonQueries.EmbedMessage.Ability
 import Commands.PokemonQueries.EmbedMessage.Move (createMoveEmbed)
 import Commands.PokemonQueries.EmbedMessage.Item
 import Commands.PokemonQueries.EmbedMessage.Learn
+import Control.Concurrent
+import Commands.CursorManager
 
 queryCom :: Command
-queryCom = Com "To be defined" (TextCommand parseQuery)
+queryCom = Com "To be defined" (CursorCommand parseQuery)
 
 -- | First parse query
 -- -> If succesfull open connection to db and run query
 -- -> Transform QueryResult into Discord embedded message, optionally figure out how to use commandtabs
-parseQuery :: Message -> DiscordHandler ()
-parseQuery m = do
+parseQuery :: MVar CursorManager -> Message -> DiscordHandler ()
+parseQuery cmVar m = do
   let (parsableContent, opts) = combineOptionsWith (combineWithSep ",") (parseOptionsOnSep ',' (messageContent m))
       query = parse queryParser "Parsing a message to a query" parsableContent
   ifElse (isLeft query) (reportError "Couldn't parse the given query, a better help system will be implemented eventually" m) (preProcessQuery (extractRight query) opts m)

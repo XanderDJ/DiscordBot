@@ -9,8 +9,8 @@ import Discord
 import Discord.Types
 import qualified Discord.Requests as R
 
-help :: Message -> M.Map Text Command -> DiscordHandler ()
-help m map = do
+help :: M.Map Text Command -> Message -> DiscordHandler ()
+help map m = do
     let 
         commands = L.nub . M.elems $ map
         descriptions = L.foldr appendDescription "" commands

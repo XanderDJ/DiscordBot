@@ -44,8 +44,10 @@ library
       Commands.AuctionCommands
       Commands.Commands
       Commands.Cursor
+      Commands.CursorManager
       Commands.Help
       Commands.Manage.Role
+      Commands.PaginatedContents
       Commands.Parsers
       Commands.PokemonQueries
       Commands.PokemonQueries.EmbedMessage.Ability

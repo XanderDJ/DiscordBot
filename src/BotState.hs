@@ -1,7 +1,11 @@
 module BotState where
 
 import System.Random
+import Commands.Auction
+import Control.Concurrent
+import Commands.CursorManager (CursorManager)
 
-newtype BotState = BotState {
-    randomGenerator :: StdGen
+data BotState = BotState {
+    auctionState :: MVar Auctions,
+    cursorManager :: MVar CursorManager
 }

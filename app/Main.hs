@@ -33,7 +33,8 @@ import Commands.Manage.Role
 import Discord.Interactions
 import Text.Pretty.Simple (pPrint)
 import System.Random (getStdGen)
-import BotState (BotState(BotState))
+import BotState
+import Commands.CursorManager
 
 main = bot
 
@@ -42,38 +43,38 @@ bot = do
   [token] <- getArgs
   auctionVar <- newEmptyMVar
   putMVar auctionVar []
-  botStateVar <- newEmptyMVar
+  cursorManagerVar <- newEmptyMVar
   stdGen <- getStdGen
-  putMVar botStateVar (BotState stdGen)
+  putMVar cursorManagerVar (CursorManager M.empty stdGen)
   userFacingError <-
     runDiscord $
       def
         { discordToken = append "Bot " (pack token),
           discordOnLog = print,
-          discordOnEvent = eventHandler auctionVar,
+          discordOnEvent = eventHandler (BotState auctionVar cursorManagerVar),
           discordOnEnd = putStrLn "Ending",
           discordOnStart = lift $ putStrLn "Starting"
         }
   TIO.appendFile "log.txt" (append userFacingError "\n\n")
 
-eventHandler :: MVar Auctions -> Event -> DiscordHandler ()
-eventHandler mvar event = case event of
-  MessageCreate m -> if not (fromBot m) then runCommands mvar m commandMap else pure ()
+eventHandler :: BotState -> Event -> DiscordHandler ()
+eventHandler botState event = case event of
+  MessageCreate m -> if not (fromBot m) then runCommands botState m commandMap else pure ()
   GuildMemberAdd gId gM -> addRoleToUser gId gM
   InteractionCreate i -> do 
     lift $ pPrint i
     void . restCall $ R.CreateInteractionResponse (interactionId i) (interactionToken i) (InteractionResponseUpdateMessage (InteractionResponseMessage Nothing (Just "Edited") Nothing Nothing Nothing Nothing Nothing))
   _ -> pure ()
 
-runCommands :: MVar Auctions -> Message -> M.Map Text Command -> DiscordHandler ()
-runCommands mvar m map = if isJust com then runCommand (fromJust com) mvar m map else pure ()
+runCommands :: BotState -> Message -> M.Map Text Command -> DiscordHandler ()
+runCommands botState m map = if isJust com then runCommand (fromJust com) botState m map else pure ()
   where
     commandName = parse parseCommand "Parse Command name" ((toLower . messageContent) m)
     com = if isLeft commandName then Nothing else M.lookup (fromRight "" commandName) map
 
-runCommand :: Command -> MVar Auctions -> Message -> M.Map Text Command -> DiscordHandler ()
-runCommand (Com _ (AuctionCommand f)) mvar m _ = f mvar m
-runCommand (Com _ (HelpCommand f)) _ m map = f m map
+runCommand :: Command -> BotState -> Message -> M.Map Text Command -> DiscordHandler ()
+runCommand (Com _ (AuctionCommand f)) botState m _ = f (auctionState botState) m
+runCommand (Com _ (HelpCommand f)) _ m map = f map m
 runCommand (Com _ (TextCommand f)) _ m _ = f m
 runCommand (Com _ NoOp) _ _ _ = pure ()
 

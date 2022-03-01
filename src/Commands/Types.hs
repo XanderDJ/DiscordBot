@@ -6,6 +6,7 @@ import qualified Data.Map as M
 import Data.Text
 import Discord
 import Discord.Types
+import Commands.CursorManager (CursorManager)
 
 type Usage = Text
 type Options = M.Map Text Text
@@ -13,7 +14,8 @@ type Options = M.Map Text Text
 data CommandFunction
   = TextCommand (Message -> DiscordHandler ())
   | AuctionCommand (MVar Auctions -> Message -> DiscordHandler ())
-  | HelpCommand (Message -> M.Map Text Command -> DiscordHandler ())
+  | HelpCommand (M.Map Text Command -> Message -> DiscordHandler ())
+  | CursorCommand (MVar CursorManager -> Message -> DiscordHandler ())
   | NoOp 
 
 data Command = Com Usage CommandFunction
