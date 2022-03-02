@@ -78,6 +78,7 @@ library
       DiscordDB.Tables
       DiscordDB.Types
       Excel
+      Interactions.CursorInteraction
       Pokemon.DamageCalc
       Pokemon.DamageCalc.DamageCalc
       Pokemon.DamageCalc.Functions
@@ -99,6 +100,7 @@ library
       PokemonDB.Tables
       PokemonDB.Types
       SplitSubstr
+      Utility
   other-modules:
       Paths_Lonewulfx6
   hs-source-dirs:

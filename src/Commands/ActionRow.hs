@@ -10,7 +10,7 @@ searchActionRow key b =
     [ ComponentButton (T.append key " first") b ButtonStyleSecondary Nothing (Just (mkEmoji "⏪")),
       ComponentButton (T.append key " back") b ButtonStyleSecondary Nothing (Just (mkEmoji "◀️")),
       ComponentButton (T.append key " delete") b ButtonStyleSecondary Nothing (Just (mkEmoji "⏹️")),
-      ComponentButton (T.append key " next") b ButtonStyleSecondary Nothing (Just (mkEmoji "▶️")),
+      ComponentButton (T.append key " forward") b ButtonStyleSecondary Nothing (Just (mkEmoji "▶️")),
       ComponentButton (T.append key " last") b ButtonStyleSecondary Nothing (Just (mkEmoji "⏩"))
     ]
 

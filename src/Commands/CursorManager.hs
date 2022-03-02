@@ -46,3 +46,7 @@ getNewKey :: CursorManager -> (T.Text, CursorManager)
 getNewKey cm@CursorManager {..} = ((T.pack . show) token, cm {randomGen = newGen})
   where
     (token, newGen) = random randomGen :: (Word64, StdGen)
+
+hasKey :: CursorManager -> Maybe T.Text -> Bool
+hasKey _ Nothing = False
+hasKey CursorManager {..} (Just k) = M.member k cursorList

@@ -11,7 +11,8 @@ import Commands.CursorManager
 import Commands.Manage.Role
 import Commands.Parsers
 import Commands.Types
-import Control.Concurrent.MVar (MVar, newEmptyMVar, putMVar, takeMVar)
+import Utility
+import Control.Concurrent.MVar (MVar, newEmptyMVar, putMVar, takeMVar, readMVar)
 import Control.Monad
 import Control.Monad.Trans
 import Data.Char
@@ -19,7 +20,7 @@ import Data.Default (Default (def))
 import Data.Either
 import Data.Functor
 import qualified Data.Map as M
-import Data.Maybe (fromJust, isJust, fromMaybe)
+import Data.Maybe (fromJust, fromMaybe, isJust)
 import Data.Text
 import qualified Data.Text as T
 import qualified Data.Text.IO as TIO
@@ -43,7 +44,8 @@ import System.Environment (getArgs)
 import System.Random (getStdGen)
 import Text.Parsec
 import Text.Pretty.Simple (pPrint)
-import Commands.Utility
+import Commands.CursorManager (hasKey)
+import Interactions.CursorInteraction (handleCursorInteraction)
 
 main = bot
 
@@ -71,9 +73,39 @@ eventHandler botState event = case event of
   MessageCreate m -> if not (fromBot m) then runCommands botState m commandMap else linkMessage (cursorManager botState) m
   GuildMemberAdd gId gM -> addRoleToUser gId gM
   InteractionCreate i -> do
-    lift $ pPrint i
-    void . restCall $ R.CreateInteractionResponse (interactionId i) (interactionToken i) (InteractionResponseUpdateMessage (InteractionResponseMessage Nothing (Just "Edited") Nothing Nothing Nothing (Just []) Nothing))
-  --void . restCall $ R.DeleteOriginalInteractionResponse (interactionApplicationId i) (interactionToken i)
+    case i of
+      i@(InteractionComponent sn sn' idc m_sn ma mou txt n mes txt' m_txt) -> case idc of
+        InteractionDataComponentButton cId -> do
+          cm <- lift $ readMVar (cursorManager botState)
+          let key = parseToken cId
+          when (hasKey cm key) (handleCursorInteraction cId (cursorManager botState) i)
+        InteractionDataComponentSelectMenu txt2 txts -> pure ()
+      InteractionPing sn sn' txt n -> void . restCall $ R.CreateInteractionResponse sn txt InteractionResponsePong
+      InteractionApplicationCommand
+        sn
+        sn'
+        idac
+        m_sn
+        ma
+        mou
+        txt
+        n
+        txt'
+        m_txt ->
+          pure ()
+      InteractionApplicationCommandAutocomplete
+        sn
+        sn'
+        idac
+        m_sn
+        ma
+        mou
+        txt
+        n
+        txt'
+        m_txt ->
+          pure ()
+      InteractionModalSubmit sn sn' idm m_sn ma mou txt n txt' m_txt -> pure ()
   _ -> pure ()
 
 runCommands :: BotState -> Message -> M.Map Text Command -> DiscordHandler ()
@@ -106,7 +138,7 @@ getKey m =
               ComponentActionRowSelectMenu csm -> Nothing
           )
   )
-    >>= ((\key -> if T.length key == 0 then Nothing else Just key) . T.takeWhile isDigit) . componentButtonCustomId
+    >>= parseToken . componentButtonCustomId
   where
     maybeHead [] = Nothing
     maybeHead (x : xs) = Just x
