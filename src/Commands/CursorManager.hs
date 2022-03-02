@@ -9,6 +9,7 @@ import Data.Maybe
 import Data.Text
 import qualified Data.Text as T
 import Data.Word
+import Discord.Interactions
 import Discord.Types
 import System.Random
 
@@ -50,3 +51,13 @@ getNewKey cm@CursorManager {..} = ((T.pack . show) token, cm {randomGen = newGen
 hasKey :: CursorManager -> Maybe T.Text -> Bool
 hasKey _ Nothing = False
 hasKey CursorManager {..} (Just k) = M.member k cursorList
+
+isCursorUser :: CursorManager -> MemberOrUser -> T.Text -> Bool
+isCursorUser cm (MemberOrUser (Left guildMember)) key = case memberUser guildMember of
+  Nothing -> False
+  Just user ->
+    let cursor = getCursor cm key
+     in cursorOwner cursor == userId user
+isCursorUser cm (MemberOrUser (Right user)) key =
+  let cursor = getCursor cm key
+   in cursorOwner cursor == userId user

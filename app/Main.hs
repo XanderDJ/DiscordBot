@@ -1,6 +1,5 @@
-{-# OPTIONS_GHC -Wno-unrecognised-pragmas #-}
+{-# LANGUAGE LambdaCase #-}
 
-{-# HLINT ignore "Use lambda-case" #-}
 module Main where
 
 import BotState
@@ -11,8 +10,7 @@ import Commands.CursorManager
 import Commands.Manage.Role
 import Commands.Parsers
 import Commands.Types
-import Utility
-import Control.Concurrent.MVar (MVar, newEmptyMVar, putMVar, takeMVar, readMVar)
+import Control.Concurrent.MVar (MVar, newEmptyMVar, putMVar, readMVar, takeMVar)
 import Control.Monad
 import Control.Monad.Trans
 import Data.Char
@@ -40,12 +38,12 @@ import Discord.Types
     Message (messageAuthor, messageComponents, messageContent, messageId),
     User (userIsBot),
   )
+import Interactions.CursorInteraction (handleCursorInteraction)
 import System.Environment (getArgs)
 import System.Random (getStdGen)
 import Text.Parsec
 import Text.Pretty.Simple (pPrint)
-import Commands.CursorManager (hasKey)
-import Interactions.CursorInteraction (handleCursorInteraction)
+import Utility
 
 main = bot
 
@@ -78,7 +76,7 @@ eventHandler botState event = case event of
         InteractionDataComponentButton cId -> do
           cm <- lift $ readMVar (cursorManager botState)
           let key = parseToken cId
-          when (hasKey cm key) (handleCursorInteraction cId (cursorManager botState) i)
+          when (hasKey cm key && isCursorUser cm (interactionUser i) (fromJust key)) (handleCursorInteraction cId (cursorManager botState) i)
         InteractionDataComponentSelectMenu txt2 txts -> pure ()
       InteractionPing sn sn' txt n -> void . restCall $ R.CreateInteractionResponse sn txt InteractionResponsePong
       InteractionApplicationCommand
@@ -133,7 +131,7 @@ getKey :: Message -> Maybe Text
 getKey m =
   ( messageComponents m
       >>= maybeHead
-      >>= ( \car -> case car of
+      >>= ( \case
               ComponentActionRowButton cbs -> maybeHead cbs
               ComponentActionRowSelectMenu csm -> Nothing
           )

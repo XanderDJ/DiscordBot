@@ -120,6 +120,7 @@ createCursor (AllMovesFromType pId moveType) (AllMovesFromTypeR dbMoves) _ msg t
         8
         (PaginatedContents "Query results" (T.pack $ "All " ++ (T.unpack . T.toTitle) moveType ++ " moves that " ++ (T.unpack . T.toTitle) pId ++ " can learn.") fieldMap)
         time
+        ((userId . messageAuthor) msg)
 createCursor originalQuery queryResult options msg time = InvalidCursor
 
 movesToFieldMap :: [Move] -> [(T.Text, [T.Text])]

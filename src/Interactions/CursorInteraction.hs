@@ -16,7 +16,6 @@ import Utility (parseToken)
 handleCursorInteraction :: T.Text -> MVar CursorManager -> Interaction -> DiscordHandler ()
 handleCursorInteraction customId cmv i = do
   cursorManager <- lift $ takeMVar cmv
-  lift $ pPrint cursorManager
   now <- lift getCurrentTime
   let (Just key, action) = parseCustomId customId
       cursor = getCursor cursorManager key

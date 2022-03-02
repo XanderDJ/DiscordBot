@@ -21,7 +21,8 @@ data Cursor
         cursorChannelId :: Maybe Snowflake,
         cursorSize :: Int,
         cursorContent :: PaginatedContents,
-        cursorLastAccessed :: UTCTime
+        cursorLastAccessed :: UTCTime,
+        cursorOwner :: UserId
       }
   | InvalidCursor
   deriving (Show)
