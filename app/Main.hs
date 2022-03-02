@@ -1,40 +1,49 @@
+{-# OPTIONS_GHC -Wno-unrecognised-pragmas #-}
+
+{-# HLINT ignore "Use lambda-case" #-}
 module Main where
 
+import BotState
 import CommandMap
+import Commands.ActionRow (searchActionRow)
 import Commands.Auction (Auctions)
+import Commands.CursorManager
+import Commands.Manage.Role
+import Commands.Parsers
 import Commands.Types
-import Control.Concurrent.MVar (MVar, newEmptyMVar, putMVar)
+import Control.Concurrent.MVar (MVar, newEmptyMVar, putMVar, takeMVar)
+import Control.Monad
+import Control.Monad.Trans
+import Data.Char
 import Data.Default (Default (def))
 import Data.Either
+import Data.Functor
 import qualified Data.Map as M
-import Data.Maybe (fromJust, isJust)
+import Data.Maybe (fromJust, isJust, fromMaybe)
 import Data.Text
+import qualified Data.Text as T
 import qualified Data.Text.IO as TIO
 import Discord
   ( DiscordHandler,
-    RunDiscordOpts (discordOnEvent, discordOnLog, discordToken, discordOnEnd, discordOnStart),
+    RunDiscordOpts (discordOnEnd, discordOnEvent, discordOnLog, discordOnStart, discordToken),
     restCall,
     runDiscord,
   )
+import qualified Discord
+import Discord.Interactions
 import qualified Discord.Requests as R
 import Discord.Types
-  ( Event (MessageCreate, GuildMemberUpdate, GuildMemberAdd, InteractionCreate),
-    Message (messageAuthor, messageContent, messageId),
+  ( ComponentActionRow (ComponentActionRowButton, ComponentActionRowSelectMenu),
+    ComponentButton (componentButtonCustomId),
+    Event (GuildMemberAdd, GuildMemberUpdate, InteractionCreate, MessageCreate),
+    Message (messageAuthor, messageComponents, messageContent, messageId),
     User (userIsBot),
   )
-import Commands.Parsers
 import System.Environment (getArgs)
-import Text.Parsec
-import qualified Discord
-import qualified Discord.Requests as R
-import Control.Monad
-import Control.Monad.Trans
-import Commands.Manage.Role
-import Discord.Interactions
-import Text.Pretty.Simple (pPrint)
 import System.Random (getStdGen)
-import BotState
-import Commands.CursorManager
+import Text.Parsec
+import Text.Pretty.Simple (pPrint)
+import Commands.Utility
 
 main = bot
 
@@ -59,25 +68,48 @@ bot = do
 
 eventHandler :: BotState -> Event -> DiscordHandler ()
 eventHandler botState event = case event of
-  MessageCreate m -> if not (fromBot m) then runCommands botState m commandMap else pure ()
+  MessageCreate m -> if not (fromBot m) then runCommands botState m commandMap else linkMessage (cursorManager botState) m
   GuildMemberAdd gId gM -> addRoleToUser gId gM
-  InteractionCreate i -> do 
+  InteractionCreate i -> do
     lift $ pPrint i
-    void . restCall $ R.CreateInteractionResponse (interactionId i) (interactionToken i) (InteractionResponseUpdateMessage (InteractionResponseMessage Nothing (Just "Edited") Nothing Nothing Nothing Nothing Nothing))
+    void . restCall $ R.CreateInteractionResponse (interactionId i) (interactionToken i) (InteractionResponseUpdateMessage (InteractionResponseMessage Nothing (Just "Edited") Nothing Nothing Nothing (Just []) Nothing))
+  --void . restCall $ R.DeleteOriginalInteractionResponse (interactionApplicationId i) (interactionToken i)
   _ -> pure ()
 
 runCommands :: BotState -> Message -> M.Map Text Command -> DiscordHandler ()
 runCommands botState m map = if isJust com then runCommand (fromJust com) botState m map else pure ()
   where
-    commandName = parse parseCommand "Parse Command name" ((toLower . messageContent) m)
+    commandName = parse parseCommand "Parse Command name" ((T.toLower . messageContent) m)
     com = if isLeft commandName then Nothing else M.lookup (fromRight "" commandName) map
 
 runCommand :: Command -> BotState -> Message -> M.Map Text Command -> DiscordHandler ()
 runCommand (Com _ (AuctionCommand f)) botState m _ = f (auctionState botState) m
 runCommand (Com _ (HelpCommand f)) _ m map = f map m
 runCommand (Com _ (TextCommand f)) _ m _ = f m
-runCommand (Com _ (CursorCommand f)) botState m _ = f (cursorManager botState) m 
+runCommand (Com _ (CursorCommand f)) botState m _ = f (cursorManager botState) m
 runCommand (Com _ NoOp) _ _ _ = pure ()
+
+linkMessage :: MVar CursorManager -> Message -> DiscordHandler ()
+linkMessage cursorManagerVar m = do
+  cursorManager <- lift $ takeMVar cursorManagerVar
+  let key = getKey m
+      cm' = linkMessageId cursorManager key (messageId m)
+  lift $ putMVar cursorManagerVar cm'
+  pure ()
+
+getKey :: Message -> Maybe Text
+getKey m =
+  ( messageComponents m
+      >>= maybeHead
+      >>= ( \car -> case car of
+              ComponentActionRowButton cbs -> maybeHead cbs
+              ComponentActionRowSelectMenu csm -> Nothing
+          )
+  )
+    >>= ((\key -> if T.length key == 0 then Nothing else Just key) . T.takeWhile isDigit) . componentButtonCustomId
+  where
+    maybeHead [] = Nothing
+    maybeHead (x : xs) = Just x
 
 fromBot :: Message -> Bool
 fromBot = userIsBot . messageAuthor

@@ -1,7 +1,9 @@
+{-# OPTIONS_GHC -Wno-unrecognised-pragmas #-}
+{-# HLINT ignore "Functor law" #-}
 module Commands.Parsers where
 
 import Commands.Auction (Auction (A), AuctionID, Participant (P), User (U))
-import Commands.Utility (toId)
+import Commands.Types (Options)
 import Data.Char (isPunctuation, toLower)
 import Data.Functor
 import Data.List (isPrefixOf)
@@ -12,13 +14,13 @@ import Data.Text (Text, dropWhileEnd, pack, replace, unpack)
 import qualified Data.Text as T
 import Pokemon.Functions (getStat, parseNatureEffect)
 import Pokemon.Types (BaseStat (BaseStat), Level, NatureEffect (NPositive))
+import PokemonDB.Types (PokemonQuery (..))
 import SplitSubstr
 import Text.Parsec
 import Text.Parsec.Number (fractional, int)
 import Text.Parsec.Text (Parser)
 import Text.Read (readMaybe)
-import PokemonDB.Types (PokemonQuery(..))
-import Commands.Types (Options)
+import Commands.Utility
 
 parseSep :: Parser Text
 parseSep = T.singleton <$> char ','
@@ -62,6 +64,13 @@ parseCommand = pack <$> (char 'l' *> many letter)
 
 parseId :: Parser Text
 parseId = toId . pack <$> (spaces *> many (noneOf ","))
+
+prefixes :: [String] -> Parser String
+prefixes = foldr ((<|>) . try . string) (unexpected "Given prefixes not found")
+
+
+keyParser :: Parser Text
+keyParser = T.pack <$> many digit
 
 -- Message example = !auction lpl 5000
 
@@ -162,7 +171,7 @@ combineOptionsWith :: ((Text, Options) -> (Text, Options) -> (Text, Options)) ->
 combineOptionsWith = foldl1
 
 combineWithSep :: Semigroup b => Text -> (Text, b) -> (Text, b) -> (Text, b)
-combineWithSep sep (t, opts) (t', opts') = (T.intercalate sep [t,t'], opts <> opts')
+combineWithSep sep (t, opts) (t', opts') = (T.intercalate sep [t, t'], opts <> opts')
 
 -- | Parse a command to get a list of pokemon names
 -- Ex: l(bu|beatup) mon with space, mon2, mon3, ...
@@ -203,10 +212,24 @@ parseLC = do
   moves <- sepByComma parseId
   return (mon, moves)
 
+typeQueryParser :: Parser PokemonQuery
+typeQueryParser = do
+  prefixes ["lquery", "lq"]
+  spaces
+  prefixes ["coverage", "cov", "type", "types"]
+  spaces
+  parseSep
+  spaces
+  pokemon <- parseId
+  parseSep
+  spaces
+  AllMovesFromType pokemon <$> parseId
+
 
 queryParser :: Parser PokemonQuery
-queryParser = DT <$> dtP <||> toLearnQuery <$> parseLC
- where toLearnQuery (p, ms) = Learn p ms
+queryParser = DT <$> dtP <||> toLearnQuery <$> parseLC <||> typeQueryParser
+  where
+    toLearnQuery (p, ms) = Learn p ms
 
 (<||>) :: ParsecT s u m a -> ParsecT s u m a -> ParsecT s u m a
 (<||>) a b = try a <|> b

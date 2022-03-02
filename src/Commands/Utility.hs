@@ -16,6 +16,7 @@ import DiscordDB.Types (GuildRoleT (GuildRoleT))
 import PokemonDB.Connection (getDbConnEnv)
 import Text.Pretty.Simple (pPrint)
 import Text.Printf (PrintfArg, printf)
+import Text.Parsec
 
 sendMessage :: R.ChannelRequest Message -> DiscordHandler ()
 sendMessage = void . restCall

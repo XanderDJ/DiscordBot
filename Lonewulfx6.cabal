@@ -30,6 +30,7 @@ library
       ChanceCalculator.ChanceCalculator
       ChanceCalculator.ChanceList
       CommandMap
+      Commands.ActionRow
       Commands.Auction
       Commands.Auction.Bid
       Commands.Auction.EndAuction

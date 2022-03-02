@@ -44,5 +44,7 @@ commandMap =
       ("dc", damageCalcCom),
       ("vc", valueConversionCom),
       ("valueconversion", valueConversionCom),
-      ("test", testCom)
+      ("test", testCom),
+      ("q", queryCom),
+      ("query", queryCom)
     ]
