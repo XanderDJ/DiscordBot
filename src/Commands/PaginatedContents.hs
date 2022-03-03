@@ -10,4 +10,4 @@ data PaginatedContents = PaginatedContents
   { paginatedTitle :: Text,
     paginatedText :: Text,
     paginatedFieldsMap :: [(FieldName, [FieldContent])]
-  } deriving Show
+  } deriving (Show, Eq)

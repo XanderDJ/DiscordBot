@@ -19,7 +19,6 @@ import Data.Either
 import Data.Functor
 import qualified Data.Map as M
 import Data.Maybe (fromJust, fromMaybe, isJust)
-import Data.Text
 import qualified Data.Text as T
 import qualified Data.Text.IO as TIO
 import Discord
@@ -44,6 +43,8 @@ import System.Random (getStdGen)
 import Text.Parsec
 import Text.Pretty.Simple (pPrint)
 import Utility
+import Data.Time (getCurrentTime)
+import Commands.Cursor
 
 main = bot
 
@@ -58,13 +59,13 @@ bot = do
   userFacingError <-
     runDiscord $
       def
-        { discordToken = append "Bot " (pack token),
+        { discordToken = T.append "Bot " (T.pack token),
           discordOnLog = print,
           discordOnEvent = eventHandler (BotState auctionVar cursorManagerVar),
           discordOnEnd = putStrLn "Ending",
           discordOnStart = lift $ putStrLn "Starting"
         }
-  TIO.appendFile "log.txt" (append userFacingError "\n\n")
+  TIO.appendFile "log.txt" (T.append userFacingError "\n\n")
 
 eventHandler :: BotState -> Event -> DiscordHandler ()
 eventHandler botState event = case event of
@@ -106,17 +107,18 @@ eventHandler botState event = case event of
       InteractionModalSubmit sn sn' idm m_sn ma mou txt n txt' m_txt -> pure ()
   _ -> pure ()
 
-runCommands :: BotState -> Message -> M.Map Text Command -> DiscordHandler ()
+runCommands :: BotState -> Message -> M.Map T.Text Command -> DiscordHandler ()
 runCommands botState m map = if isJust com then runCommand (fromJust com) botState m map else pure ()
   where
     commandName = parse parseCommand "Parse Command name" ((T.toLower . messageContent) m)
     com = if isLeft commandName then Nothing else M.lookup (fromRight "" commandName) map
 
-runCommand :: Command -> BotState -> Message -> M.Map Text Command -> DiscordHandler ()
+runCommand :: Command -> BotState -> Message -> M.Map T.Text Command -> DiscordHandler ()
 runCommand (Com _ (AuctionCommand f)) botState m _ = f (auctionState botState) m
 runCommand (Com _ (HelpCommand f)) _ m map = f map m
 runCommand (Com _ (TextCommand f)) _ m _ = f m
 runCommand (Com _ (CursorCommand f)) botState m _ = f (cursorManager botState) m
+runCommand (Com _ (StateCommand f)) botState m _ = f botState m
 runCommand (Com _ NoOp) _ _ _ = pure ()
 
 linkMessage :: MVar CursorManager -> Message -> DiscordHandler ()
@@ -127,7 +129,7 @@ linkMessage cursorManagerVar m = do
   lift $ putMVar cursorManagerVar cm'
   pure ()
 
-getKey :: Message -> Maybe Text
+getKey :: Message -> Maybe T.Text
 getKey m =
   ( messageComponents m
       >>= maybeHead
@@ -143,3 +145,19 @@ getKey m =
 
 fromBot :: Message -> Bool
 fromBot = userIsBot . messageAuthor
+
+cursorMaintenance :: MVar CursorManager -> DiscordHandler ()
+cursorMaintenance cmVar = do
+  time <- lift getCurrentTime
+  cursorManager <- lift $ takeMVar cmVar
+  let expiredCursors = getExpiredCursors cursorManager time
+      cm' = foldl removeCursor cursorManager (map fst expiredCursors)
+  lift $ putMVar cmVar cm'
+  mapM_ (expireCursor . snd) expiredCursors
+  cursorMaintenance cmVar
+
+expireCursor :: Cursor -> DiscordHandler ()
+expireCursor c = do
+  let (Just mId) = cursorMessageId c
+      (Just cId) = cursorChannelId c
+  void . restCall $ R.EditMessage (mId, cId) "" (Just def)

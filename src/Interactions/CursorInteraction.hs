@@ -59,4 +59,5 @@ readAction "forward" = Forward
 readAction "last" = Last
 readAction other = NoAction
 
+parseCustomId :: T.Text -> (Maybe T.Text, CursorAction)
 parseCustomId customId = (parseToken customId, (readAction . T.toLower . T.takeWhileEnd (/= ' ')) customId)

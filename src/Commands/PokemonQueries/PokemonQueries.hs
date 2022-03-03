@@ -69,12 +69,15 @@ cursor :: PokemonQuery -> PokemonQueryResult -> Options -> MVar CursorManager ->
 cursor originalQuery queryResult opts cursorManagerVar msg = do
   time <- lift getCurrentTime
   let c = createCursor originalQuery queryResult opts msg time
-  cursorManager <- lift $ takeMVar cursorManagerVar
-  let (key, cm') = getNewKey cursorManager
-      cm'' = addCursor cm' key c
-  lift $ putMVar cursorManagerVar cm''
-  let detailedMessage = createCursorMessage c key
-  sendMessage $ R.CreateMessageDetailed (messageChannelId msg) detailedMessage
+  if c == InvalidCursor
+    then sendMessage $ R.CreateMessage (messageChannelId msg) (T.append (pingUserText msg) ", the given query didn't offer any results!")
+    else do
+      cursorManager <- lift $ takeMVar cursorManagerVar
+      let (key, cm') = getNewKey cursorManager
+          cm'' = addCursor cm' key c
+      lift $ putMVar cursorManagerVar cm''
+      let detailedMessage = createCursorMessage c key
+      sendMessage $ R.CreateMessageDetailed (messageChannelId msg) detailedMessage
 
 noCursor :: PokemonQuery -> PokemonQueryResult -> M.Map T.Text T.Text -> MVar CursorManager -> Message -> DiscordHandler ()
 noCursor originalQuery queryResult opts cursorManagerVar msg = do
@@ -110,18 +113,40 @@ createDiscordMessage (Learn pId allMoves) (LearnR learnableMoves) _ _ = createDe
 createDiscordMessage pq pqr opts msg = def {R.messageDetailedContent = "Not implemented yet"}
 
 createCursor :: PokemonQuery -> PokemonQueryResult -> M.Map T.Text T.Text -> Message -> UTCTime -> Cursor
-createCursor (AllMovesFromType pId moveType) (AllMovesFromTypeR dbMoves) _ msg time =
-  let fieldMap = movesToFieldMap (map toMove dbMoves)
-   in Cursor
-        0
-        (max 0 (div (length dbMoves - 1) 8))
-        Nothing
-        (Just $ messageChannelId msg)
-        8
-        (PaginatedContents "Query results" (T.pack $ "All " ++ (T.unpack . T.toTitle) moveType ++ " moves that " ++ (T.unpack . T.toTitle) pId ++ " can learn.") fieldMap)
-        time
-        ((userId . messageAuthor) msg)
+createCursor (AllMovesFromType pId moveType) (AllMovesFromTypeR dbMoves) _ msg time = if null dbMoves then InvalidCursor else
+  movesToCursor
+    (map toMove dbMoves)
+    "Query results"
+    (T.pack $ "All " ++ (T.unpack . T.toTitle) moveType ++ " moves that " ++ (T.unpack . T.toTitle) pId ++ " can learn.")
+    time
+    msg
+createCursor (AllMovesFromCategory pId moveCategory) (AllMovesFromCategoryR dbMoves) _ msg time = if null dbMoves then InvalidCursor else
+  movesToCursor
+    (map toMove dbMoves)
+    "Query results"
+    (T.pack $ "All " ++ (T.unpack . T.toTitle) moveCategory ++ " moves that " ++ (T.unpack . T.toTitle) pId ++ " can learn.")
+    time
+    msg
+createCursor (AllMovesFromCategoryAndType pId mCat mType) (AllMovesFromCategoryAndTypeR dbMoves) _ msg time = if null dbMoves then InvalidCursor else
+  movesToCursor
+    (map toMove dbMoves)
+    "Query results"
+    (T.pack $ "All " ++ (T.unpack . T.toTitle) mCat ++ "  " ++ (T.unpack . T.toTitle) mType ++ " moves that " ++ (T.unpack . T.toTitle) pId ++ " can learn.")
+    time
+    msg
 createCursor originalQuery queryResult options msg time = InvalidCursor
+
+movesToCursor :: [Move] -> T.Text -> T.Text -> UTCTime -> Message -> Cursor
+movesToCursor moves title desc time msg =
+  Cursor
+    0
+    (max 0 (div (length moves - 1) 8))
+    Nothing
+    (Just $ messageChannelId msg)
+    8
+    (PaginatedContents title desc (movesToFieldMap moves))
+    time
+    ((userId . messageAuthor) msg)
 
 movesToFieldMap :: [Move] -> [(T.Text, [T.Text])]
 movesToFieldMap moves =

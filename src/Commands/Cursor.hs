@@ -25,7 +25,7 @@ data Cursor
         cursorOwner :: UserId
       }
   | InvalidCursor
-  deriving (Show)
+  deriving (Show, Eq)
 
 isExpired :: Cursor -> UTCTime -> Bool
 isExpired Cursor {cursorLastAccessed = lastAccessed} time = diffUTCTime lastAccessed time > 10

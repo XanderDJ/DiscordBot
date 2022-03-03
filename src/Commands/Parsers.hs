@@ -1,9 +1,11 @@
 {-# OPTIONS_GHC -Wno-unrecognised-pragmas #-}
+
 {-# HLINT ignore "Functor law" #-}
 module Commands.Parsers where
 
 import Commands.Auction (Auction (A), AuctionID, Participant (P), User (U))
 import Commands.Types (Options)
+import Commands.Utility
 import Data.Char (isPunctuation, toLower)
 import Data.Functor
 import Data.List (isPrefixOf)
@@ -20,7 +22,7 @@ import Text.Parsec
 import Text.Parsec.Number (fractional, int)
 import Text.Parsec.Text (Parser)
 import Text.Read (readMaybe)
-import Commands.Utility
+import Prelude hiding (words)
 
 parseSep :: Parser Text
 parseSep = T.singleton <$> char ','
@@ -65,9 +67,8 @@ parseCommand = pack <$> (char 'l' *> many letter)
 parseId :: Parser Text
 parseId = toId . pack <$> (spaces *> many (noneOf ","))
 
-prefixes :: [String] -> Parser String
-prefixes = foldr ((<|>) . try . string) (unexpected "Given prefixes not found")
-
+words :: [String] -> Parser String
+words = foldr ((<|>) . try . string) (unexpected "Given prefixes not found")
 
 keyParser :: Parser Text
 keyParser = T.pack <$> many digit
@@ -214,9 +215,9 @@ parseLC = do
 
 typeQueryParser :: Parser PokemonQuery
 typeQueryParser = do
-  prefixes ["lquery", "lq"]
+  words ["lquery", "lq"]
   spaces
-  prefixes ["coverage", "cov", "type", "types"]
+  words ["coverage", "cov", "type", "types"]
   spaces
   parseSep
   spaces
@@ -225,9 +226,31 @@ typeQueryParser = do
   spaces
   AllMovesFromType pokemon <$> parseId
 
+categoryQueryParser :: Parser PokemonQuery
+categoryQueryParser = do
+  words ["lquery", "lq"]
+  spaces
+  words ["category", "cat"]
+  spaces
+  parseSep
+  pokemon <- parseId
+  parseSep
+  spaces
+  AllMovesFromCategory pokemon <$> parseId
+
+categoryTypeQueryParser :: Parser PokemonQuery
+categoryTypeQueryParser = do
+  words ["lquery", "lq"]
+  spaces
+  words ["categorytype", "categorycoverage", "catcov", "covcat", "coveragecategory", "typecategory"]
+  spaces
+  parseSep
+  pokemon <- parseId
+  parseSep
+  AllMovesFromCategoryAndType pokemon <$> parseId <*> (parseSep *> parseId)
 
 queryParser :: Parser PokemonQuery
-queryParser = DT <$> dtP <||> toLearnQuery <$> parseLC <||> typeQueryParser
+queryParser = DT <$> dtP <||> toLearnQuery <$> parseLC <||> typeQueryParser <||> categoryQueryParser <||> categoryTypeQueryParser
   where
     toLearnQuery (p, ms) = Learn p ms
 

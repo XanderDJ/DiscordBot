@@ -33,13 +33,13 @@ addCursor :: CursorManager -> Text -> Cursor -> CursorManager
 addCursor CursorManager {..} key c = CursorManager (M.insert key c cursorList) randomGen
 
 removeCursor :: CursorManager -> Text -> CursorManager
-removeCursor CursorManager {..} key = CursorManager (M.delete key cursorList) randomGen
+removeCursor CursorManager {..}  key= CursorManager (M.delete key cursorList) randomGen
 
 getCursor :: CursorManager -> Text -> Cursor
 getCursor CursorManager {..} key = cursorList M.! key
 
-getDeprecatedCursors :: CursorManager -> UTCTime -> [(Text, Cursor)]
-getDeprecatedCursors CursorManager {..} currentTime = M.foldrWithKey (f currentTime) [] cursorList
+getExpiredCursors :: CursorManager -> UTCTime -> [(Text, Cursor)]
+getExpiredCursors CursorManager {..} currentTime = M.foldrWithKey (f currentTime) [] cursorList
   where
     f time key cursor expiredCursors = if isExpired cursor time then (key, cursor) : expiredCursors else expiredCursors
 

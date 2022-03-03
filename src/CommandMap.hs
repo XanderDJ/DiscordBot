@@ -46,5 +46,6 @@ commandMap =
       ("valueconversion", valueConversionCom),
       ("test", testCom),
       ("q", queryCom),
-      ("query", queryCom)
+      ("query", queryCom),
+      ("showstate", showStateCom)
     ]

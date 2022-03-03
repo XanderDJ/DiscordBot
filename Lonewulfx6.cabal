@@ -46,6 +46,8 @@ library
       Commands.Commands
       Commands.Cursor
       Commands.CursorManager
+      Commands.Debug
+      Commands.Debug.ShowState
       Commands.Help
       Commands.Manage.Role
       Commands.PaginatedContents
