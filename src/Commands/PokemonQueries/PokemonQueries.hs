@@ -28,13 +28,14 @@ import Discord
 import Discord.Requests
 import qualified Discord.Requests as R
 import Discord.Types
-import Pokemon.DBConversion (toDTType, toMove)
+import Pokemon.DBConversion (toDTType, toMove, toPokemon)
 import Pokemon.Nature
 import Pokemon.Types
 import PokemonDB.Queries
 import PokemonDB.Types
 import Text.Parsec
 import Text.Pretty.Simple (pPrint)
+import Pokemon.Functions (toShortString)
 
 queryCom :: Command
 queryCom = Com "To be defined" (CursorCommand parseQuery)
@@ -197,7 +198,40 @@ createCursor (AllStatusMoves pId) (AllStatusMovesR dbMoves) _ msg time =
     (T.pack $ "All status inducing moves that " ++ (T.unpack . T.toTitle) pId  ++ " can learn.")
     time
     msg
+createCursor (AllPokemonsWithAbility aId) (AllPokemonsWithAbilityR dbMons) _ msg time = 
+  pokemonsToCursor
+    (map toPokemon dbMons)
+    "Query results"
+    (T.pack $ "All pokemons that can have the " ++ (T.unpack . T.toTitle) aId  ++ " ability.")
+    time
+    msg
+createCursor (AllPokemonsWithMove mId) (AllPokemonsWithMoveR dbMons) _ msg time =
+  pokemonsToCursor
+    (map toPokemon dbMons)
+    "Query results"
+    (T.pack $ "All pokemons that can learn " ++ (T.unpack . T.toTitle) mId  ++ ".")
+    time
+    msg
 createCursor originalQuery queryResult options msg time = InvalidCursor
+
+pokemonsToCursor :: [Pokemon] -> T.Text -> T.Text -> UTCTime -> Message -> Cursor
+pokemonsToCursor mons title desc time msg = if null mons then InvalidCursor else
+  Cursor
+    0
+    (max 0 (div (length mons - 1) 8))
+    Nothing
+    (Just $ messageChannelId msg)
+    8
+    (PaginatedContents title desc (pokemonsToFieldMap mons))
+    time
+    ((userId . messageAuthor) msg)
+
+pokemonsToFieldMap :: [Pokemon] -> [(T.Text, [T.Text])]
+pokemonsToFieldMap mons = [
+  ("Name", map pName mons),
+  ("Typing", map (T.intercalate ", " . map (T.pack . show) . pTyping) mons),
+  ("HP ATK DEF SPA SPD SPE", map (T.pack . toShortString . baseStats) mons)
+ ]
 
 movesToCursor :: [Move] -> T.Text -> T.Text -> UTCTime -> Message -> Cursor
 movesToCursor moves title desc time msg = if null moves then InvalidCursor else

@@ -42,9 +42,21 @@ runPokemonQuery con (AllMoves pId) = AllMovesR <$> getPokemonMoves con (toId pId
 runPokemonQuery con (AllMovesFromType pId tipe) = AllMovesFromTypeR <$> getCoverageMoves con (toId pId) (toTitle tipe)
 runPokemonQuery con (AllMovesFromCategory pId category) = AllMovesFromCategoryR <$> getCategoryMoves con (toId pId) category
 runPokemonQuery con (AllMovesFromCategoryAndType pId category tipe) = AllMovesFromCategoryAndTypeR <$> getCategoryCoverageMoves con (toId pId) category (toTitle tipe)
-runPokemonQuery con (AllPokemonWithStat stat value) = AllPokemonWithStatR <$> getPokemonsWithStat con stat value
-runPokemonQuery con (AllPokemonsWithAbility aId) = AllPokemonsWithAbilityR <$> getPokemonsWithAbility con (toId aId)
-runPokemonQuery con (AllPokemonsWithMove mId) = AllPokemonsWithMoveR <$> getPokemonsWithMove con (toId mId)
+runPokemonQuery con (AllPokemonWithStat stat value) = AllPokemonWithStatR <$> do 
+  mons <- getPokemonsWithStat con stat value
+  let monIds = map pokemonId mons
+  completePokemons <- mapM (getCompletePokemon con) monIds
+  return $ rights completePokemons
+runPokemonQuery con (AllPokemonsWithAbility aId) = AllPokemonsWithAbilityR <$> do 
+  mons <- getPokemonsWithAbility con (toId aId)
+  let monIds = map pokemonId mons
+  completePokemons <- mapM (getCompletePokemon con) monIds
+  return $ rights completePokemons
+runPokemonQuery con (AllPokemonsWithMove mId) = AllPokemonsWithMoveR <$> do 
+  mons <- getPokemonsWithMove con (toId mId)
+  let monIds = map pokemonId mons
+  completePokemons <- mapM (getCompletePokemon con) monIds
+  return $ rights completePokemons
 runPokemonQuery con (AllPriorityMoves pId) = AllPriorityMovesR <$> getPriorityMoves con (toId pId)
 runPokemonQuery con (AllHazardMoves pId) = AllHazardMovesR <$> getHazardMoves con (toId pId)
 runPokemonQuery con (AllClericMoves pId) = AllClericMovesR <$> getClericMoves con (toId pId)

@@ -151,6 +151,10 @@ typeToColor _ = "FF000000"
 sortMoves :: [Move] -> [Move]
 sortMoves = sort
 
+toShortString :: BaseStats -> String
+toShortString bs = f HP ++ " " ++ f ATK ++ " " ++ f DEF ++ " " ++ f SPA ++ " " ++ f SPD ++ " " ++ f SPE
+ where f = show . getValue . findBaseStat bs
+
 toName :: T.Text -> T.Text
 toName = T.replace " " "-" . T.toLower
 
