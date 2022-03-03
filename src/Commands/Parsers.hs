@@ -249,8 +249,65 @@ categoryTypeQueryParser = do
   parseSep
   AllMovesFromCategoryAndType pokemon <$> parseId <*> (parseSep *> parseId)
 
+singleParameterQuery :: [String] -> (T.Text -> PokemonQuery) -> Parser PokemonQuery
+singleParameterQuery queryType queryConstructor = do
+  words ["lquery", "lq"]
+  spaces
+  words queryType
+  spaces
+  parseSep
+  queryConstructor <$> parseId
+
+allClericMovesParser :: Parser PokemonQuery
+allClericMovesParser = singleParameterQuery ["cleric"] AllClericMoves
+
+hazardMovesQueryParser :: Parser PokemonQuery
+hazardMovesQueryParser = singleParameterQuery ["hazard"] AllHazardMoves 
+
+hazardControlParser :: Parser PokemonQuery
+hazardControlParser = singleParameterQuery ["hazardcontrol"] AllHazardControl
+
+allMovesParser :: Parser PokemonQuery
+allMovesParser = singleParameterQuery ["all moves"] AllMoves
+
+allPokemonsWithAbilityParser :: Parser PokemonQuery
+allPokemonsWithAbilityParser = singleParameterQuery ["ability"] AllPokemonsWithAbility
+
+allPokemonsWithMoveParser :: Parser PokemonQuery
+allPokemonsWithMoveParser = singleParameterQuery ["move"] AllPokemonsWithMove
+
+allPriority :: Parser PokemonQuery
+allPriority = singleParameterQuery ["priority", "prio"] AllPriorityMoves
+
+allRecoveryParser :: Parser PokemonQuery
+allRecoveryParser = singleParameterQuery ["recovery", "heal", "healing"] AllRecoveryMoves
+
+allBoostParser :: Parser PokemonQuery
+allBoostParser = singleParameterQuery ["boost", "boosting", "setup"] AllSetUpMoves
+
+allScreensParser :: Parser PokemonQuery
+allScreensParser = singleParameterQuery ["screens", "screen"] AllScreens
+
+allStatusParser :: Parser PokemonQuery
+allStatusParser = singleParameterQuery ["status"] AllStatusMoves
+
 queryParser :: Parser PokemonQuery
-queryParser = DT <$> dtP <||> toLearnQuery <$> parseLC <||> typeQueryParser <||> categoryQueryParser <||> categoryTypeQueryParser
+queryParser = DT <$> dtP
+    <||> toLearnQuery <$> parseLC
+    <||> typeQueryParser
+    <||> categoryQueryParser
+    <||> categoryTypeQueryParser
+    <||> allClericMovesParser
+    <||> allScreensParser
+    <||> allStatusParser
+    <||> hazardMovesQueryParser
+    <||> hazardControlParser
+    <||> allBoostParser
+    <||> allRecoveryParser
+    <||> allPriority
+    <||> allPokemonsWithAbilityParser
+    <||> allPokemonsWithMoveParser
+    <||> allMovesParser
   where
     toLearnQuery (p, ms) = Learn p ms
 

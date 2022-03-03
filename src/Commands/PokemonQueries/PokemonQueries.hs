@@ -70,7 +70,7 @@ cursor originalQuery queryResult opts cursorManagerVar msg = do
   time <- lift getCurrentTime
   let c = createCursor originalQuery queryResult opts msg time
   if c == InvalidCursor
-    then sendMessage $ R.CreateMessage (messageChannelId msg) (T.append (pingUserText msg) ", the given query didn't offer any results!")
+    then sendMessage $ R.CreateMessage (messageChannelId msg) (T.append (pingUserText msg) ", the given query didn't offer any results or wasn't implemented yet!")
     else do
       cursorManager <- lift $ takeMVar cursorManagerVar
       let (key, cm') = getNewKey cursorManager
@@ -113,31 +113,94 @@ createDiscordMessage (Learn pId allMoves) (LearnR learnableMoves) _ _ = createDe
 createDiscordMessage pq pqr opts msg = def {R.messageDetailedContent = "Not implemented yet"}
 
 createCursor :: PokemonQuery -> PokemonQueryResult -> M.Map T.Text T.Text -> Message -> UTCTime -> Cursor
-createCursor (AllMovesFromType pId moveType) (AllMovesFromTypeR dbMoves) _ msg time = if null dbMoves then InvalidCursor else
+createCursor (AllMovesFromType pId moveType) (AllMovesFromTypeR dbMoves) _ msg time = 
   movesToCursor
     (map toMove dbMoves)
     "Query results"
     (T.pack $ "All " ++ (T.unpack . T.toTitle) moveType ++ " moves that " ++ (T.unpack . T.toTitle) pId ++ " can learn.")
     time
     msg
-createCursor (AllMovesFromCategory pId moveCategory) (AllMovesFromCategoryR dbMoves) _ msg time = if null dbMoves then InvalidCursor else
+createCursor (AllMovesFromCategory pId moveCategory) (AllMovesFromCategoryR dbMoves) _ msg time = 
   movesToCursor
     (map toMove dbMoves)
     "Query results"
     (T.pack $ "All " ++ (T.unpack . T.toTitle) moveCategory ++ " moves that " ++ (T.unpack . T.toTitle) pId ++ " can learn.")
     time
     msg
-createCursor (AllMovesFromCategoryAndType pId mCat mType) (AllMovesFromCategoryAndTypeR dbMoves) _ msg time = if null dbMoves then InvalidCursor else
+createCursor (AllMovesFromCategoryAndType pId mCat mType) (AllMovesFromCategoryAndTypeR dbMoves) _ msg time = 
   movesToCursor
     (map toMove dbMoves)
     "Query results"
     (T.pack $ "All " ++ (T.unpack . T.toTitle) mCat ++ "  " ++ (T.unpack . T.toTitle) mType ++ " moves that " ++ (T.unpack . T.toTitle) pId ++ " can learn.")
     time
     msg
+createCursor (AllMoves pId) (AllMovesR dbMoves) _ msg time = 
+  movesToCursor
+    (map toMove dbMoves)
+    "Query results"
+    (T.pack $ "All moves that " ++ (T.unpack . T.toTitle) pId  ++ " can learn.")
+    time
+    msg
+createCursor (AllPriorityMoves pId) (AllPriorityMovesR dbMoves) _ msg time =
+  movesToCursor
+    (map toMove dbMoves)
+    "Query results"
+    (T.pack $ "All priority moves that " ++ (T.unpack . T.toTitle) pId  ++ " can learn.")
+    time
+    msg
+createCursor (AllHazardMoves pId) (AllHazardMovesR dbMoves) _ msg time =
+  movesToCursor
+    (map toMove dbMoves)
+    "Query results"
+    (T.pack $ "All hazards that " ++ (T.unpack . T.toTitle) pId  ++ " can set up.")
+    time
+    msg
+createCursor (AllHazardControl pId) (AllHazardControlR dbMoves) _ msg time =
+  movesToCursor
+    (map toMove dbMoves)
+    "Query results"
+    (T.pack $ "All hazard control that " ++ (T.unpack . T.toTitle) pId  ++ " has.")
+    time
+    msg
+createCursor (AllRecoveryMoves pId) (AllRecoveryMovesR dbMoves) _ msg time =
+  movesToCursor
+    (map toMove dbMoves)
+    "Query results"
+    (T.pack $ "All recovery moves that " ++ (T.unpack . T.toTitle) pId  ++ " can learn.")
+    time
+    msg
+createCursor (AllClericMoves pId) (AllClericMovesR dbMoves) _ msg time =
+  movesToCursor
+    (map toMove dbMoves)
+    "Query results"
+    (T.pack $ "All cleric moves that " ++ (T.unpack . T.toTitle) pId  ++ " can learn.")
+    time
+    msg
+createCursor (AllScreens pId) (AllScreensR dbMoves) _ msg time =
+  movesToCursor
+    (map toMove dbMoves)
+    "Query results"
+    (T.pack $ "All screens that " ++ (T.unpack . T.toTitle) pId  ++ " can learn.")
+    time
+    msg
+createCursor (AllSetUpMoves pId) (AllSetUpMovesR dbMoves) _ msg time = 
+  movesToCursor
+    (map toMove dbMoves)
+    "Query results"
+    (T.pack $ "All set up moves that " ++ (T.unpack . T.toTitle) pId  ++ " can learn.")
+    time
+    msg
+createCursor (AllStatusMoves pId) (AllStatusMovesR dbMoves) _ msg time =
+  movesToCursor
+    (map toMove dbMoves)
+    "Query results"
+    (T.pack $ "All status inducing moves that " ++ (T.unpack . T.toTitle) pId  ++ " can learn.")
+    time
+    msg
 createCursor originalQuery queryResult options msg time = InvalidCursor
 
 movesToCursor :: [Move] -> T.Text -> T.Text -> UTCTime -> Message -> Cursor
-movesToCursor moves title desc time msg =
+movesToCursor moves title desc time msg = if null moves then InvalidCursor else
   Cursor
     0
     (max 0 (div (length moves - 1) 8))
