@@ -18,11 +18,11 @@ data ItemT a b c d = ItemT
     onMemory :: d,
     onDrive :: d
   }
-  deriving (Show)
+  deriving (Show, Eq)
 
 type DBItem = ItemT Text Bool Int (Maybe Text)
 
-newtype TypeT a = TypeT {typeName :: a} deriving (Show)
+newtype TypeT a = TypeT {typeName :: a} deriving (Show, Eq)
 
 type DBType = TypeT Text
 
@@ -32,7 +32,7 @@ data AbilityT t n = AbilityT
     abilityNum :: n,
     abilityDesc :: t
   }
-  deriving (Show)
+  deriving (Show, Eq)
 
 type DBAbility = AbilityT Text Int
 
@@ -75,7 +75,7 @@ data MoveT b n t mn mf mt = MoveT
     moveDance :: b,
     moveWillCrit :: b
   }
-  deriving (Show)
+  deriving (Show, Eq)
 
 type DBMove = MoveT Bool Int Text (Maybe Int) (Maybe Double) (Maybe Text)
 
@@ -93,7 +93,7 @@ data PokemonT b d n t = PokemonT
     pokemonColour :: t,
     pokemonNFE :: b
   }
-  deriving (Show)
+  deriving (Show, Eq)
 
 type DBPokemon = PokemonT Bool Double Int Text
 

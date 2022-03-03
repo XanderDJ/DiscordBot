@@ -21,11 +21,12 @@ module PokemonDB.Queries
     getCategoryCoverageMoves,
     getObjectClass,
     getData,
-    runPokemonQuery
+    runPokemonQuery,
   )
 where
 
 import Data.Either
+import qualified Data.List as L
 import Data.Maybe
 import Data.Profunctor.Product.Default
 import Data.Text (Text, toTitle)
@@ -42,21 +43,9 @@ runPokemonQuery con (AllMoves pId) = AllMovesR <$> getPokemonMoves con (toId pId
 runPokemonQuery con (AllMovesFromType pId tipe) = AllMovesFromTypeR <$> getCoverageMoves con (toId pId) (toTitle tipe)
 runPokemonQuery con (AllMovesFromCategory pId category) = AllMovesFromCategoryR <$> getCategoryMoves con (toId pId) category
 runPokemonQuery con (AllMovesFromCategoryAndType pId category tipe) = AllMovesFromCategoryAndTypeR <$> getCategoryCoverageMoves con (toId pId) category (toTitle tipe)
-runPokemonQuery con (AllPokemonWithStat stat value) = AllPokemonWithStatR <$> do 
-  mons <- getPokemonsWithStat con stat value
-  let monIds = map pokemonId mons
-  completePokemons <- mapM (getCompletePokemon con) monIds
-  return $ rights completePokemons
-runPokemonQuery con (AllPokemonsWithAbility aId) = AllPokemonsWithAbilityR <$> do 
-  mons <- getPokemonsWithAbility con (toId aId)
-  let monIds = map pokemonId mons
-  completePokemons <- mapM (getCompletePokemon con) monIds
-  return $ rights completePokemons
-runPokemonQuery con (AllPokemonsWithMove mId) = AllPokemonsWithMoveR <$> do 
-  mons <- getPokemonsWithMove con (toId mId)
-  let monIds = map pokemonId mons
-  completePokemons <- mapM (getCompletePokemon con) monIds
-  return $ rights completePokemons
+runPokemonQuery con (AllPokemonWithStat stat value) = AllPokemonWithStatR <$> do getPokemonsWithStat con stat value
+runPokemonQuery con (AllPokemonsWithAbility aId) = AllPokemonsWithAbilityR <$> getPokemonsWithAbility con (toId aId)
+runPokemonQuery con (AllPokemonsWithMove mId) = AllPokemonsWithMoveR <$> do getPokemonsWithMove con (toId mId)
 runPokemonQuery con (AllPriorityMoves pId) = AllPriorityMovesR <$> getPriorityMoves con (toId pId)
 runPokemonQuery con (AllHazardMoves pId) = AllHazardMovesR <$> getHazardMoves con (toId pId)
 runPokemonQuery con (AllClericMoves pId) = AllClericMovesR <$> getClericMoves con (toId pId)
@@ -84,6 +73,9 @@ selectPokemonType pokemon = do
   allTypeRs@(PTT pId tipe) <- T.selectPokemonType
   where_ $ pId .== pokemonId mon
   return (TypeT tipe)
+
+joinPokemonType :: T.PokemonF -> T.TypeF -> T.PokemonTypeF -> Select ()
+joinPokemonType mon tipe ptr = where_ $ pokemonId mon .== ptPokemonId ptr .&& typeName tipe .== ptType ptr
 
 getPokemonTypes :: Connection -> PokemonId -> IO [DBType]
 getPokemonTypes con mon = runSelect con $ selectPokemonType mon
@@ -167,26 +159,40 @@ getCompletePokemon con mon = do
         Right
           (head pokemon, map typeName types, map abilityName abilities, moves)
 
-selectPokemonWithMove :: MoveId -> Select T.PokemonF
+selectPokemonWithMove :: MoveId -> Select (T.PokemonF, T.TypeF, T.AbilityF, T.MoveF)
 selectPokemonWithMove mId = do
   mon <- T.selectPokemon
   move <- T.selectMove
   pmr <- T.selectPokemonMove
-  joinPokemonMove mon move pmr
-  isMove move mId
-  return mon
-
-getPokemonsWithMove :: Connection -> MoveId -> IO [DBPokemon]
-getPokemonsWithMove con mId = runSelect con $ selectPokemonWithMove mId
-
-selectPokemonWithAbility :: AbilityId -> Select T.PokemonF
-selectPokemonWithAbility aId = do
-  mon <- T.selectPokemon
+  tipe <- T.selectType
+  ptr <- T.selectPokemonType
   ability <- T.selectAbility
   par <- T.selectPokemonAbility
   joinPokemonAbility mon ability par
+  joinPokemonType mon tipe ptr
+  joinPokemonMove mon move pmr
+  isMove move mId
+  return (mon, tipe, ability, move)
+
+getPokemonsWithMove :: Connection -> MoveId -> IO [DBCompletePokemon]
+getPokemonsWithMove con mId = do
+  result <- runSelect con $ selectPokemonWithMove mId
+  if null result then return [] else return $ getCompletePokemonFromResult result
+
+selectPokemonWithAbility :: AbilityId -> Select (T.PokemonF, T.TypeF, T.AbilityF, T.MoveF)
+selectPokemonWithAbility aId = do
+  mon <- T.selectPokemon
+  pmr <- T.selectPokemonMove
+  move <- T.selectMove
+  ability <- T.selectAbility
+  par <- T.selectPokemonAbility
+  ptr <- T.selectPokemonType
+  tipe <- T.selectType
+  joinPokemonMove mon move pmr
+  joinPokemonType mon tipe ptr
+  joinPokemonAbility mon ability par
   isAbility ability aId
-  return mon
+  return (mon, tipe, ability, move)
 
 joinPokemonAbility ::
   T.PokemonF -> T.AbilityF -> T.PokemonAbilityF -> Select ()
@@ -194,30 +200,56 @@ joinPokemonAbility mon ability par =
   where_ $
     pokemonId mon .== paPokemonId par .&& abilityId ability .== paAbilityId par
 
-getPokemonsWithAbility :: Connection -> AbilityId -> IO [DBPokemon]
-getPokemonsWithAbility con ability =
-  runSelect con $ selectPokemonWithAbility ability
+getPokemonsWithAbility :: Connection -> AbilityId -> IO [DBCompletePokemon]
+getPokemonsWithAbility con ability = do
+  result <- runSelect con $ selectPokemonWithAbility ability
+  if L.null result
+    then return []
+    else do return $ getCompletePokemonFromResult result
+
+getCompletePokemonFromResult :: [(DBPokemon, DBType, DBAbility, DBMove)] -> [DBCompletePokemon]
+getCompletePokemonFromResult result =
+  let grouped = L.groupBy groupFunction result
+   in map toCompletePokemon grouped
+  where
+    groupFunction (a, b, c, d) (a', b', c', d') = a == a'
+    toCompletePokemon :: [(DBPokemon, DBType, DBAbility, DBMove)] -> DBCompletePokemon
+    toCompletePokemon l =
+      let (mons, types, abilities, moves) = (map fst4 l, map (typeName . snd4) l, map (abilityName . third4) l, map last4 l)
+       in (head mons, L.nub types, L.nub abilities, L.nub moves)
 
 selectPokemonsWithStat ::
-  (T.PokemonF -> Column SqlInt4) -> Int -> Select T.PokemonF
+  (T.PokemonF -> Column SqlInt4) -> Int -> Select (T.PokemonF, T.TypeF, T.AbilityF, T.MoveF)
 selectPokemonsWithStat f stat = do
   mon <- T.selectPokemon
+  pmr <- T.selectPokemonMove
+  move <- T.selectMove
+  ability <- T.selectAbility
+  par <- T.selectPokemonAbility
+  ptr <- T.selectPokemonType
+  tipe <- T.selectType
+  joinPokemonMove mon move pmr
+  joinPokemonType mon tipe ptr
+  joinPokemonAbility mon ability par
   where_ $ f mon .== toFields stat
-  return mon
+  return (mon, tipe, ability, move)
 
-getPokemonsWithStat :: Connection -> Stat -> Int -> IO [DBPokemon]
-getPokemonsWithStat con "atk" stat = runSelect con (selectPokemonsWithStat pokemonAtk stat)
-getPokemonsWithStat con "attack" stat = runSelect con (selectPokemonsWithStat pokemonAtk stat)
-getPokemonsWithStat con "def" stat = runSelect con (selectPokemonsWithStat pokemonDef stat)
-getPokemonsWithStat con "defense" stat = runSelect con (selectPokemonsWithStat pokemonDef stat)
-getPokemonsWithStat con "spa" stat = runSelect con (selectPokemonsWithStat pokemonSpa stat)
-getPokemonsWithStat con "specialattack" stat = runSelect con (selectPokemonsWithStat pokemonSpa stat)
-getPokemonsWithStat con "spd" stat = runSelect con (selectPokemonsWithStat pokemonSpd stat)
-getPokemonsWithStat con "specialdefense" stat = runSelect con (selectPokemonsWithStat pokemonSpd stat)
-getPokemonsWithStat con "spe" stat = runSelect con (selectPokemonsWithStat pokemonSpe stat)
-getPokemonsWithStat con "speed" stat = runSelect con (selectPokemonsWithStat pokemonSpe stat)
-getPokemonsWithStat con "hp" stat = runSelect con (selectPokemonsWithStat pokemonHp stat)
+getPokemonsWithStat :: Connection -> Stat -> Int -> IO [DBCompletePokemon]
+getPokemonsWithStat con "atk" stat = runSelect con (selectPokemonsWithStat pokemonAtk stat) >>= toCompletePokemon
+getPokemonsWithStat con "attack" stat = runSelect con (selectPokemonsWithStat pokemonAtk stat) >>= toCompletePokemon
+getPokemonsWithStat con "def" stat = runSelect con (selectPokemonsWithStat pokemonDef stat) >>= toCompletePokemon
+getPokemonsWithStat con "defense" stat = runSelect con (selectPokemonsWithStat pokemonDef stat) >>= toCompletePokemon
+getPokemonsWithStat con "spa" stat = runSelect con (selectPokemonsWithStat pokemonSpa stat) >>= toCompletePokemon
+getPokemonsWithStat con "specialattack" stat = runSelect con (selectPokemonsWithStat pokemonSpa stat) >>= toCompletePokemon
+getPokemonsWithStat con "spd" stat = runSelect con (selectPokemonsWithStat pokemonSpd stat) >>= toCompletePokemon
+getPokemonsWithStat con "specialdefense" stat = runSelect con (selectPokemonsWithStat pokemonSpd stat) >>= toCompletePokemon
+getPokemonsWithStat con "spe" stat = runSelect con (selectPokemonsWithStat pokemonSpe stat) >>= toCompletePokemon
+getPokemonsWithStat con "speed" stat = runSelect con (selectPokemonsWithStat pokemonSpe stat) >>= toCompletePokemon
+getPokemonsWithStat con "hp" stat = runSelect con (selectPokemonsWithStat pokemonHp stat) >>= toCompletePokemon
 getPokemonsWithStat _ _ _ = pure []
+
+toCompletePokemon :: Monad m => [(DBPokemon, DBType, DBAbility, DBMove)] -> m [DBCompletePokemon]
+toCompletePokemon r = if null r then return [] else return $ getCompletePokemonFromResult r
 
 selectMove :: MoveId -> Select T.MoveF
 selectMove mId = do
@@ -304,11 +336,13 @@ isOc :: T.OCF -> ObjectId -> Select ()
 isOc oc oId = where_ $ ocId oc .== toFields oId
 
 getObjectClass :: Connection -> ObjectId -> IO (Maybe ObjectClass)
-
-getObjectClass con oId = (\l -> if length l == 1
-                                then Just (head l)
-                                else Nothing)
-  <$> runSelect con (selectObjectClass oId)
+getObjectClass con oId =
+  ( \l ->
+      if length l == 1
+        then Just (head l)
+        else Nothing
+  )
+    <$> runSelect con (selectObjectClass oId)
 
 getData :: Connection -> ObjectId -> IO (Maybe DBData)
 getData con oId = do
@@ -515,4 +549,16 @@ toId :: T.Text -> T.Text
 toId = T.replace " " "" . T.replace "-" "" . T.toLower
 
 printSql :: Default Unpackspec a a => Select a -> IO ()
-printSql = putStrLn . fromMaybe "Empty select". showSql
+printSql = putStrLn . fromMaybe "Empty select" . showSql
+
+fst4 :: (a, b, c, d) -> a
+fst4 (a, b, c, d) = a
+
+snd4 :: (a, b, c, d) -> b
+snd4 (a, b, c, d) = b
+
+third4 :: (a, b, c, d) -> c
+third4 (a, b, c, d) = c
+
+last4 :: (a, b, c, d) -> d
+last4 (a, b, c, d) = d
