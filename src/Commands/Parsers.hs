@@ -291,6 +291,18 @@ allScreensParser = singleParameterQuery ["screens", "screen"] AllScreens
 allStatusParser :: Parser PokemonQuery
 allStatusParser = singleParameterQuery ["status"] AllStatusMoves
 
+allPokemonsWithStatParser :: Parser PokemonQuery
+allPokemonsWithStatParser = do
+  words ["lquery", "lq"]
+  spaces
+  words ["stat"]
+  spaces
+  parseSep
+  stat <- parseId
+  spaces
+  parseSep
+  AllPokemonWithStat stat . read . (\s -> if null s then "0" else s) <$> many digit
+
 queryParser :: Parser PokemonQuery
 queryParser = DT <$> dtP
     <||> toLearnQuery <$> parseLC
@@ -308,6 +320,7 @@ queryParser = DT <$> dtP
     <||> allPokemonsWithAbilityParser
     <||> allPokemonsWithMoveParser
     <||> allMovesParser
+    <||> allPokemonsWithStatParser
   where
     toLearnQuery (p, ms) = Learn p ms
 

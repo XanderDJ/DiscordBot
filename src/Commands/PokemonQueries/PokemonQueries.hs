@@ -21,6 +21,7 @@ import Data.Either
 import Data.Function
 import qualified Data.Map as M
 import Data.Maybe
+import Data.Text (justifyRight)
 import qualified Data.Text as T
 import Data.Time (getCurrentTime)
 import Database.PostgreSQL.Simple
@@ -29,14 +30,13 @@ import Discord.Requests
 import qualified Discord.Requests as R
 import Discord.Types
 import Pokemon.DBConversion (toDTType, toMove, toPokemon)
+import Pokemon.Functions hiding (toId)
 import Pokemon.Nature
 import Pokemon.Types
 import PokemonDB.Queries
 import PokemonDB.Types
 import Text.Parsec
 import Text.Pretty.Simple (pPrint)
-import Pokemon.Functions hiding (toId)
-import Data.Text (justifyRight)
 
 queryCom :: Command
 queryCom = Com "To be defined" (CursorCommand parseQuery)
@@ -115,141 +115,153 @@ createDiscordMessage (Learn pId allMoves) (LearnR learnableMoves) _ _ = createDe
 createDiscordMessage pq pqr opts msg = def {R.messageDetailedContent = "Not implemented yet"}
 
 createCursor :: PokemonQuery -> PokemonQueryResult -> M.Map T.Text T.Text -> Message -> UTCTime -> Cursor
-createCursor (AllMovesFromType pId moveType) (AllMovesFromTypeR dbMoves) _ msg time = 
+createCursor (AllMovesFromType pId moveType) (AllMovesFromTypeR dbMoves) _ msg time =
   movesToCursor
     (map toMove dbMoves)
     "Query results"
     (T.pack $ "All " ++ (T.unpack . T.toTitle) moveType ++ " moves that " ++ (T.unpack . T.toTitle) pId ++ " can learn.")
     time
     msg
-createCursor (AllMovesFromCategory pId moveCategory) (AllMovesFromCategoryR dbMoves) _ msg time = 
+createCursor (AllMovesFromCategory pId moveCategory) (AllMovesFromCategoryR dbMoves) _ msg time =
   movesToCursor
     (map toMove dbMoves)
     "Query results"
     (T.pack $ "All " ++ (T.unpack . T.toTitle) moveCategory ++ " moves that " ++ (T.unpack . T.toTitle) pId ++ " can learn.")
     time
     msg
-createCursor (AllMovesFromCategoryAndType pId mCat mType) (AllMovesFromCategoryAndTypeR dbMoves) _ msg time = 
+createCursor (AllMovesFromCategoryAndType pId mCat mType) (AllMovesFromCategoryAndTypeR dbMoves) _ msg time =
   movesToCursor
     (map toMove dbMoves)
     "Query results"
     (T.pack $ "All " ++ (T.unpack . T.toTitle) mCat ++ "  " ++ (T.unpack . T.toTitle) mType ++ " moves that " ++ (T.unpack . T.toTitle) pId ++ " can learn.")
     time
     msg
-createCursor (AllMoves pId) (AllMovesR dbMoves) _ msg time = 
+createCursor (AllMoves pId) (AllMovesR dbMoves) _ msg time =
   movesToCursor
     (map toMove dbMoves)
     "Query results"
-    (T.pack $ "All moves that " ++ (T.unpack . T.toTitle) pId  ++ " can learn.")
+    (T.pack $ "All moves that " ++ (T.unpack . T.toTitle) pId ++ " can learn.")
     time
     msg
 createCursor (AllPriorityMoves pId) (AllPriorityMovesR dbMoves) _ msg time =
   movesToCursor
     (map toMove dbMoves)
     "Query results"
-    (T.pack $ "All priority moves that " ++ (T.unpack . T.toTitle) pId  ++ " can learn.")
+    (T.pack $ "All priority moves that " ++ (T.unpack . T.toTitle) pId ++ " can learn.")
     time
     msg
 createCursor (AllHazardMoves pId) (AllHazardMovesR dbMoves) _ msg time =
   movesToCursor
     (map toMove dbMoves)
     "Query results"
-    (T.pack $ "All hazards that " ++ (T.unpack . T.toTitle) pId  ++ " can set up.")
+    (T.pack $ "All hazards that " ++ (T.unpack . T.toTitle) pId ++ " can set up.")
     time
     msg
 createCursor (AllHazardControl pId) (AllHazardControlR dbMoves) _ msg time =
   movesToCursor
     (map toMove dbMoves)
     "Query results"
-    (T.pack $ "All hazard control that " ++ (T.unpack . T.toTitle) pId  ++ " has.")
+    (T.pack $ "All hazard control that " ++ (T.unpack . T.toTitle) pId ++ " has.")
     time
     msg
 createCursor (AllRecoveryMoves pId) (AllRecoveryMovesR dbMoves) _ msg time =
   movesToCursor
     (map toMove dbMoves)
     "Query results"
-    (T.pack $ "All recovery moves that " ++ (T.unpack . T.toTitle) pId  ++ " can learn.")
+    (T.pack $ "All recovery moves that " ++ (T.unpack . T.toTitle) pId ++ " can learn.")
     time
     msg
 createCursor (AllClericMoves pId) (AllClericMovesR dbMoves) _ msg time =
   movesToCursor
     (map toMove dbMoves)
     "Query results"
-    (T.pack $ "All cleric moves that " ++ (T.unpack . T.toTitle) pId  ++ " can learn.")
+    (T.pack $ "All cleric moves that " ++ (T.unpack . T.toTitle) pId ++ " can learn.")
     time
     msg
 createCursor (AllScreens pId) (AllScreensR dbMoves) _ msg time =
   movesToCursor
     (map toMove dbMoves)
     "Query results"
-    (T.pack $ "All screens that " ++ (T.unpack . T.toTitle) pId  ++ " can learn.")
+    (T.pack $ "All screens that " ++ (T.unpack . T.toTitle) pId ++ " can learn.")
     time
     msg
-createCursor (AllSetUpMoves pId) (AllSetUpMovesR dbMoves) _ msg time = 
+createCursor (AllSetUpMoves pId) (AllSetUpMovesR dbMoves) _ msg time =
   movesToCursor
     (map toMove dbMoves)
     "Query results"
-    (T.pack $ "All set up moves that " ++ (T.unpack . T.toTitle) pId  ++ " can learn.")
+    (T.pack $ "All set up moves that " ++ (T.unpack . T.toTitle) pId ++ " can learn.")
     time
     msg
 createCursor (AllStatusMoves pId) (AllStatusMovesR dbMoves) _ msg time =
   movesToCursor
     (map toMove dbMoves)
     "Query results"
-    (T.pack $ "All status inducing moves that " ++ (T.unpack . T.toTitle) pId  ++ " can learn.")
+    (T.pack $ "All status inducing moves that " ++ (T.unpack . T.toTitle) pId ++ " can learn.")
     time
     msg
-createCursor (AllPokemonsWithAbility aId) (AllPokemonsWithAbilityR dbMons) _ msg time = 
+createCursor (AllPokemonsWithAbility aId) (AllPokemonsWithAbilityR dbMons) _ msg time =
   pokemonsToCursor
     (map toPokemon dbMons)
     "Query results"
-    (T.pack $ "All pokemons that can have the " ++ (T.unpack . T.toTitle) aId  ++ " ability.")
+    (T.pack $ "All pokemons that can have the " ++ (T.unpack . T.toTitle) aId ++ " ability.")
     time
     msg
 createCursor (AllPokemonsWithMove mId) (AllPokemonsWithMoveR dbMons) _ msg time =
   pokemonsToCursor
     (map toPokemon dbMons)
     "Query results"
-    (T.pack $ "All pokemons that can learn " ++ (T.unpack . T.toTitle) mId  ++ ".")
+    (T.pack $ "All pokemons that can learn " ++ (T.unpack . T.toTitle) mId ++ ".")
+    time
+    msg
+createCursor (AllPokemonWithStat stat value) (AllPokemonWithStatR dbMons) _ msg time =
+  pokemonsToCursor
+    (map toPokemon dbMons)
+    "Query results"
+    (T.pack $ "All pokemons that have " ++ show value ++ " " ++ (T.unpack . T.toTitle) stat ++ ".")
     time
     msg
 createCursor originalQuery queryResult options msg time = InvalidCursor
 
 pokemonsToCursor :: [Pokemon] -> T.Text -> T.Text -> UTCTime -> Message -> Cursor
-pokemonsToCursor mons title desc time msg = if null mons then InvalidCursor else
-  Cursor
-    0
-    (max 0 (div (length mons - 1) 8))
-    Nothing
-    (Just $ messageChannelId msg)
-    8
-    (PaginatedContents title desc (pokemonsToFieldMap mons))
-    time
-    ((userId . messageAuthor) msg)
+pokemonsToCursor mons title desc time msg =
+  if null mons
+    then InvalidCursor
+    else
+      Cursor
+        0
+        (max 0 (div (length mons - 1) 8))
+        Nothing
+        (Just $ messageChannelId msg)
+        8
+        (PaginatedContents title desc (pokemonsToFieldMap mons))
+        time
+        ((userId . messageAuthor) msg)
 
 pokemonsToFieldMap :: [Pokemon] -> [(T.Text, [T.Text])]
-pokemonsToFieldMap mons = [
-  ("Name", map pName mons),
-  ("Typing", map (T.intercalate " " . map (typeToEmote . T.pack . show) . pTyping) mons),
-  ("HP   ATK  DEF  SPA  SPD  SPE  ", map (T.pack . toShortString . baseStats) mons)
- ]
- where 
-  toShortString :: BaseStats -> String
-  toShortString bs = f bs HP ++ " " ++ f bs ATK ++ " " ++ f bs DEF ++ " " ++ f bs SPA ++ " " ++ f bs SPD ++ " " ++ f bs SPE
-  f bs stat = (show . getValue . findBaseStat bs) stat
-  
+pokemonsToFieldMap mons =
+  [ ("Name", map pName mons),
+    ("Typing", map (T.intercalate " " . map (typeToEmote . T.pack . show) . pTyping) mons),
+    ("HP   ATK  DEF  SPA  SPD  SPE  ", map (T.pack . toShortString . baseStats) mons)
+  ]
+  where
+    toShortString :: BaseStats -> String
+    toShortString bs = f bs HP ++ " " ++ f bs ATK ++ " " ++ f bs DEF ++ " " ++ f bs SPA ++ " " ++ f bs SPD ++ " " ++ f bs SPE
+    f bs stat = (show . getValue . findBaseStat bs) stat
 
 movesToCursor :: [Move] -> T.Text -> T.Text -> UTCTime -> Message -> Cursor
-movesToCursor moves title desc time msg = if null moves then InvalidCursor else
-  Cursor
-    0
-    (max 0 (div (length moves - 1) 8))
-    Nothing
-    (Just $ messageChannelId msg)
-    8
-    (PaginatedContents title desc (movesToFieldMap moves))
-    time
-    ((userId . messageAuthor) msg)
+movesToCursor moves title desc time msg =
+  if null moves
+    then InvalidCursor
+    else
+      Cursor
+        0
+        (max 0 (div (length moves - 1) 8))
+        Nothing
+        (Just $ messageChannelId msg)
+        8
+        (PaginatedContents title desc (movesToFieldMap moves))
+        time
+        ((userId . messageAuthor) msg)
 
 movesToFieldMap :: [Move] -> [(T.Text, [T.Text])]
 movesToFieldMap moves =
