@@ -35,7 +35,8 @@ import PokemonDB.Queries
 import PokemonDB.Types
 import Text.Parsec
 import Text.Pretty.Simple (pPrint)
-import Pokemon.Functions (toShortString)
+import Pokemon.Functions hiding (toId)
+import Data.Text (justifyRight)
 
 queryCom :: Command
 queryCom = Com "To be defined" (CursorCommand parseQuery)
@@ -229,9 +230,14 @@ pokemonsToCursor mons title desc time msg = if null mons then InvalidCursor else
 pokemonsToFieldMap :: [Pokemon] -> [(T.Text, [T.Text])]
 pokemonsToFieldMap mons = [
   ("Name", map pName mons),
-  ("Typing", map (T.intercalate ", " . map (T.pack . show) . pTyping) mons),
-  ("HP ATK DEF SPA SPD SPE", map (T.pack . toShortString . baseStats) mons)
+  ("Typing", map (T.intercalate " " . map (typeToEmote . T.pack . show) . pTyping) mons),
+  ("HP   ATK  DEF  SPA  SPD  SPE  ", map (T.pack . toShortString . baseStats) mons)
  ]
+ where 
+  toShortString :: BaseStats -> String
+  toShortString bs = f bs HP ++ " " ++ f bs ATK ++ " " ++ f bs DEF ++ " " ++ f bs SPA ++ " " ++ f bs SPD ++ " " ++ f bs SPE
+  f bs stat = (show . getValue . findBaseStat bs) stat
+  
 
 movesToCursor :: [Move] -> T.Text -> T.Text -> UTCTime -> Message -> Cursor
 movesToCursor moves title desc time msg = if null moves then InvalidCursor else

@@ -148,12 +148,30 @@ typeToColor "DRAGON" = "FF4C08EF"
 typeToColor "PSYCHIC" = "FFf61C5D"
 typeToColor _ = "FF000000"
 
+typeToEmote :: T.Text -> T.Text
+typeToEmote "FIRE" = "<:fire:948981234443370519>"
+typeToEmote "GRASS" = "<:grass:948981182337519676>"
+typeToEmote "WATER" = "<:water:948980979979157515>"
+typeToEmote "ELECTRIC" = "<:electric:948981342257942548>"
+typeToEmote "FLYING" = "<:flying:948981202625368065>"
+typeToEmote "GROUND" = "<:ground:948981128369410119>"
+typeToEmote "STEEL" = "<:steel:948980999834959883>"
+typeToEmote "FAIRY" = "<:fairy:948981308644802620>"
+typeToEmote "DARK" = "<:dark:948981409144528907>"
+typeToEmote "GHOST" = "<:ghost:948981159566667836>"
+typeToEmote "FIGHTING" = "<:fighting:948981259915382865>"
+typeToEmote "NORMAL" = "<:normal:948982220582957176>"
+typeToEmote "ROCK" = "<:rock:948982609906630776>"
+typeToEmote "POISON" = "<:poison:948981082068488202>"
+typeToEmote "BUG" = "<:bug:948981434016735242>"
+typeToEmote "ICE" = "<:ice:948981105774718977>"
+typeToEmote "DRAGON" = "<:dragon:948981381407604797>"
+typeToEmote "PSYCHIC" = "<:psychic:948981051227799552>"
+typeToEmote _ = "<:normal:948982220582957176>"
+
 sortMoves :: [Move] -> [Move]
 sortMoves = sort
 
-toShortString :: BaseStats -> String
-toShortString bs = f HP ++ " " ++ f ATK ++ " " ++ f DEF ++ " " ++ f SPA ++ " " ++ f SPD ++ " " ++ f SPE
- where f = show . getValue . findBaseStat bs
 
 toName :: T.Text -> T.Text
 toName = T.replace " " "-" . T.toLower
