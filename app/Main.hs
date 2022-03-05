@@ -45,7 +45,10 @@ import Text.Pretty.Simple (pPrint)
 import Utility
 import Data.Time (getCurrentTime)
 import Commands.Cursor
+import UnliftIO.Concurrent (forkIO, threadDelay)
+import Commands.Utility
 
+main :: IO ()
 main = bot
 
 bot :: IO ()
@@ -63,7 +66,7 @@ bot = do
           discordOnLog = print,
           discordOnEvent = eventHandler (BotState auctionVar cursorManagerVar),
           discordOnEnd = putStrLn "Ending",
-          discordOnStart = lift $ putStrLn "Starting"
+          discordOnStart = lift (putStrLn "Starting" ) >> forkIO (cursorMaintenance cursorManagerVar) >> pure ()
         }
   TIO.appendFile "log.txt" (T.append userFacingError "\n\n")
 
@@ -154,10 +157,12 @@ cursorMaintenance cmVar = do
       cm' = foldl removeCursor cursorManager (map fst expiredCursors)
   lift $ putMVar cmVar cm'
   mapM_ (expireCursor . snd) expiredCursors
+  threadDelay 10000000
   cursorMaintenance cmVar
 
 expireCursor :: Cursor -> DiscordHandler ()
 expireCursor c = do
   let (Just mId) = cursorMessageId c
       (Just cId) = cursorChannelId c
-  void . restCall $ R.EditMessage (mId, cId) "" (Just def)
+  void . restCall $ R.EditMessage (cId, mId) def {R.messageDetailedComponents = Just []}
+

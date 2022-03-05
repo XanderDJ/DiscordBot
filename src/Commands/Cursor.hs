@@ -28,7 +28,7 @@ data Cursor
   deriving (Show, Eq)
 
 isExpired :: Cursor -> UTCTime -> Bool
-isExpired Cursor {cursorLastAccessed = lastAccessed} time = diffUTCTime lastAccessed time > 10
+isExpired Cursor {cursorLastAccessed = lastAccessed} time = diffUTCTime time lastAccessed > 10
 isExpired InvalidCursor _ = True
 
 firstPage :: Cursor -> Cursor
@@ -64,6 +64,7 @@ createCursorMessage c@Cursor {..} key =
               { createEmbedTitle = paginatedTitle cursorContent,
                 createEmbedDescription = paginatedText cursorContent,
                 createEmbedFields = createCursorFields c,
+                createEmbedFooterText = T.pack $ "Page " ++ show (cursorPage + 1) ++ "/" ++ show (cursorTotalPages + 1),
                 createEmbedColor = sideColor
               }
           ],
@@ -81,6 +82,7 @@ createCursorInteractionResponse c@Cursor {..} =
             { createEmbedTitle = paginatedTitle cursorContent,
               createEmbedDescription = paginatedText cursorContent,
               createEmbedFields = createCursorFields c,
+              createEmbedFooterText = T.pack $ "Page " ++ show (cursorPage + 1) ++ "/" ++ show (cursorTotalPages + 1),
               createEmbedColor = sideColor
             }
         ]

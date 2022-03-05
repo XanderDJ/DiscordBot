@@ -18,7 +18,7 @@ import Data.Time.Clock.POSIX (getPOSIXTime)
 import Database.PostgreSQL.Simple (Connection, close)
 import Discord (DiscordHandler)
 import qualified Discord.Requests as R
-import Discord.Types 
+import Discord.Types
 import Excel
 import Pokemon.DBConversion (toPokemon)
 import Pokemon.Excel (pokemonMoveMap, speedTable)
@@ -27,6 +27,7 @@ import Pokemon.Types
 import PokemonDB.Connection (getDbConnEnv)
 import qualified PokemonDB.Queries as Q
 import Text.Parsec (parse)
+import Discord
 
 speedSheetCommand :: Command
 speedSheetCommand = Com "lss - makes an excel sheet of speed tiers with the teams specified in the message" (TextCommand makeSpeedSheet)
@@ -61,7 +62,7 @@ makeSS m teams = do
       xl' = emptyXlsx & atSheet "SpeedTiers" ?~ sheet
       xl = insertMoveMaps xl' (L.concat moveMaps)
   time <- lift getPOSIXTime
-  sendMessage $ R.CreateMessageUploadFile (messageChannelId m) fileName (L.toStrict (fromXlsx time xl))
+  sendMessage $ R.CreateMessageDetailed (messageChannelId m) def {R.messageDetailedFile = Just (fileName, L.toStrict (fromXlsx time xl))}
 
 insertTables :: [ExcelTable] -> (Int, Int) -> Worksheet -> Worksheet
 insertTables [] _ sheet = sheet

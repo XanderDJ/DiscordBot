@@ -33,7 +33,7 @@ addCursor :: CursorManager -> Text -> Cursor -> CursorManager
 addCursor CursorManager {..} key c = CursorManager (M.insert key c cursorList) randomGen
 
 removeCursor :: CursorManager -> Text -> CursorManager
-removeCursor CursorManager {..}  key= CursorManager (M.delete key cursorList) randomGen
+removeCursor CursorManager {..} key = CursorManager (M.delete key cursorList) randomGen
 
 getCursor :: CursorManager -> Text -> Cursor
 getCursor CursorManager {..} key = cursorList M.! key

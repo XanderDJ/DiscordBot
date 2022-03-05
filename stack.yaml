@@ -66,6 +66,6 @@ packages:
 # Allow a newer minor version of GHC than the snapshot specifies
 # compiler-check: newer-minor
 extra-deps:
-- discord-haskell-1.12.1
+- discord-haskell-1.12.2
 - emoji-0.1.0.2
 - parsec3-numbers-0.1.0
