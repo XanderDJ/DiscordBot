@@ -35,7 +35,7 @@ endBidCommand :: Command
 endBidCommand = Com "lendbid" (AuctionCommand startEndBid)
 
 startEndBid :: MVar [Auction] -> Message -> DiscordHandler ()
-startEndBid mvar m = auctionActive mvar m canEndBid
+startEndBid = auctionActive canEndBid
 
 canEndBid :: MVar Auctions -> Message -> Auctions -> Auction -> DiscordHandler ()
 canEndBid mvar m as a = do

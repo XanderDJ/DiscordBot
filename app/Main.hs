@@ -1,4 +1,5 @@
 {-# LANGUAGE LambdaCase #-}
+{-# LANGUAGE RecordWildCards #-}
 
 module Main where
 
@@ -6,10 +7,12 @@ import BotState
 import CommandMap
 import Commands.ActionRow (searchActionRow)
 import Commands.Auction (Auctions)
+import Commands.Cursor
 import Commands.CursorManager
 import Commands.Manage.Role
 import Commands.Parsers
 import Commands.Types
+import Commands.Utility
 import Control.Concurrent.MVar (MVar, newEmptyMVar, putMVar, readMVar, takeMVar)
 import Control.Monad
 import Control.Monad.Trans
@@ -21,6 +24,7 @@ import qualified Data.Map as M
 import Data.Maybe (fromJust, fromMaybe, isJust)
 import qualified Data.Text as T
 import qualified Data.Text.IO as TIO
+import Data.Time (getCurrentTime)
 import Discord
   ( DiscordHandler,
     RunDiscordOpts (discordOnEnd, discordOnEvent, discordOnLog, discordOnStart, discordToken),
@@ -42,11 +46,8 @@ import System.Environment (getArgs)
 import System.Random (getStdGen)
 import Text.Parsec
 import Text.Pretty.Simple (pPrint)
-import Utility
-import Data.Time (getCurrentTime)
-import Commands.Cursor
 import UnliftIO.Concurrent (forkIO, threadDelay)
-import Commands.Utility
+import Utility
 
 main :: IO ()
 main = bot
@@ -66,7 +67,7 @@ bot = do
           discordOnLog = print,
           discordOnEvent = eventHandler (BotState auctionVar cursorManagerVar),
           discordOnEnd = putStrLn "Ending",
-          discordOnStart = lift (putStrLn "Starting" ) >> forkIO (cursorMaintenance cursorManagerVar) >> pure ()
+          discordOnStart = lift (putStrLn "Starting") >> forkIO (cursorMaintenance cursorManagerVar) >> pure ()
         }
   TIO.appendFile "log.txt" (T.append userFacingError "\n\n")
 
@@ -82,32 +83,10 @@ eventHandler botState event = case event of
           let key = parseToken cId
           when (hasKey cm key && isCursorUser cm (interactionUser i) (fromJust key)) (handleCursorInteraction cId (cursorManager botState) i)
         InteractionDataComponentSelectMenu txt2 txts -> pure ()
-      InteractionPing sn sn' txt n -> void . restCall $ R.CreateInteractionResponse sn txt InteractionResponsePong
-      InteractionApplicationCommand
-        sn
-        sn'
-        idac
-        m_sn
-        ma
-        mou
-        txt
-        n
-        txt'
-        m_txt ->
-          pure ()
-      InteractionApplicationCommandAutocomplete
-        sn
-        sn'
-        idac
-        m_sn
-        ma
-        mou
-        txt
-        n
-        txt'
-        m_txt ->
-          pure ()
-      InteractionModalSubmit sn sn' idm m_sn ma mou txt n txt' m_txt -> pure ()
+      i@InteractionPing {..} -> void . restCall $ R.CreateInteractionResponse interactionApplicationId interactionToken InteractionResponsePong
+      i@InteractionApplicationCommand {..} -> pure ()
+      i@InteractionApplicationCommandAutocomplete {..} -> pure ()
+      i@InteractionModalSubmit {..} -> pure ()
   _ -> pure ()
 
 runCommands :: BotState -> Message -> M.Map T.Text Command -> DiscordHandler ()
@@ -165,4 +144,3 @@ expireCursor c = do
   let (Just mId) = cursorMessageId c
       (Just cId) = cursorChannelId c
   void . restCall $ R.EditMessage (cId, mId) def {R.messageDetailedComponents = Just []}
-

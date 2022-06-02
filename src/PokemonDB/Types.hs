@@ -218,6 +218,7 @@ data PokemonQuery
     AllSetUpMoves PokemonId
   | -- | Query all the status moves a mon has
     AllStatusMoves PokemonId
+  | AllPokemonsWithMoveFromTeam MoveId [PokemonId] -- ^ Query all the pokemon from a certain team that can learn the given move
   deriving (Show)
 
 data PokemonQueryResult
@@ -239,4 +240,5 @@ data PokemonQueryResult
   | AllHazardControlR [DBMove]
   | AllSetUpMovesR [DBMove]
   | AllStatusMovesR [DBMove]
+  | AllPokemonsWithMoveFromTeamR [DBCompletePokemon]
   deriving (Show)

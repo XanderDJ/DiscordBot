@@ -36,10 +36,10 @@ nominationCommand :: Command
 nominationCommand = Com "lnom <player>" (AuctionCommand registerNomination)
 
 registerNomination :: MVar [Auction] -> Message -> DiscordHandler ()
-registerNomination mvar m = auctionActive mvar m canNominate
+registerNomination = auctionActive canNominate
 
 canNominate :: MVar [Auction] -> Message -> [Auction] -> Auction -> DiscordHandler ()
-canNominate mvar m as a = ifElse (isJust $ _aCurrentBid a) (storeAuctions mvar as >> nominationAlreadyActive m) (isParticipant mvar m as a hasSlots)
+canNominate mvar m as a = ifElse (isJust $ _aCurrentBid a) (storeAuctions mvar as >> nominationAlreadyActive m) (isParticipant hasSlots mvar m as a)
 
 hasSlots :: MVar Auctions -> Message -> Auctions -> Auction -> DiscordHandler ()
 hasSlots mvar m as a = do

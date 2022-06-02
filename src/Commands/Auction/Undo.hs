@@ -40,7 +40,7 @@ undoCommand :: Command
 undoCommand = Com "lundo - removes the last won auction from this user" (AuctionCommand undo')
 
 undo' :: MVar Auctions -> Message -> DiscordHandler ()
-undo' mvar m = auctionActive mvar m (isAuctioneer startUndo)
+undo' = auctionActive (isAuctioneer startUndo)
 
 startUndo :: MVar Auctions -> Message -> Auctions -> Auction -> DiscordHandler ()
 startUndo mvar m as a = do

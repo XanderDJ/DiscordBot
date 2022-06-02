@@ -17,7 +17,7 @@ import qualified Data.Text as T
 import Pokemon.Functions (getStat, parseNatureEffect)
 import Pokemon.Types (BaseStat (BaseStat), Level, NatureEffect (NPositive))
 import PokemonDB.Types (PokemonQuery (..))
-import SplitSubstr
+import SplitSubstr (splitOnSubstrs)
 import Text.Parsec
 import Text.Parsec.Number (fractional, int)
 import Text.Parsec.Text (Parser)
@@ -58,8 +58,11 @@ parseDoubleFraction = do
 parseDoubleDecimal :: Parser Double
 parseDoubleDecimal = fractional
 
-parseUser :: Parser User
-parseUser = U . pack <$> many (noneOf "#") <*> (char '#' *> parseMaybeInt)
+parseUser :: Parser [User]
+parseUser = do
+  name <- many (noneOf "#")
+  discrim <- char '#' *> many digit
+  return [U (pack name) ((Just . pack) discrim)]
 
 parseCommand :: Parser Text
 parseCommand = pack <$> (char 'l' *> many letter)
@@ -92,10 +95,10 @@ bidP = parseIntCommand "lb"
 
 -- example: info lonewulfx3#3333
 infoP :: Parser User
-infoP = U . pack <$> (string "linfouser" *> spaces *> many (noneOf "#")) <*> (char '#' *> parseMaybeInt)
+infoP = U . pack <$> (string "linfouser" *> spaces *> many (noneOf "#")) <*> (Just . pack <$> (char '#' *> many digit))
 
 undoP :: Parser User
-undoP = U . pack <$> (string "lundo" *> spaces *> many (noneOf "#")) <*> (char '#' *> parseMaybeInt)
+undoP = U . pack <$> (string "lundo" *> spaces *> many (noneOf "#")) <*> (Just . pack <$> (char '#' *> many digit))
 
 dtP :: Parser Text
 dtP = pack <$> (string "ldt " *> spaces *> many anyChar)
@@ -262,7 +265,7 @@ allClericMovesParser :: Parser PokemonQuery
 allClericMovesParser = singleParameterQuery ["cleric"] AllClericMoves
 
 hazardMovesQueryParser :: Parser PokemonQuery
-hazardMovesQueryParser = singleParameterQuery ["hazard"] AllHazardMoves 
+hazardMovesQueryParser = singleParameterQuery ["hazard"] AllHazardMoves
 
 hazardControlParser :: Parser PokemonQuery
 hazardControlParser = singleParameterQuery ["hazardcontrol"] AllHazardControl
@@ -303,8 +306,21 @@ allPokemonsWithStatParser = do
   parseSep
   AllPokemonWithStat stat . read . (\s -> if null s then "0" else s) <$> many digit
 
+allPokemonsWithMoveFromTeamParser :: Parser PokemonQuery
+allPokemonsWithMoveFromTeamParser = do
+  words ["lquery", "lq"]
+  spaces
+  words ["moveteam", "movet"]
+  spaces
+  parseSep
+  move <- parseId
+  spaces
+  parseSep
+  AllPokemonsWithMoveFromTeam move <$> sepByComma parseId
+
 queryParser :: Parser PokemonQuery
-queryParser = DT <$> dtP
+queryParser =
+  DT <$> dtP
     <||> toLearnQuery <$> parseLC
     <||> typeQueryParser
     <||> categoryQueryParser
@@ -321,6 +337,7 @@ queryParser = DT <$> dtP
     <||> allPokemonsWithMoveParser
     <||> allMovesParser
     <||> allPokemonsWithStatParser
+    <||> allPokemonsWithMoveFromTeamParser
   where
     toLearnQuery (p, ms) = Learn p ms
 

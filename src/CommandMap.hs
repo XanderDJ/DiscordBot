@@ -47,5 +47,7 @@ commandMap =
       ("test", testCom),
       ("q", queryCom),
       ("query", queryCom),
-      ("showstate", showStateCom)
+      ("showstate", showStateCom),
+      ("allow", allowCom),
+      ("debugauctions", showAuctionsCom)
     ]

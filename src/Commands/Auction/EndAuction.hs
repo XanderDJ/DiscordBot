@@ -28,7 +28,7 @@ endAuctionCommand :: Command
 endAuctionCommand = Com "lendauction - ends the current auction in the channel" (AuctionCommand endAuction')
 
 endAuction' :: MVar Auctions -> Message -> DiscordHandler ()
-endAuction' mvar m = auctionActive mvar m startEndAuction
+endAuction' = auctionActive startEndAuction
 
 startEndAuction :: MVar Auctions -> Message -> Auctions -> Auction -> DiscordHandler ()
 startEndAuction = isAuctioneer canEndAuction

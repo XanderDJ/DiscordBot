@@ -38,11 +38,11 @@ bidCommand :: Command
 bidCommand = Com "lb  <x|x.y|xk|x.yk>" (AuctionCommand registerBid)
 
 registerBid :: MVar Auctions -> Message -> DiscordHandler ()
-registerBid mvar m = auctionActive mvar m canBid
+registerBid = auctionActive canBid
 
 canBid :: MVar Auctions -> Message -> Auctions -> Auction -> DiscordHandler ()
 canBid mvar m as a = do
-  ifElse (isNothing $ _aCurrentBid a) (storeAuctions mvar as >> noNominationActive m) (isParticipant mvar m as a checkEnoughSlots)
+  ifElse (isNothing $ _aCurrentBid a) (storeAuctions mvar as >> noNominationActive m) (isParticipant checkEnoughSlots mvar m as a)
 
 checkEnoughSlots :: MVar Auctions -> Message -> Auctions -> Auction -> DiscordHandler ()
 checkEnoughSlots mvar m as a = do
@@ -63,7 +63,7 @@ checkBidHigher mvar m as a b = do
 checkBidCorrectStep :: MVar Auctions -> Message -> Auctions -> Auction -> Int -> DiscordHandler ()
 checkBidCorrectStep mvar m as a b = do
   let (Just step) = _aMinStep a
-  ifElse (b `mod` step /= 0) (storeAuctions mvar as >> mustBidCorrectStep m step) (checkNotCurrentBidder mvar m as a b)
+  ifElse (b `mod` step /= 0) (storeAuctions mvar as >> mustBidCorrectStep m step) (hasEnoughBudget mvar m as a b)
 
 checkNotCurrentBidder :: MVar Auctions -> Message -> Auctions -> Auction -> Int -> DiscordHandler ()
 checkNotCurrentBidder mvar m as a b = do

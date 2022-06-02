@@ -54,6 +54,7 @@ runPokemonQuery con (AllScreens pId) = AllScreensR <$> getScreenMoves con (toId 
 runPokemonQuery con (AllHazardControl pId) = AllHazardControlR <$> getHazardControlMoves con (toId pId)
 runPokemonQuery con (AllSetUpMoves pId) = AllSetUpMovesR <$> getSetUpMoves con (toId pId)
 runPokemonQuery con (AllStatusMoves pId) = AllStatusMovesR <$> getStatusMoves con (toId pId)
+runPokemonQuery con (AllPokemonsWithMoveFromTeam mId pIds) = AllPokemonsWithMoveFromTeamR <$> undefined
 
 selectPokemon :: PokemonId -> Select T.PokemonF
 selectPokemon id = do

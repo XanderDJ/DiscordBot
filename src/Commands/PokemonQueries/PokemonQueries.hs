@@ -37,6 +37,7 @@ import PokemonDB.Queries
 import PokemonDB.Types
 import Text.Parsec
 import Text.Pretty.Simple (pPrint)
+import Discord.Interactions
 
 queryCom :: Command
 queryCom = Com "To be defined" (CursorCommand parseQuery)
@@ -269,3 +270,9 @@ movesToFieldMap moves =
     ("BP/PP", map (\m -> T.pack $ (show . fromMaybe 0 . mBp) m ++ "/" ++ (show . mPP) m) moves),
     ("Accuracy", map (\m -> T.append ((T.pack . show . fromMaybe 0 . mAccuracy) m) "%") moves)
   ]
+
+interactionPing :: Interaction -> MemberOrUser
+interactionPing = interactionUser
+
+usertest :: MemberOrUser
+usertest = interactionPing (InteractionPing 12 332 "" 1)

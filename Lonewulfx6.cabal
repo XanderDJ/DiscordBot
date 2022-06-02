@@ -32,6 +32,7 @@ library
       CommandMap
       Commands.ActionRow
       Commands.Auction
+      Commands.Auction.Allow
       Commands.Auction.Bid
       Commands.Auction.EndAuction
       Commands.Auction.EndBid
@@ -47,6 +48,7 @@ library
       Commands.Cursor
       Commands.CursorManager
       Commands.Debug
+      Commands.Debug.ShowAuctions
       Commands.Debug.ShowState
       Commands.Help
       Commands.Manage.Role

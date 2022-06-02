@@ -42,6 +42,7 @@ getInfo :: MVar Auctions -> Message -> DiscordHandler ()
 getInfo mvar m = do
   auctions <- lift $ readMVar mvar
   let auction = getAuction (auctionID m) auctions
+  lift $ print (user m)
   ifElse (isNothing auction) (auctionNotFound m) (checkParticipant mvar m auctions (fromJust auction) (user m))
 
 checkParticipant :: MVar Auctions -> Message -> Auctions -> Auction -> User -> DiscordHandler ()

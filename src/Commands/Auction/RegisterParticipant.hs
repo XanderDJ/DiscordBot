@@ -3,7 +3,7 @@ module Commands.Auction.RegisterParticipant (registerParticipantCommand) where
 import Commands.Auction.Types
   ( Auction (_aAuctioneer, _aParticipants),
     Auctions,
-    Participant (P, _pId),
+    Participant (P, _pIds),
     User (U, _uName),
   )
 import Commands.Auction.Utility
@@ -36,20 +36,21 @@ registerParticipantCommand :: Command
 registerParticipantCommand = Com "lrp <budget> @participant1 @participant2 ..." (AuctionCommand registerParticipant)
 
 registerParticipant :: MVar [Auction] -> Message -> DiscordHandler ()
-registerParticipant mvar m = auctionActive mvar m addParticipant
+registerParticipant = auctionActive addParticipant
 
 addParticipant :: MVar [Auction] -> Message -> [Auction] -> Auction -> DiscordHandler ()
 addParticipant mvar m as a = do
   ifElse (user m /= _aAuctioneer a) (lift (putMVar mvar as) >> notAuctioneer m) (authorizedAddParticipant mvar m a as)
 
 toParticipant :: Int -> Discord.Types.User -> Participant
-toParticipant b u = P (U ((T.toLower . userName) u) (fromMaybe Nothing (userDiscrim u >>= readMaybe . T.unpack))) (Just b) []
+toParticipant b u = P [U ((T.toLower . userName) u) (userDiscrim u)] (Just b) []
 
 authorizedAddParticipant :: MVar [Auction] -> Message -> Auction -> [Auction] -> DiscordHandler ()
 authorizedAddParticipant mvar m a as = do
   let budget = parse (parseIntCommand "lrp") "" (messageContent m)
   ifElse (isLeft budget || isNothing (extractRight budget)) (lift (putMVar mvar as) >> usageRp m) (checkParticipants mvar a as (fromJust (extractRight budget)) m)
 
+usageRp :: Message -> DiscordHandler ()
 usageRp = reportError "lrp <budget> @participant1 @participant2 ..."
 
 checkParticipants :: MVar Auctions -> Auction -> Auctions -> Int -> Message -> DiscordHandler ()

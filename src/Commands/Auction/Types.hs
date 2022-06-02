@@ -2,13 +2,15 @@ module Commands.Auction.Types where
 
 import Data.List
 import Data.Maybe
-import Data.Text ( Text, unpack )
+import Data.Text (Text, unpack)
 
-data User = U {_uName :: Text, _uIdentifier :: Maybe Int} deriving (Eq)
+data User = U {_uName :: Text, _uIdentifier :: Maybe Text} deriving (Eq)
+
 
 instance Show User where
   show (U name (Just id)) = unpack name ++ "#" ++ show id
   show (U name Nothing) = unpack name
+
 
 data AuctionID = ID Int Int deriving (Show, Eq)
 
@@ -31,17 +33,19 @@ instance Show Auction where
       participants = Data.List.intercalate "\n\n" (map show (_aParticipants a))
 
 data Participant = P
-  { _pId :: User,
+  { _pIds :: [User],
     _pBudget :: Maybe Int,
     _pTeam :: [Item]
   }
 
+
 instance Show Participant where
   show p = captain ++ "\n" ++ budget ++ "\n\n" ++ team
     where
-      captain = show (_pId p) ++ ":"
+      captain = show ((Data.List.intercalate "," . map (unpack . _uName)) (_pIds p)) ++ ":"
       budget = "Remaining Budget: " ++ (show . fromJust . _pBudget) p
       team = Data.List.intercalate "\n" (Data.List.map show (_pTeam p))
+
 
 data Item = I
   { _iName :: Text,
@@ -53,4 +57,3 @@ instance Show Item where
   show i = unpack (_iName i) ++ " - " ++ (show . fromJust . _iPrice) i
 
 type Auctions = [Auction]
-
