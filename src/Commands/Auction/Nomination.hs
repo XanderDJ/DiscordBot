@@ -15,7 +15,7 @@ import Commands.Types
   ( Command (..),
     CommandFunction (AuctionCommand),
   )
-import Commands.Utility (extractRight, ifElse, pingUserText)
+import Commands.Utility (extractRight, ifElse, pingUserText, reportError)
 import Control.Concurrent.MVar (MVar, putMVar)
 import Control.Monad (void)
 import Control.Monad.Trans (MonadTrans (lift))
@@ -24,7 +24,7 @@ import Data.Maybe (fromJust, isJust)
 import Data.Text (Text, append, pack, toLower, unpack)
 import Discord (DiscordHandler, restCall)
 import qualified Discord.Requests as R
-import Discord.Types 
+import Discord.Types
 import Text.Parsec (parse)
 
 nominationCommand :: Command
@@ -39,7 +39,12 @@ canNominate mvar m as a = ifElse (isJust $ _aCurrentBid a) (storeAuctions mvar a
 hasSlots :: MVar Auctions -> Message -> Auctions -> Auction -> DiscordHandler ()
 hasSlots mvar m as a = do
   let part = getParticipant (user m) (_aParticipants a)
-  ifElse (Prelude.length (_pTeam part) >= (fromJust . _aMaxAmountTeam) a) (storeAuctions mvar as >> notEnoughSlots m) (parseNomination mvar m as a)
+  ifElse (Prelude.length (_pTeam part) >= (fromJust . _aMaxAmountTeam) a) (storeAuctions mvar as >> notEnoughSlots m) (hasBudget mvar m as a)
+
+hasBudget :: MVar Auctions -> Message -> Auctions -> Auction -> DiscordHandler ()
+hasBudget mvar m auctions auction = do
+  let remainingBudget = fromJust . _pBudget $ getParticipant (user m) (_aParticipants auction)
+  ifElse (remainingBudget < (fromJust . _aMinBid) auction) (storeAuctions mvar auctions >> reportError "You don't have the budget for this!" m) (parseNomination mvar m auctions auction)
 
 parseNomination :: MVar [Auction] -> Message -> [Auction] -> Auction -> DiscordHandler ()
 parseNomination mvar m as a = do
