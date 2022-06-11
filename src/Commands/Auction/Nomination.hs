@@ -55,11 +55,11 @@ startNomination :: MVar Auctions -> Message -> Auctions -> Auction -> Text -> Di
 startNomination mvar m as a name = do
   let hasMentioned = (not . null) (messageMentions m)
       name' = if hasMentioned then (userName . head) (messageMentions m) else name
-      currentBid = Just (user m, I name (_aMinBid a))
+      currentBid = Just (user m, I name' (_aMinBid a))
       a' = a {_aCurrentBid = currentBid}
       as' = updateAuction a' as
   lift $ putMVar mvar as'
-  void . restCall $ R.CreateMessage (messageChannelId m) (append (pingUserText m) (nominateText name (_aMinBid a)))
+  void . restCall $ R.CreateMessage (messageChannelId m) (append (pingUserText m) (nominateText name' (_aMinBid a)))
 
 nominateCommandHelp :: Message -> DiscordHandler ()
 nominateCommandHelp m = void . restCall $ R.CreateMessage (messageChannelId m) (append (pingUserText m) ", correct usage: nom (player)")
