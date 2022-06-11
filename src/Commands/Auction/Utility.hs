@@ -99,7 +99,7 @@ getMaxBudget user auction = maxBudget
   where
     participant = getParticipant user (_aParticipants auction)
     itemsToBuy = (fromJust . _aMinAmountTeam) auction - (Prelude.length (_pTeam participant) + 1)
-    maxBudget = (fromJust . _pBudget) participant - itemsToBuy * (fromJust . _aMinBid) auction
+    maxBudget = (fromJust . _pBudget) participant - max 0 (itemsToBuy * (fromJust . _aMinBid) auction)
 
 isValidUser :: Commands.Auction.Types.User -> Bool
 isValidUser (U _ (Just _)) = True
