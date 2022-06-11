@@ -53,7 +53,9 @@ parseNomination mvar m as a = do
 
 startNomination :: MVar Auctions -> Message -> Auctions -> Auction -> Text -> DiscordHandler ()
 startNomination mvar m as a name = do
-  let currentBid = Just (user m, I name (_aMinBid a))
+  let hasMentioned = (not . null) (messageMentions m)
+      name' = if hasMentioned then (userName . head) (messageMentions m) else name
+      currentBid = Just (user m, I name (_aMinBid a))
       a' = a {_aCurrentBid = currentBid}
       as' = updateAuction a' as
   lift $ putMVar mvar as'
