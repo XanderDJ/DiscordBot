@@ -1,11 +1,6 @@
 module Commands.Auction.Bid (bidCommand) where
 
 import Commands.Auction.Types
-  ( Auction (_aAmountTeam, _aCurrentBid, _aMinStep, _aParticipants),
-    Auctions,
-    Item (I),
-    Participant (_pTeam),
-  )
 import Commands.Auction.Utility
   ( auctionActive,
     getMaxBudget,
@@ -48,7 +43,7 @@ checkEnoughSlots :: MVar Auctions -> Message -> Auctions -> Auction -> DiscordHa
 checkEnoughSlots mvar m as a = do
   let part = getParticipant (user m) (_aParticipants a)
       teamSize = Prelude.length (_pTeam part)
-  ifElse (teamSize >= (fromJust . _aAmountTeam) a) (storeAuctions mvar as >> notEnoughSlots m) (parseBid mvar m as a)
+  ifElse (teamSize >= (fromJust . _aMaxAmountTeam) a) (storeAuctions mvar as >> notEnoughSlots m) (parseBid mvar m as a)
 
 parseBid :: MVar Auctions -> Message -> Auctions -> Auction -> DiscordHandler ()
 parseBid mvar m as a = do

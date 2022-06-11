@@ -1,11 +1,6 @@
 module Commands.Auction.Nomination (nominationCommand) where
 
 import Commands.Auction.Types
-  ( Auction (_aAmountTeam, _aCurrentBid, _aMinBid, _aParticipants),
-    Auctions,
-    Item (I),
-    Participant (_pTeam),
-  )
 import Commands.Auction.Utility
   ( auctionActive,
     getParticipant,
@@ -44,7 +39,7 @@ canNominate mvar m as a = ifElse (isJust $ _aCurrentBid a) (storeAuctions mvar a
 hasSlots :: MVar Auctions -> Message -> Auctions -> Auction -> DiscordHandler ()
 hasSlots mvar m as a = do
   let part = getParticipant (user m) (_aParticipants a)
-  ifElse (Prelude.length (_pTeam part) >= (fromJust . _aAmountTeam) a) (storeAuctions mvar as >> notEnoughSlots m) (parseNomination mvar m as a)
+  ifElse (Prelude.length (_pTeam part) >= (fromJust . _aMaxAmountTeam) a) (storeAuctions mvar as >> notEnoughSlots m) (parseNomination mvar m as a)
 
 parseNomination :: MVar [Auction] -> Message -> [Auction] -> Auction -> DiscordHandler ()
 parseNomination mvar m as a = do

@@ -25,7 +25,7 @@ import Discord.Types
 import Text.Parsec (parse)
 
 registerAuctionCommand :: Command
-registerAuctionCommand = Com "lhostauction <name> <minimum bid i.e. 5000> <minimum bid step i.e. 500> <amount of players per team>" (AuctionCommand registerAuction)
+registerAuctionCommand = Com "lhostauction <name> <minimum bid i.e. 5000> <minimum bid step i.e. 500> <min amount of players per team> <max amount of players>" (AuctionCommand registerAuction)
 
 registerAuction :: MVar [Auction] -> Message -> DiscordHandler ()
 registerAuction mvar m = do
@@ -56,5 +56,5 @@ auctionCommandHelp :: Message -> DiscordHandler ()
 auctionCommandHelp m = void $ restCall (R.CreateMessage (messageChannelId m) (append (pingUserText m) ", use the command in this way: lhostauction (name) (minimum bid i.e. 5000) (minimum bid step i.e. 500) (amount of players per team)"))
 
 isValidAuction :: Auction -> Bool
-isValidAuction (A _ _ (Just _) (Just _) (Just _) _ _ _ _) = True
+isValidAuction (A _ _ (Just _) (Just _) (Just _) (Just _) _ _ _ _) = True
 isValidAuction _ = False
